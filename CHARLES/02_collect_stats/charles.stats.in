@@ -1,0 +1,92 @@
+# Simplified Wheel Tutorial
+
+#Define useful quantities
+DEFINE D=0.750         #Outer wheel diameter
+DEFINE T=0.150         #Tire thickness
+DEFINE Y_CENTER = 0.0  #symmetry plane coordinate
+DEFINE PI = 3.14159265359
+
+RESTART = ../../STITCH/simplified_wheel_wt.mles result.sles
+
+#Equation of State Information
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+#Speed of Sound
+HELMHOLTZ_SOS 340.65
+
+CHECK_INTERVAL 10
+NSTEPS = 20000
+#RUNTIME 0.95  #hours, wall time
+
+TIMESTEP DT = 7.5e-05
+
+#Write a full result file every 1000 steps
+WRITE_RESULT INTERVAL=1000 NAME=data/simplified_wheel
+
+#collect stats
+RESET_STATS
+STATS p p_total() mag(u) u helicity() \
+wheel_rim:y_plus() wheel_hub:y_plus() wheel_spokes:y_plus() tire_tread:y_plus() tire_sidewall:y_plus() \
+wheel_rim:tau_wall() wheel_hub:tau_wall() wheel_spokes:tau_wall() tire_tread:tau_wall() tire_sidewall:tau_wall()  
+
+
+
+# Subgrid modeling
+SGS_MODEL VREMAN
+
+# solver options
+#Default configuration, no multigrid
+MOMENTUM_MG_NLEVEL 1 #Optional
+MOMENTUM_SOLVER JACOBI
+MOMENTUM_MAXITER 100
+MOMENTUM_ZERO 1e-6
+
+PRESSURE_MG_NLEVEL 1 #Optional
+PRESSURE_MAXITER 1000
+PRESSURE_ZERO 1e-6
+
+
+#BOUNDARY CONDITIONS
+
+inlet          = INLET 20.0 0.0 0.0
+outlet         = SPONGE TYPE L_X STRENGTH 50 LENGTH 2*$(D) OUTLET_PRESSURE 0.0 OUTLET_STRENGTH 20*$(D) SPEED 20.0
+side_y0        = SLIP
+side_y1        = SLIP
+top            = SLIP
+floor          = WALL
+moving_floor   = WALL U_WALL 20.0 0.0 0.0
+
+wheel_rim      = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI)) 
+wheel_hub      = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+wheel_spokes   = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+tire_tread     = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+tire_sidewall  = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+
+QUERY_BC inlet         INTERVAL 100 WRITE
+QUERY_BC outlet        INTERVAL 100 WRITE
+QUERY_BC wheel_rim     INTERVAL 100 WRITE
+QUERY_BC wheel_hub     INTERVAL 100 WRITE
+QUERY_BC wheel_spokes  INTERVAL 100 WRITE
+QUERY_BC tire_tread    INTERVAL 100 WRITE
+QUERY_BC tire_sidewall INTERVAL 100 WRITE
+
+
+#Use MRF around spokes
+ADD_BODY_FORCE NAME=forces/simplified_wheel_mrf INTERVAL=1 TYPE=MRF \
+GEOM=SBIN ../../SURFER/simplified_wheel_mrf.sbin \
+X_ROT=0.0 0.0 $(D)*0.5-0.015 AXIS_ROT=0.0 -1.0 0.0  OMEGA_ROT=20.0/($(D)*$(PI)) \ 
+MOMENT 0.0 0.0 $(D)*0.5-0.015
+
+#END BOUNDARY CONDITIONS
+
+#FORCES
+WRITE_FORCE NAME=forces/simplified_wheel INTERVAL=1 FAZONE wheel_rim,wheel_hub,wheel_spokes,tire_tread,tire_sidewall \
+MOMENT 0.0 0.0 $(D)*0.5-0.015
+
+#IMAGES                                                                  
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_p GEOM=Y_PLANE_FRAC 0.5 VAR=p      SIZE 1200 800
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_u GEOM=Y_PLANE_FRAC 0.5 VAR=mag(u) SIZE 1200 800
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_u_zoom GEOM PLANE 2*$(D) $(Y_CENTER) 2*$(D)-0.002 0 -1 0 UP=0 0 1 WIDTH=6*$(D) VAR=mag(u) SIZE=1200 800 NO_GEOM_BLANKING HIDE_SUBZONES 2
+WRITE_IMAGE INTERVAL=25 NAME=images/z0p08250 GEOM=PLANE 2*$(D) $(Y_CENTER) $(D)*0.5-0.015 0 0 1 UP 0 1 0 WIDTH=6*$(D) VAR=mag(u) SIZE=1200 800
+

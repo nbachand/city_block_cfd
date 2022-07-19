@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# But not these files...
+!*.py
+!*.in
+!*.scad
+!*.ipynb
+!*.cpp
+!.gitignore
+!README.md
+
+# ...even if they are in subdirectories
+!*/

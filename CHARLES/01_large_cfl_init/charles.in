@@ -1,0 +1,83 @@
+# Simplified Wheel Tutorial
+
+#Define useful quantities
+DEFINE D=0.750         #Outer wheel diameter
+DEFINE T=0.150         #Tire thickness
+DEFINE Y_CENTER = 0.0  #symmetry plane coordinate
+DEFINE PI = 3.14159265359
+
+RESTART = ../../STITCH/simplified_wheel_wt.mles 
+INIT time = 0.0 step = 0 u = 0.0 0.0 0.0 p = 0.0
+RESET_ALL
+
+#Equation of State Information
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+#Speed of Sound
+HELMHOLTZ_SOS 340.65
+
+
+CHECK_INTERVAL 1
+NSTEPS = 2000
+#RUNTIME 0.95  #hours, wall time
+
+TIMESTEP DT = 1.0e-03
+
+# Subgrid modeling
+SGS_MODEL VREMAN
+
+# solver options
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+
+MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+#MOMENTUM_MG_SOLVE_ON_COARSEST # uses Patr on coarsest grid
+MOMENTUM_MAXITER 1000
+MOMENTUM_ZERO 1e-6
+
+PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+PRESSURE_MG_NSMOOTH 10,10 # first is fine grid  #if smoother=1, half this 5,5
+PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+#PRESSURE_MG_SOLVE_ON_COARSEST # uses CG on coarses grid
+PRESSURE_MAXITER 1000
+PRESSURE_ZERO 1e-6
+
+#BOUNDARY CONDITIONS
+
+inlet          = INLET 20.0 0.0 0.0
+outlet         = SPONGE TYPE L_X STRENGTH 50 LENGTH 2*$(D) OUTLET_PRESSURE 0.0 OUTLET_STRENGTH 20*$(D) SPEED 20.0
+side_y0        = SLIP
+side_y1        = SLIP
+top            = SLIP
+floor          = WALL
+moving_floor   = WALL U_WALL 20.0 0.0 0.0
+
+wheel_rim      = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI)) 
+wheel_hub      = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+wheel_spokes   = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+tire_tread     = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+tire_sidewall  = WM_ALG_WALL ROTATING 0.0 0.0 $(D)*0.5-0.015 0.0 -1.0 0.0 20.0/($(D)*$(PI))
+
+
+#Use MRF around spokes
+ADD_BODY_FORCE NAME=forces/simplified_wheel_mrf INTERVAL=500 TYPE=MRF \
+GEOM=SBIN ../../SURFER/simplified_wheel_mrf.sbin \
+X_ROT=0.0 0.0 $(D)*0.5-0.015 AXIS_ROT=0.0 -1.0 0.0  OMEGA_ROT=20.0/($(D)*$(PI)) \ 
+MOMENT 0.0 0.0 $(D)*0.5-0.015
+
+#END BOUNDARY CONDITIONS
+
+#IMAGES                                                                  
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_p GEOM=Y_PLANE_FRAC 0.5 VAR=p      SIZE 1200 800
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_u GEOM=Y_PLANE_FRAC 0.5 VAR=mag(u) SIZE 1200 800
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_u_zoom GEOM PLANE 2*$(D) $(Y_CENTER) 2*$(D)-0.002 0 -1 0 UP=0 0 1 WIDTH=6*$(D) VAR=mag(u) SIZE=1200 800 NO_GEOM_BLANKING HIDE_SUBZONES 2
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_mrf_um GEOM PLANE 2*$(D) $(Y_CENTER) 2*$(D)-0.002 0 -1 0 UP=0 0 1 WIDTH=6*$(D) VAR=mag(u) SIZE=1200 800
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_mrf_ux GEOM PLANE 2*$(D) $(Y_CENTER) 2*$(D)-0.002 0 -1 0 UP=0 0 1 WIDTH=6*$(D) VAR=comp(u,0) SIZE=1200 800 
+WRITE_IMAGE INTERVAL=25 NAME=images/y0_mrf_uz GEOM PLANE 2*$(D) $(Y_CENTER) 2*$(D)-0.002 0 -1 0 UP=0 0 1 WIDTH=6*$(D) VAR=comp(u,2) SIZE=1200 800 
+WRITE_IMAGE INTERVAL=25 NAME=images/z0p08250 GEOM=PLANE 2*$(D) $(Y_CENTER) $(D)*0.5-0.015 0 0 1 UP 0 1 0 WIDTH=6*$(D) VAR=mag(u) SIZE=1200 800
+

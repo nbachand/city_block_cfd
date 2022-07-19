@@ -1,0 +1,13 @@
+SURF STL ../OpenSCAD/city_block.stl
+
+#SPLIT_FLAG BY_ANGLE 150 ALL
+
+#Check that the surface is water tight
+#RUN_DIAGNOSTICS WITH_DETAILS WITH_SUBZONE_INFO
+#CHECK_SELF_INTERSECTIONS
+
+#Write the combined surface
+#WRITE_SBIN surfer_geom.stl
+
+
+INTERACTIVE
