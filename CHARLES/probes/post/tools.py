@@ -6,7 +6,7 @@ def read_probes(filename):
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x','y','z'])
-            
+
 class MyLazyDict(dict):
     '''
     Create a lazy dictionary by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
@@ -20,6 +20,29 @@ class MyLazyDict(dict):
             value = function(arg) # read in the data, and assign it to the dict value
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
         return value
+
+class MyLazyList(list):
+    '''
+    Create a lazy list by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
+    and memorizes data once it has been read in.
+    '''
+    def __getitem__(self, item):
+        value=list.__getitem__(self, item) # retrieve the current dictionary value
+        if not isinstance(value, pd.core.frame.DataFrame): # check if data has been read in
+            # print('reading in data')
+            if isinstance(value, list):
+                unpacked_values = []
+                for v in value:
+                    function, arg = v # retrieve data reading function and data path
+                    v = function(arg) # read in the data, and assign it to the dict value
+                    unpacked_values.append(v)
+                value = unpacked_values
+            else:
+                function, arg = value # retrieve data reading function and data path
+                value = function(arg) # read in the data, and assign it to the dict value
+            list.__setitem__(self, item, value) # reset the dictionary value to the data
+        return value
+
 
 
 class Probes:
@@ -53,4 +76,12 @@ class Probes:
             location_path = f"{dir_locations}/{probe_name}.txt"
             locations[probe_name] = (read_locations, location_path)
         self.locations = MyLazyDict(locations)
+
+    def create_data_lists(self):
+        my_list = []
+        # print(my_list)
+        for _, name_dict in self.data.items():
+            my_list.append(MyLazyList(list(name_dict.values())))
+        self.data_list = my_list
+
 
