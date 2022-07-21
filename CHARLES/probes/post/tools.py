@@ -56,7 +56,7 @@ class Probes:
         locations = {}
         for probe_name in self.probe_names:
             location_path = f"{dir_locations}/{probe_name}.txt"
-            locations[probe_name] = (read_locations, location_path)
+            locations[probe_name] = (read_locations, location_path) 
         self.locations = MyLazyDict(locations)
 
 
@@ -67,14 +67,12 @@ class Probes:
             get_numbers = self.probe_numbers
 
         names_list = []
-        
-        for name, name_dict in self.data.items():
-            if name in get_names:
-                numbers_list = []
-                for number in name_dict.keys():
-                    if number in get_numbers:
-                        numbers_list.append(name_dict[number].to_numpy())
-                names_list.append(numbers_list)
+        for name in get_names:
+            name_dict = self.data[name]
+            numbers_list = []
+            for number in get_numbers:
+                numbers_list.append(name_dict[number].to_numpy())
+            names_list.append(numbers_list)
 
         return np.asarray(names_list)
 
