@@ -56,25 +56,25 @@ class Probes:
         locations = {}
         for probe_name in self.probe_names:
             location_path = f"{dir_locations}/{probe_name}.txt"
-            locations[probe_name] = (read_locations, location_path) 
-        self.locations = MyLazyDict(locations)
+            locations[probe_name] = (read_locations, location_path) # preparing for lazy location reading
+        self.locations = MyLazyDict(locations) # creating lazy dict for locations
 
 
     def slice_into_np(self, get_names = [], get_numbers = []):
         if not get_names:
-            get_names = self.probe_names
+            get_names = self.probe_names # if empty, use all probes
         if not get_numbers:
-            get_numbers = self.probe_numbers
+            get_numbers = self.probe_numbers# if empty, use all numbers
 
         names_list = []
         for name in get_names:
             name_dict = self.data[name]
             numbers_list = []
             for number in get_numbers:
-                numbers_list.append(name_dict[number].to_numpy())
-            names_list.append(numbers_list)
+                numbers_list.append(name_dict[number].to_numpy()) # get df from data dictionary and convert to np array
+            names_list.append(numbers_list) # create nested lists of names[numbers]
 
-        return np.asarray(names_list)
+        return np.asarray(names_list) # return numpy array with all requested data
 
         
 
