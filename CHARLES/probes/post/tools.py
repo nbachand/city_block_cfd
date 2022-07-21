@@ -1,5 +1,6 @@
 import pandas as pd
 import glob
+import numpy as np
 
 def read_probes(filename):
     return pd.read_csv(filename, delim_whitespace=True)
@@ -21,29 +22,6 @@ class MyLazyDict(dict):
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
         return value
 
-class MyLazyList(list):
-    '''
-    Create a lazy list by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
-    and memorizes data once it has been read in.
-    '''
-    def __getitem__(self, item):
-        value=list.__getitem__(self, item) # retrieve the current dictionary value
-        if not isinstance(value, pd.core.frame.DataFrame): # check if data has been read in
-            # print('reading in data')
-            if isinstance(value, list):
-                unpacked_values = []
-                for v in value:
-                    function, arg = v # retrieve data reading function and data path
-                    v = function(arg) # read in the data, and assign it to the dict value
-                    unpacked_values.append(v)
-                value = unpacked_values
-            else:
-                function, arg = value # retrieve data reading function and data path
-                value = function(arg) # read in the data, and assign it to the dict value
-            list.__setitem__(self, item, value) # reset the dictionary value to the data
-        return value
-
-
 
 class Probes:
     def __init__(self, directory):
@@ -51,6 +29,7 @@ class Probes:
         my_dict= {}
         path_generator = glob.iglob(f'{directory}/*.pcd') # create a generator to iterate over probe paths
         self.probe_names = []
+        self.probe_numbers = None
 
         for path in path_generator:
 
@@ -68,6 +47,9 @@ class Probes:
         #iterate through the upper data dict
         for probe_name, name_dict in my_dict.items():
             my_dict[probe_name] = MyLazyDict(name_dict) # modify the getter or the lower-level dicts to lazily read in data
+            if not self.probe_numbers:
+                self.probe_numbers = list(name_dict.keys())
+                self.probe_numbers.sort()
         self.data = my_dict
 
     def get_locations(self, dir_locations):
@@ -77,11 +59,27 @@ class Probes:
             locations[probe_name] = (read_locations, location_path)
         self.locations = MyLazyDict(locations)
 
-    def create_data_lists(self):
-        my_list = []
-        # print(my_list)
-        for _, name_dict in self.data.items():
-            my_list.append(MyLazyList(list(name_dict.values())))
-        self.data_list = my_list
+
+    def slice_into_np(self, get_names = [], get_numbers = []):
+        if not get_names:
+            get_names = self.probe_names
+        if not get_numbers:
+            get_numbers = self.probe_numbers
+
+        names_list = []
+        
+        for name, name_dict in self.data.items():
+            if name in get_names:
+                numbers_list = []
+                for number in name_dict.keys():
+                    if number in get_numbers:
+                        numbers_list.append(name_dict[number].to_numpy())
+                names_list.append(numbers_list)
+
+        return np.asarray(names_list)
+
+        
+
+
 
 
