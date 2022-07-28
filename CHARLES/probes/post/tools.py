@@ -60,21 +60,70 @@ class Probes:
         self.locations = MyLazyDict(locations) # creating lazy dict for locations
 
 
-    def slice_into_np(self, get_names = [], get_numbers = []):
+    def slice_into_np(self, get_names = [], get_numbers = [], get_vars = [], get_probes = np.s_[::]):
         if not get_names:
             get_names = self.probe_names # if empty, use all probes
         if not get_numbers:
             get_numbers = self.probe_numbers# if empty, use all numbers
 
         names_list = []
-        for name in get_names:
+        check_vars = True
+        for  name in get_names:
             name_dict = self.data[name]
             numbers_list = []
             for number in get_numbers:
-                numbers_list.append(name_dict[number].to_numpy()) # get df from data dictionary and convert to np array
+                df = name_dict[number]
+                if check_vars and not get_vars:
+                    get_vars = df.keys()
+                    check_vars = False
+                df = df[get_vars]
+                np_array = df.to_numpy()
+                np_array_select_probes = np_array[get_probes]
+                numbers_list.append(np_array_select_probes) # get df from data dictionary and convert to np array
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
         return np.asarray(names_list) # return numpy array with all requested data
+
+    
+    def mattia_plot(
+        self, 
+        get_names = [],
+        get_numbers =  [],
+        get_probes = [],
+        get_vars = [],
+        LES_params = {},
+        plotting_params = {}
+        ):
+        
+        # LES params
+        self.LES_params.update(LES_params)
+
+        uStar = self.LES_params['uStar']
+        z0 = self.LES_params['z0']
+        deltas = self.LES_parmas['deltas']
+
+
+        Uref = uStar/0.41*np.log(1.975/z0)
+        q = 0.5*1.225*Uref**2
+
+        self.LES_params.update({
+            'Uref' : Uref,
+            'q' : q
+        })
+
+        # plotting params
+        self.plotting_params.update(plotting_params)
+
+        t0 = self.plotting_params['t0']
+
+        data = self.slice_into_np(get_names, get_numbers)
+
+
+
+
+
+
+    
 
         
 
