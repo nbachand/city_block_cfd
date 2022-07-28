@@ -1,6 +1,8 @@
 import pandas as pd
 import glob
 import numpy as np
+from matplotlib import pyplot as plt
+from sklearn.inspection import plot_partial_dependence
 
 def read_probes(filename):
     return pd.read_csv(filename, delim_whitespace=True)
@@ -26,6 +28,9 @@ class MyLazyDict(dict):
 class Probes:
     def __init__(self, directory):
 
+        self.LES_params = {}
+        self.plot_params = {}
+        
         my_dict= {}
         path_generator = glob.iglob(f'{directory}/*.pcd') # create a generator to iterate over probe paths
         self.probe_names = []
@@ -62,37 +67,32 @@ class Probes:
 
     def slice_into_np(
         self,
-        slice_params = {
-            'get_names' : [], 
-            'get_numbers' : [], 
-            'get_stack' : [], 
-            'get_vars' : []
-        }
+        slice_params = {}
         ):
 
-        if not slice_params['get_names']:
-            slice_params['get_names'] = self.probe_names # if empty, use all probes
-        if not slice_params['get_numbers']:
-            slice_params['get_numbers'] = self.probe_numbers# if empty, use all numbers
+        if 'names' not in slice_params:
+            slice_params['names'] = self.probe_names # if empty, use all probes
+        if 'numbers' not in slice_params:
+            slice_params['numbers'] = self.probe_numbers# if empty, use all numbers
 
         names_list = []
         check_vars = True
-        for name in slice_params['get_names']:
+        for name in slice_params['names']:
             name_dict = self.data[name]
             numbers_list = []
-            for number in slice_params['get_numbers']:
+            for number in slice_params['numbers']:
                 df = name_dict[number]
                 if check_vars:
                     self.probe_vars = df.keys()
                     self.probe_stack  = df.index
-                    if not slice_params['get_vars']:
-                        slice_params['get_vars'] = self.probe_vars
-                    if not slice_params['get_stack']:
-                        slice_params['get_stack'] = self.probe_stack
+                    if 'vars' not in  slice_params:
+                        slice_params['vars'] = self.probe_vars
+                    if 'stack' not in slice_params:
+                        slice_params['stack'] = self.probe_stack
                     check_vars = False
-                df = df[slice_params['get_vars']]
+                df = df[slice_params['vars']]
                 np_array = df.to_numpy()
-                np_array_select_probes = np_array[slice_params['get_stack']]
+                np_array_select_probes = np_array[slice_params['stack']]
                 numbers_list.append(np_array_select_probes) # get df from data dictionary and convert to np array
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
@@ -101,14 +101,9 @@ class Probes:
     
     def mattia_plot(
         self, 
-        slice_params = {
-            'get_names' : [], 
-            'get_numbers' : [], 
-            'get_stack' : [], 
-            'get_vars' : []
-        },
+        slice_params = {},
         LES_params = {},
-        plotting_params = {}
+        plot_params = {}
         ):
         
         # LES params
@@ -116,7 +111,7 @@ class Probes:
 
         uStar = self.LES_params['uStar']
         z0 = self.LES_params['z0']
-        deltas = self.LES_parmas['deltas']
+        # deltas = self.LES_parmas['deltas']
 
 
         Uref = uStar/0.41*np.log(1.975/z0)
@@ -127,17 +122,26 @@ class Probes:
             'q' : q
         })
 
-        # plotting params
-        self.plotting_params.update(plotting_params)
-
         data_dict_struct, slice_params = self.slice_into_np(slice_params)
         n_names, n_numbers, n_stack, n_vars = data_dict_struct.shape
 
-        data = data_dict_struct.transpose((3,0,2,1)) # reorder to var, names, stack, numbers
-
+        # reorder to var, names, stack, numbers
+        data = data_dict_struct.transpose((3,0,2,1))
         var_cum_avg = np.cumsum(data, axis = -1) / np.arange(stop = n_numbers) # cumumlative averge
+        plot_data = var_cum_avg.reshape(order = 'C')
 
-        x = np.tile(get_stack, n_numbers)
+        xPlot = np.tile(slice_params['stack'], n_numbers)
+        yPlot = slice_params['numbers']
+
+        # plotting params
+        self.plotting_params.update(plot_params)
+        if 'levels' not in self.plotting_params:
+            plot_params['levels'] = np.arange(0,20,0.1)
+
+        plt.contourf(xPlot, yPlot, plot_data, levels = plot_params['levels'])
+        plt.colorbar()
+        plt.show(block=True)
+        plt.close('all')
 
 
 
