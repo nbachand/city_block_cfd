@@ -60,7 +60,7 @@ class Probes:
         self.locations = MyLazyDict(locations) # creating lazy dict for locations
 
 
-    def slice_into_np(self, get_names = [], get_numbers = [], get_vars = [], get_probes = np.s_[::]):
+    def slice_into_np(self, get_names = [], get_numbers = [], get_stack = np.s_[::], get_vars = []):
         if not get_names:
             get_names = self.probe_names # if empty, use all probes
         if not get_numbers:
@@ -68,17 +68,20 @@ class Probes:
 
         names_list = []
         check_vars = True
-        for  name in get_names:
+        for name in get_names:
             name_dict = self.data[name]
             numbers_list = []
             for number in get_numbers:
                 df = name_dict[number]
-                if check_vars and not get_vars:
-                    get_vars = df.keys()
-                    check_vars = False
+                if check_vars:
+                    self.probe_vars = df.keys()
+                    self.probe_stack  = df.index
+                    if not get_vars:
+                        get_vars = self.probe_vars
+                        check_vars = False
                 df = df[get_vars]
                 np_array = df.to_numpy()
-                np_array_select_probes = np_array[get_probes]
+                np_array_select_probes = np_array[get_stack]
                 numbers_list.append(np_array_select_probes) # get df from data dictionary and convert to np array
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
@@ -89,7 +92,7 @@ class Probes:
         self, 
         get_names = [],
         get_numbers =  [],
-        get_probes = [],
+        get_stack = np.s_[::],
         get_vars = [],
         LES_params = {},
         plotting_params = {}
@@ -116,7 +119,13 @@ class Probes:
 
         t0 = self.plotting_params['t0']
 
-        data = self.slice_into_np(get_names, get_numbers)
+        data = self.slice_into_np(get_names, get_numbers, get_stack, get_vars)
+
+        n_names, n_numbers, n_stack, n_vars = data.shape
+
+        var_cum_avg = np.cumsum(data, axis = -1) / np.arange(stop = n_numbers)
+
+
 
 
 
