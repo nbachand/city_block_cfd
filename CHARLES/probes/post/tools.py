@@ -96,6 +96,11 @@ class Probes:
                 numbers_list.append(np_array_select_probes) # get df from data dictionary and convert to np array
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
+        np_data = np.asarray(names_list)
+
+        if 'ordering' in slice_params:
+            np_data = np_data.transpose(slice_params['ordering'])
+
         return np.asarray(names_list), slice_params # return numpy array with all requested data
 
     
@@ -113,7 +118,6 @@ class Probes:
         z0 = self.LES_params['z0']
         # deltas = self.LES_parmas['deltas']
 
-
         Uref = uStar/0.41*np.log(1.975/z0)
         q = 0.5*1.225*Uref**2
 
@@ -122,8 +126,11 @@ class Probes:
             'q' : q
         })
 
+        slice_params['ordering'] = (3,0,2,1) # set dim order to var, names, stack, numbers
+
         data_dict_struct, slice_params = self.slice_into_np(slice_params)
-        n_names, n_numbers, n_stack, n_vars = data_dict_struct.shape
+        n_names = len(slice_params['names'])
+        n_numbers = len(slice_params['numbers'])
 
         # reorder to var, names, stack, numbers
         data = data_dict_struct.transpose((3,0,2,1))
@@ -141,9 +148,11 @@ class Probes:
         if 'levels' not in self.plot_params:
             plot_params['levels'] = 200
 
+        plt.figure()
         plt.contourf(xPlot, yPlot, plot_data, levels = plot_params['levels'])
         plt.colorbar()
         plt.show(block=True)
+
 
 
 
