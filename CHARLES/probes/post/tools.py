@@ -127,16 +127,18 @@ class Probes:
 
         # reorder to var, names, stack, numbers
         data = data_dict_struct.transpose((3,0,2,1))
-        var_cum_avg = np.cumsum(data, axis = -1) / np.arange(stop = n_numbers) # cumumlative averge
-        plot_data = var_cum_avg.reshape(order = 'C')
+        data = data[0,...] #just looking at u,0 for now
+        var_cum_avg = np.cumsum(data, axis = -1) / np.arange(0,n_numbers) # cumumlative averge
+        data_diff = abs((var_cum_avg - var_cum_avg[...,[-1]])/var_cum_avg[...,[-1]])
+        plot_data = var_cum_avg.reshape((-1, n_numbers), order = 'C')
 
-        xPlot = np.tile(slice_params['stack'], n_numbers)
-        yPlot = slice_params['numbers']
+        yPlot = np.tile(slice_params['stack'], n_names)
+        xPlot = slice_params['numbers']
 
         # plotting params
-        self.plotting_params.update(plot_params)
-        if 'levels' not in self.plotting_params:
-            plot_params['levels'] = np.arange(0,20,0.1)
+        self.plot_params.update(plot_params)
+        if 'levels' not in self.plot_params:
+            plot_params['levels'] = 200
 
         plt.contourf(xPlot, yPlot, plot_data, levels = plot_params['levels'])
         plt.colorbar()
