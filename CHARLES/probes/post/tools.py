@@ -133,14 +133,6 @@ class Probes:
         data_diff = abs((var_cum_avg - var_cum_avg[...,[-1]])/var_cum_avg[...,[-1]])
         plot_data = data_diff.reshape((-1, n_numbers), order = 'C')
 
-        # ## debugging
-        # plt.figure()
-        # plt.plot((np.cumsum(data, axis = -1) / np.arange(1,n_numbers+1))[0,30,:])
-        # plt.figure()
-        # plt.plot(plot_data[30,:])
-        # plt.figure()
-        # ##
-
         yPlot = np.tile(slice_params['stack'], n_names)
         xPlot = slice_params['numbers']
 
