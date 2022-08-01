@@ -101,7 +101,7 @@ class Probes:
         if 'ordering' in slice_params:
             np_data = np_data.transpose(slice_params['ordering'])
 
-        return np.asarray(names_list), slice_params # return numpy array with all requested data
+        return np_data, slice_params # return numpy array with all requested data
 
     
     def mattia_plot(
@@ -128,12 +128,9 @@ class Probes:
 
         slice_params['ordering'] = (3,0,2,1) # set dim order to var, names, stack, numbers
 
-        data_dict_struct, slice_params = self.slice_into_np(slice_params)
+        data, slice_params = self.slice_into_np(slice_params)
         n_names = len(slice_params['names'])
         n_numbers = len(slice_params['numbers'])
-
-        # reorder to var, names, stack, numbers
-        data = data_dict_struct.transpose((3,0,2,1))
 
         data = data[0,...] #just looking at u,0 for now
         var_cum_avg = np.cumsum(data, axis = -1) / np.arange(1,n_numbers+1) # cumumlative averge
