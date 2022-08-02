@@ -2,7 +2,6 @@ import pandas as pd
 import glob
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.inspection import plot_partial_dependence
 
 def read_probes(filename):
     return pd.read_csv(filename, delim_whitespace=True)
