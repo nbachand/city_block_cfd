@@ -10,6 +10,16 @@ def read_probes(filename):
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x','y','z'])
 
+def ax_index(ax,i,j):
+    n_dims = np.array(ax).ndim
+    if n_dims == 0:
+        sub_ax = ax
+    elif n_dims == 1:
+        sub_ax = ax[max(i,j)]
+    else:
+        sub_ax = ax[i,j]
+    return sub_ax
+
 class MyLazyDict(dict):
     '''
     Create a lazy dictionary by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
@@ -131,24 +141,51 @@ class Probes:
         data, slice_params = self.slice_into_np(slice_params)
         n_names = len(slice_params['names'])
         n_numbers = len(slice_params['numbers'])
+        n_vars = len(slice_params['vars'])
 
-        data = data[0,...] #just looking at u,0 for now
         var_cum_avg = np.cumsum(data, axis = -1) / np.arange(1,n_numbers+1) # cumumlative averge
         data_diff = abs((var_cum_avg - var_cum_avg[...,[-1]])/var_cum_avg[...,[-1]])
-        plot_data = data_diff.reshape((-1, n_numbers), order = 'C')
 
-        yPlot = np.tile(slice_params['stack'], n_names)
+        # data_diff = data_diff[0,...] #just looking at u,0 for now
+        # plot_data = data_diff.reshape((-1, n_numbers), order = 'C')
+
+        yPlot = np.tile(slice_params['stack'], 1)
         xPlot = slice_params['numbers']
 
-        # plotting params
         self.plot_params.update(plot_params)
-        if 'levels' not in self.plot_params:
-            plot_params['levels'] = 200
 
-        plt.figure()
-        plt.contourf(xPlot, yPlot, plot_data, levels = plot_params['levels'])
-        plt.colorbar()
-        plt.show(block=True)
+        fig, ax = plt.subplots(n_names, n_vars)
+
+        for i, var in enumerate(slice_params['vars']):
+            ax_list = []
+            if 'levels' in self.plot_params and var in plot_params['levels']:
+                levels = plot_params['levels'][var]
+            else:
+                levels = np.linspace(0,.5,200)
+            
+            for j, name in enumerate(slice_params['names']):
+                plot_data = data_diff[i,j,...]
+                sub_ax = ax_index(ax,j,i)
+                im = sub_ax.contourf(xPlot, yPlot, plot_data, levels = levels)
+                ax_list.append(sub_ax)
+
+                if i > 0:
+                    sub_ax.yaxis.set_visible(False)
+                else:
+                    sub_ax.set_ylabel(name)
+                if j < n_names-1:
+                    sub_ax.xaxis.set_visible(False)
+                else:
+                    sub_ax.set_xlabel(var)
+            
+            fig.colorbar(im, ax = ax_list)
+
+           
+
+
+        # plt.figure()
+        # plt.contourf(xPlot, yPlot, plot_data, levels = plot_params['levels'])
+        # fig.show()
 
 
 
