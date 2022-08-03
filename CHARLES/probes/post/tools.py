@@ -1,7 +1,11 @@
-import pandas as pd
 import glob
 import numpy as np
 from matplotlib import pyplot as plt
+import time
+from itertools import repeat
+import pandas as pd
+
+from joblib import Parallel, delayed, cpu_count
 
 def read_probes(filename):
     return pd.read_csv(filename, delim_whitespace=True)
@@ -33,6 +37,12 @@ class MyLazyDict(dict):
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
         return value
 
+def df_from_dict(params):
+    dict, key, slice_params = params
+    df = dict[key][slice_params['vars']]
+    np_array = df.to_numpy()
+    np_array_select_probes = np_array[slice_params['stack']]
+    return np_array_select_probes
 
 class Probes:
     def __init__(self, directory):
@@ -64,6 +74,9 @@ class Probes:
             if not self.probe_numbers:
                 self.probe_numbers = list(name_dict.keys())
                 self.probe_numbers.sort()
+                representative_dict = my_dict[probe_name][self.probe_numbers[0]]
+                self.probe_vars = representative_dict.keys()
+                self.probe_stack = representative_dict.index
         self.data = my_dict
 
     def get_locations(self, dir_locations):
@@ -79,36 +92,49 @@ class Probes:
         slice_params = {}
         ):
 
+        st = time.time()
+
         if 'names' not in slice_params:
             slice_params['names'] = self.probe_names # if empty, use all probes
         if 'numbers' not in slice_params:
             slice_params['numbers'] = self.probe_numbers# if empty, use all numbers
+        if 'vars' not in  slice_params:
+            slice_params['vars'] = self.probe_vars
+        if 'stack' not in slice_params:
+            slice_params['stack'] = self.probe_stack
 
         names_list = []
-        check_vars = True
+
+        slice_numbers = len(slice_params['numbers'])
+        slice_param_iter = repeat(slice_params, times = slice_numbers)
+        if 'nCpu' in slice_params:
+            prl_jobs =  slice_params['nCpu']
+        else:
+            prl_jobs = cpu_count() - 1
+        print(f'number of jobs: {prl_jobs}')
+
         for name in slice_params['names']:
             name_dict = self.data[name]
             numbers_list = []
-            for number in slice_params['numbers']:
-                df = name_dict[number]
-                if check_vars:
-                    self.probe_vars = df.keys()
-                    self.probe_stack  = df.index
-                    if 'vars' not in  slice_params:
-                        slice_params['vars'] = self.probe_vars
-                    if 'stack' not in slice_params:
-                        slice_params['stack'] = self.probe_stack
-                    check_vars = False
-                df = df[slice_params['vars']]
-                np_array = df.to_numpy()
-                np_array_select_probes = np_array[slice_params['stack']]
-                numbers_list.append(np_array_select_probes) # get df from data dictionary and convert to np array
+
+            name_dict_iter = repeat(name_dict, times = slice_numbers)
+            prl_inputs = zip(name_dict_iter, slice_params['numbers'], slice_param_iter)
+
+            numbers_list = list(Parallel(
+                n_jobs=prl_jobs, prefer="threads")(
+                    delayed(np_from_dict)(input) 
+                    for input in prl_inputs))
+
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
         np_data = np.asarray(names_list)
 
         if 'ordering' in slice_params:
             np_data = np_data.transpose(slice_params['ordering'])
+
+        et = time.time()
+        elapsed_time = et - st
+        print(f"slice took {elapsed_time} seconds")
 
         return np_data, slice_params # return numpy array with all requested data
 
