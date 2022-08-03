@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import time
 from itertools import repeat
 import pandas as pd
+import pickle
 
 from joblib import Parallel, delayed, cpu_count
 
@@ -37,12 +38,10 @@ class MyLazyDict(dict):
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
         return value
 
-def df_from_dict(params):
-    dict, key, slice_params = params
-    df = dict[key][slice_params['vars']]
-    np_array = df.to_numpy()
-    np_array_select_probes = np_array[slice_params['stack']]
-    return np_array_select_probes
+def np_from_dict(params):
+    dict, key, vars = params
+    df = dict[key][vars]
+    return df.to_numpy()
 
 class Probes:
     def __init__(self, directory):
@@ -106,7 +105,7 @@ class Probes:
         names_list = []
 
         slice_numbers = len(slice_params['numbers'])
-        slice_param_iter = repeat(slice_params, times = slice_numbers)
+        vars_iter = repeat(slice_params['vars'], times = slice_numbers)
         if 'nCpu' in slice_params:
             prl_jobs =  slice_params['nCpu']
         else:
@@ -118,7 +117,7 @@ class Probes:
             numbers_list = []
 
             name_dict_iter = repeat(name_dict, times = slice_numbers)
-            prl_inputs = zip(name_dict_iter, slice_params['numbers'], slice_param_iter)
+            prl_inputs = zip(name_dict_iter, slice_params['numbers'], vars_iter)
 
             numbers_list = list(Parallel(
                 n_jobs=prl_jobs, prefer="threads")(
@@ -128,6 +127,7 @@ class Probes:
             names_list.append(numbers_list) # create nested lists of names[numbers]
 
         np_data = np.asarray(names_list)
+        np_data = np_data[..., slice_params['stack']]
 
         if 'ordering' in slice_params:
             np_data = np_data.transpose(slice_params['ordering'])
