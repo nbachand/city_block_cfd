@@ -91,6 +91,10 @@ class Probes:
         slice_params = {}
         ):
 
+        df = pandas.DataFrame.from_dict(dictionary, orient="index").stack().to_frame()
+# to break out the lists into columns
+df = pd.DataFrame(df[0].values.tolist(), index=df.index)
+
         st = time.time()
 
         if 'names' not in slice_params:
@@ -124,10 +128,10 @@ class Probes:
                     delayed(np_from_dict)(input) 
                     for input in prl_inputs))
 
-            names_list.append(numbers_list) # create nested lists of names[numbers]
+            names_list.append(numbers_list[..., slice_params['stack']]) # create nested lists of names[numbers]
 
         np_data = np.asarray(names_list)
-        np_data = np_data[..., slice_params['stack']]
+
 
         if 'ordering' in slice_params:
             np_data = np_data.transpose(slice_params['ordering'])
