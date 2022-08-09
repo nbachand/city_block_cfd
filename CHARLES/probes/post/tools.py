@@ -10,8 +10,7 @@ from pandarallel import pandarallel
 
 def read_probes(filename):
     df = pd.read_csv(filename, delim_whitespace=True)
-    data_dict = df.stack().to_dict()
-    return data_dict
+    return df.stack().to_dict()
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x','y','z'])
@@ -33,7 +32,7 @@ def eval_tuple(value):
     return value # read in the data, and assign it to the dict value
 
 def parallel_functions(value):
-    return pd.DataFrame.stack(eval_tuple(value))
+    return pd.Series(eval_tuple(value))
 
 
 
@@ -82,7 +81,7 @@ class Probes:
         representative_dict = my_dict[(self.probe_names[0], self.probe_numbers[0])]
         representative_dict_keys = list(zip(*representative_dict.keys()))
         self.probe_vars = [*set(representative_dict_keys[0])]
-        self.probe_vars = [*set(representative_dict_keys[1])]
+        self.probe_stack = [*set(representative_dict_keys[1])]
         self.data = my_dict
 
     def get_locations(self, dir_locations):
@@ -107,7 +106,7 @@ class Probes:
         if 'stack' not in slice_params:
             slice_params['stack'] = self.probe_stack
 
-        mi_series = pd.DataFrame.from_dict(self.data, orient="index").stack()
+        mi_series = pd.Series(self.data)
         mi_series_sliced = mi_series.loc[slice_params['names'],slice_params['numbers']]
 
         st = time.time()
@@ -125,9 +124,9 @@ class Probes:
         print(f"reading data took {elapsed_time} seconds")
 
         st = time.time()
-        for name in slice_params['names']:
-            for number in slice_params['numbers']:
-                self.data[name][number] = mi_df[name][number].unstack()
+
+        new_dict = mi_df.to_dict
+        self.data.update(mi_df)
 
         et = time.time()
         elapsed_time = et - st
