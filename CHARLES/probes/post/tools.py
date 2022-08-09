@@ -6,7 +6,7 @@ from itertools import repeat
 import pandas as pd
 import pickle
 
-from joblib import Parallel, delayed, cpu_count
+from pandarallel import pandarallel
 
 def read_probes(filename):
     return pd.read_csv(filename, delim_whitespace=True)
@@ -24,6 +24,17 @@ def ax_index(ax,i,j):
         sub_ax = ax[i,j]
     return sub_ax
 
+def eval_tuple(value):
+    if not isinstance(value, pd.core.frame.DataFrame):
+        function, arg = value # retrieve data reading function and data path
+        value = function(arg)
+    return value # read in the data, and assign it to the dict value
+
+def parallel_functions(value):
+    return pd.DataFrame.stack(eval_tuple(value))
+
+
+
 class MyLazyDict(dict):
     '''
     Create a lazy dictionary by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
@@ -33,15 +44,9 @@ class MyLazyDict(dict):
         value=dict.__getitem__(self, item) # retrieve the current dictionary value
         if not isinstance(value, pd.core.frame.DataFrame): # check if data has been read in
             # print('reading in data')
-            function, arg = value # retrieve data reading function and data path
-            value = function(arg) # read in the data, and assign it to the dict value
+            value = eval_tuple(value)
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
         return value
-
-def np_from_dict(params):
-    dict, key, vars = params
-    df = dict[key][vars]
-    return df.to_numpy()
 
 class Probes:
     def __init__(self, directory):
@@ -86,16 +91,12 @@ class Probes:
         self.locations = MyLazyDict(locations) # creating lazy dict for locations
 
 
-    def slice_into_np(
+    def slice_into_df(
         self,
         slice_params = {}
         ):
 
-        df = pandas.DataFrame.from_dict(dictionary, orient="index").stack().to_frame()
-# to break out the lists into columns
-df = pd.DataFrame(df[0].values.tolist(), index=df.index)
 
-        st = time.time()
 
         if 'names' not in slice_params:
             slice_params['names'] = self.probe_names # if empty, use all probes
@@ -106,41 +107,24 @@ df = pd.DataFrame(df[0].values.tolist(), index=df.index)
         if 'stack' not in slice_params:
             slice_params['stack'] = self.probe_stack
 
-        names_list = []
+        mi_series = pd.DataFrame.from_dict(self.data, orient="index").stack()
+        mi_series_sliced = mi_series.loc[slice_params['names'],slice_params['numbers']]
 
-        slice_numbers = len(slice_params['numbers'])
-        vars_iter = repeat(slice_params['vars'], times = slice_numbers)
-        if 'nCpu' in slice_params:
-            prl_jobs =  slice_params['nCpu']
+        st = time.time()
+
+        if 'parallel' in slice_params and slice_params['parallel'] is True:
+            pandarallel.initialize(progress_bar=True) # initialize(36) or initialize(os.cpu_count()-1)
+            mi_df = mi_series_sliced.parallel_apply(parallel_functions)
         else:
-            prl_jobs = cpu_count() - 1
-        print(f'number of jobs: {prl_jobs}')
+            mi_df = mi_series_sliced.apply(parallel_functions)
 
-        for name in slice_params['names']:
-            name_dict = self.data[name]
-            numbers_list = []
-
-            name_dict_iter = repeat(name_dict, times = slice_numbers)
-            prl_inputs = zip(name_dict_iter, slice_params['numbers'], vars_iter)
-
-            numbers_list = list(Parallel(
-                n_jobs=prl_jobs, prefer="threads")(
-                    delayed(np_from_dict)(input) 
-                    for input in prl_inputs))
-
-            names_list.append(numbers_list[..., slice_params['stack']]) # create nested lists of names[numbers]
-
-        np_data = np.asarray(names_list)
-
-
-        if 'ordering' in slice_params:
-            np_data = np_data.transpose(slice_params['ordering'])
+        mi_df = mi_df.swaplevel(axis = 'columns')
 
         et = time.time()
         elapsed_time = et - st
-        print(f"slice took {elapsed_time} seconds")
+        print(f"reading data took {elapsed_time} seconds")
 
-        return np_data, slice_params # return numpy array with all requested data
+        return mi_df # return numpy array with all requested data
 
     
     def mattia_plot(
