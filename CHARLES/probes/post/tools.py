@@ -9,7 +9,9 @@ import pickle
 from pandarallel import pandarallel
 
 def read_probes(filename):
-    return pd.read_csv(filename, delim_whitespace=True)
+    df = pd.read_csv(filename, delim_whitespace=True)
+    data_dict = df.stack().to_dict()
+    return data_dict
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x','y','z'])
@@ -25,7 +27,7 @@ def ax_index(ax,i,j):
     return sub_ax
 
 def eval_tuple(value):
-    if not isinstance(value, pd.core.frame.DataFrame):
+    if isinstance(value, tuple):
         function, arg = value # retrieve data reading function and data path
         value = function(arg)
     return value # read in the data, and assign it to the dict value
@@ -42,7 +44,7 @@ class MyLazyDict(dict):
     '''
     def __getitem__(self, item):
         value=dict.__getitem__(self, item) # retrieve the current dictionary value
-        if not isinstance(value, pd.core.series.Series): # check if data has been read in
+        if isinstance(value, tuple): # check if data has been read in
             # print('reading in data')
             value = eval_tuple(value)
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
@@ -56,8 +58,8 @@ class Probes:
         
         my_dict= {}
         path_generator = glob.iglob(f'{directory}/*.pcd') # create a generator to iterate over probe paths
-        self.probe_names = []
-        self.probe_numbers = None
+        probe_names = []
+        probe_numbers = []
 
         for path in path_generator:
 
@@ -66,22 +68,21 @@ class Probes:
             probe_name, probe_number, _ = probe_info[:]
             probe_number = int(probe_number)
 
-            if probe_name not in my_dict.keys():
-                my_dict[probe_name] = {} # create a dictionary for each probe name if it does not exist
-                self.probe_names.append(probe_name)
+            probe_names.append(probe_name)
+            probe_numbers.append(probe_number)
 
-            my_dict[probe_name][probe_number] = (read_probes, path) # store the pcd path and pcd reader function
+            my_dict[(probe_name, probe_number)] = (read_probes, path) # store the pcd path and pcd reader function
 
-        self.indexing_df = pd.DataFrame()
         #iterate through the upper data dict
-        for probe_name, name_dict in my_dict.items():
-            my_dict[probe_name] = MyLazyDict(name_dict) # modify the getter or the lower-level dicts to lazily read in data
-            if not self.probe_numbers:
-                self.probe_numbers = list(name_dict.keys())
-                self.probe_numbers.sort()
-                representative_dict = my_dict[probe_name][self.probe_numbers[0]]
-                self.probe_vars = representative_dict.keys()
-                self.probe_stack = representative_dict.index
+        my_dict = MyLazyDict(my_dict) # modify the getter or the lower-level dicts to lazily read in data
+
+        self.probe_names = [*set(probe_names)]
+        self.probe_numbers = [*set(probe_numbers)]
+
+        representative_dict = my_dict[(self.probe_names[0], self.probe_numbers[0])]
+        representative_dict_keys = list(zip(*representative_dict.keys()))
+        self.probe_vars = [*set(representative_dict_keys[0])]
+        self.probe_vars = [*set(representative_dict_keys[1])]
         self.data = my_dict
 
     def get_locations(self, dir_locations):
