@@ -42,7 +42,7 @@ class MyLazyDict(dict):
     '''
     def __getitem__(self, item):
         value=dict.__getitem__(self, item) # retrieve the current dictionary value
-        if not isinstance(value, pd.core.frame.DataFrame): # check if data has been read in
+        if not isinstance(value, pd.core.series.Series): # check if data has been read in
             # print('reading in data')
             value = eval_tuple(value)
             dict.__setitem__(self, item, value) # reset the dictionary value to the data
@@ -72,6 +72,7 @@ class Probes:
 
             my_dict[probe_name][probe_number] = (read_probes, path) # store the pcd path and pcd reader function
 
+        self.indexing_df = pd.DataFrame()
         #iterate through the upper data dict
         for probe_name, name_dict in my_dict.items():
             my_dict[probe_name] = MyLazyDict(name_dict) # modify the getter or the lower-level dicts to lazily read in data
@@ -96,8 +97,6 @@ class Probes:
         slice_params = {}
         ):
 
-
-
         if 'names' not in slice_params:
             slice_params['names'] = self.probe_names # if empty, use all probes
         if 'numbers' not in slice_params:
@@ -118,11 +117,20 @@ class Probes:
         else:
             mi_df = mi_series_sliced.apply(parallel_functions)
 
-        mi_df = mi_df.swaplevel(axis = 'columns')
+        mi_df = mi_df.T
 
         et = time.time()
         elapsed_time = et - st
         print(f"reading data took {elapsed_time} seconds")
+
+        st = time.time()
+        for name in slice_params['names']:
+            for number in slice_params['numbers']:
+                self.data[name][number] = mi_df[name][number].unstack()
+
+        et = time.time()
+        elapsed_time = et - st
+        print(f"memorizing data took {elapsed_time} seconds")
 
         return mi_df # return numpy array with all requested data
 
