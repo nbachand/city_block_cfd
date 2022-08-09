@@ -9,8 +9,8 @@ import pickle
 from pandarallel import pandarallel
 
 def read_probes(filename):
-    df = pd.read_csv(filename, delim_whitespace=True)
-    return df.stack().to_dict()
+    df = pd.read_csv(filename, delim_whitespace=True) # read as dataframe
+    return df.stack().to_dict() # save as tuple indexed dictionary
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x','y','z'])
@@ -28,10 +28,14 @@ def ax_index(ax,i,j):
 def eval_tuple(value):
     if isinstance(value, tuple):
         function, arg = value # retrieve data reading function and data path
-        value = function(arg)
-    return value # read in the data, and assign it to the dict value
+        value = function(arg) # read in the data, and assign it to the dict value
+    return value
 
 def parallel_functions(value):
+    """ 
+    Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
+    This speeds up parrallel processing because less infromation is passed to subprocesses.
+    """
     return pd.Series(eval_tuple(value))
 
 
@@ -51,11 +55,16 @@ class MyLazyDict(dict):
 
 class Probes:
     def __init__(self, directory):
+        """
+        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a nested tuple indexed dictionary.
+        Accessing data is self.data[(name,number)][(stack, var)]. This format mimics the multiindex dataframe created in
+        self.slice_int_df.
+        """
 
         self.LES_params = {}
         self.plot_params = {}
         
-        my_dict= {}
+        my_dict= {} # this will be a tuple indexed 1-level dictionary.
         path_generator = glob.iglob(f'{directory}/*.pcd') # create a generator to iterate over probe paths
         probe_names = []
         probe_numbers = []
@@ -73,15 +82,15 @@ class Probes:
             my_dict[(probe_name, probe_number)] = (read_probes, path) # store the pcd path and pcd reader function
 
         #iterate through the upper data dict
-        my_dict = MyLazyDict(my_dict) # modify the getter or the lower-level dicts to lazily read in data
+        my_dict = MyLazyDict(my_dict) # modify the getter lazily read in data
 
-        self.probe_names = [*set(probe_names)]
-        self.probe_numbers = [*set(probe_numbers)]
+        self.probe_names = [*set(probe_names)] # remove duplicates
+        self.probe_numbers = [*set(probe_numbers)] #remove duplicates and sort
 
-        representative_dict = my_dict[(self.probe_names[0], self.probe_numbers[0])]
-        representative_dict_keys = list(zip(*representative_dict.keys()))
-        self.probe_vars = [*set(representative_dict_keys[0])]
-        self.probe_stack = [*set(representative_dict_keys[1])]
+        representative_dict = my_dict[(self.probe_names[0], self.probe_numbers[0])] # assume the vars and stack is the same for all probes
+        representative_dict_keys = list(zip(*representative_dict.keys())) # unzip list of tuples
+        self.probe_vars = [*set(representative_dict_keys[0])] # sort and remove duplicates
+        self.probe_stack = [*set(representative_dict_keys[1])] # sort and remove duplicates
         self.data = my_dict
 
     def get_locations(self, dir_locations):
@@ -101,19 +110,16 @@ class Probes:
             slice_params['names'] = self.probe_names # if empty, use all probes
         if 'numbers' not in slice_params:
             slice_params['numbers'] = self.probe_numbers# if empty, use all numbers
-        if 'vars' not in  slice_params:
-            slice_params['vars'] = self.probe_vars
-        if 'stack' not in slice_params:
-            slice_params['stack'] = self.probe_stack
 
-        mi_series = pd.Series(self.data)
-        mi_series_sliced = mi_series.loc[slice_params['names'],slice_params['numbers']]
+        mi_series = pd.Series(self.data) # turn outer dict into series for vectorzed opperations
+        mi_series_sliced = mi_series.loc[slice_params['names'],slice_params['numbers']] # get desired values
 
         st = time.time()
 
+        # dont use parrall for debugging, else significant speed up
         if 'parallel' in slice_params and slice_params['parallel'] is True:
             pandarallel.initialize(progress_bar=True) # initialize(36) or initialize(os.cpu_count()-1)
-            mi_df = mi_series_sliced.parallel_apply(parallel_functions)
+            mi_df = mi_series_sliced.parallel_apply(parallel_functions) # read in data directly (not indecing self.data)
         else:
             mi_df = mi_series_sliced.apply(parallel_functions)
 
@@ -125,8 +131,8 @@ class Probes:
 
         st = time.time()
 
-        new_dict = mi_df.to_dict
-        self.data.update(mi_df)
+        # memorize data that was accesed outside of self.data
+        self.data.update(mi_df) # update data dictionary
 
         et = time.time()
         elapsed_time = et - st
@@ -141,6 +147,11 @@ class Probes:
         LES_params = {},
         plot_params = {}
         ):
+
+        if 'vars' not in  slice_params:
+            slice_params['vars'] = self.probe_vars
+        if 'stack' not in slice_params:
+            slice_params['stack'] = self.probe_stack
         
         # LES params
         self.LES_params.update(LES_params)
