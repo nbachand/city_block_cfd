@@ -44,6 +44,27 @@ def parallel_functions(value):
     """
     return pd.Series(eval_tuple(value))
 
+def mean_convergence(data_df):
+    n_steps = len(data_df.groupby(axis='columns', level='step').size())
+    time_sum = data_df.groupby(
+        axis='columns', level='name').cumsum(axis='columns')
+    data_steps = pd.Series(np.arange(1, n_steps+1))
+
+    var_cum_avg = time_sum.div(
+        data_steps, axis='columns', level='step')  # cumumlative averge
+    var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
+    data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
+
+    data_diff_norm = abs(data_diff.div(
+        var_last_avg, axis='columns', level='name'))
+
+    return data_diff_norm
+
+def end_timer(st, description):
+    et = time.time()
+    elapsed_time = round(et - st)
+    print(f"{description} took {elapsed_time} seconds")
+
 
 class MyLazyDict(dict):
     '''
@@ -153,22 +174,18 @@ class Probes:
         mi_df.index.rename(['stack', 'var'], inplace=True)
         mi_df.columns.rename(['name', 'step'], inplace=True)
 
-        et = time.time()
-        elapsed_time = et - st
-        print(f"reading data took {elapsed_time} seconds")
+        end_timer(st, "reading data")
 
         st = time.time()
 
         # memorize data that was accesed outside of self.data
         self.data.update(mi_df)  # update data dictionary
 
-        et = time.time()
-        elapsed_time = et - st
-        print(f"memorizing data took {elapsed_time} seconds")
+        end_timer(st, "memorizing data")
 
         return mi_df  # return numpy array with all requested data
 
-    def mattia_plot(
+    def contour_plots(
         self,
         slice_params={},
         LES_params={},
@@ -197,37 +214,27 @@ class Probes:
 
         data = self.slice_into_df(slice_params)
         n_names = len(slice_params['names'])
-        n_steps = len(slice_params['steps'])
         n_vars = len(slice_params['vars'])
 
-        time_sum = data.groupby(
-            axis='columns', level='name').cumsum(axis='columns')
-        data_steps = pd.Series(np.arange(1, n_steps+1))
+        if 'processing' not in plot_params:
+            processed_data = data
+        else:
+            st = time.time()
+            processed_data = plot_params['processing'](data)
+            end_timer(st, 'processing data')
 
-        var_cum_avg = time_sum.div(
-            data_steps, axis='columns', level='step')  # cumumlative averge
-        var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
-        data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
-
-        data_diff_norm = abs(data_diff.div(
-            var_last_avg, axis='columns', level='name'))
-
-        # data_diff = data_diff[0,...] #just looking at u,0 for now
-        # plot_data = data_diff.reshape((-1, n_steps), order = 'C')
-
-        yPlot = np.tile(slice_params['stack'], 1)
-        xPlot = slice_params['steps']
+        st = time.time()
 
         self.plot_params.update(plot_params)
 
         fig, ax = plt.subplots(n_names, n_vars)
 
-        for j, (var, var_df) in enumerate(data_diff_norm.groupby(axis='index', level='var')):
+        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             ax_list = []
             if 'plot_levels' in self.plot_params and var in plot_params['plot_levels']:
                 plot_levels = plot_params['plot_levels'][var]
             else:
-                plot_levels = np.linspace(0, .5, 200)
+                plot_levels = 200
 
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
@@ -246,7 +253,7 @@ class Probes:
                     sub_ax.set_xlabel(var)
 
             fig.colorbar(im, ax=ax_list)
-
+        end_timer(st, "plotting")
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
         # fig.show()
