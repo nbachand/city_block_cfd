@@ -224,7 +224,8 @@ class Probes:
             processed_data = data
         else:
             st = time.time()
-            processed_data = plot_params['processing'](data)
+            for process_step in plot_params['processing']:
+                processed_data = process_step(data)
             end_timer(st, 'processing data')
 
         st = time.time()
