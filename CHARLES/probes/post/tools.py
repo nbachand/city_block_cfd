@@ -56,8 +56,8 @@ class MyLazyDict(dict):
 class Probes:
     def __init__(self, directory):
         """
-        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a nested tuple indexed dictionary.
-        Accessing data is self.data[(name,number)][(stack, var)]. This format mimics the multiindex dataframe created in
+        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
+        Data is indexed as self.data[(name,number)][(stack, var)]. This format mimics the multiIndex DataFrame created in
         self.slice_int_df.
         """
 
@@ -125,6 +125,9 @@ class Probes:
 
         mi_df = mi_df.T
 
+        mi_df.index.rename(['stack', 'var'], inplace=True)
+        mi_df.columns.rename(['name', 'number'], inplace=True)
+
         et = time.time()
         elapsed_time = et - st
         print(f"reading data took {elapsed_time} seconds")
@@ -168,15 +171,19 @@ class Probes:
             'q' : q
         })
 
-        slice_params['ordering'] = (3,0,2,1) # set dim order to var, names, stack, numbers
-
-        data, slice_params = self.slice_into_np(slice_params)
+        data = self.slice_into_df(slice_params)
         n_names = len(slice_params['names'])
         n_numbers = len(slice_params['numbers'])
         n_vars = len(slice_params['vars'])
 
-        var_cum_avg = np.cumsum(data, axis = -1) / np.arange(1,n_numbers+1) # cumumlative averge
-        data_diff = abs((var_cum_avg - var_cum_avg[...,[-1]])/var_cum_avg[...,[-1]])
+        time_sum = data.groupby(axis='columns', level='name').cumsum(axis='columns')
+        data_steps = pd.Series(np.arange(1,n_numbers+1))
+
+        var_cum_avg = time_sum.div(data_steps, axis='columns', level='number') # cumumlative averge
+        var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
+        data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='number')
+        
+        data_diff_norm = abs(data_diff.div(var_last_avg, axis='columns', level='number'))
 
         # data_diff = data_diff[0,...] #just looking at u,0 for now
         # plot_data = data_diff.reshape((-1, n_numbers), order = 'C')
