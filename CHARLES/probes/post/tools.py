@@ -185,19 +185,12 @@ class Probes:
 
         return mi_df  # return numpy array with all requested data
 
-    def contour_plots(
+    def set_LES_params(
         self,
-        slice_params={},
-        LES_params={},
-        plot_params={}
+        LES_params={}
     ):
 
-        if 'vars' not in slice_params:
-            slice_params['vars'] = self.probe_vars
-        if 'stack' not in slice_params:
-            slice_params['stack'] = self.probe_stack
-
-        # LES params
+    # LES params
         self.LES_params.update(LES_params)
 
         uStar = self.LES_params['uStar']
@@ -211,6 +204,17 @@ class Probes:
             'Uref': Uref,
             'q': q
         })
+
+    def contour_plots(
+        self,
+        slice_params={},
+        plot_params={}
+    ):
+
+        if 'vars' not in slice_params:
+            slice_params['vars'] = self.probe_vars
+        if 'stack' not in slice_params:
+            slice_params['stack'] = self.probe_stack
 
         data = self.slice_into_df(slice_params)
         n_names = len(slice_params['names'])
