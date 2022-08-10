@@ -66,7 +66,7 @@ class Probes:
     def __init__(self, directory):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name,number)][(stack, var)]. This format mimics the multiIndex DataFrame created in
+        Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
         self.slice_int_df.
         """
 
@@ -77,31 +77,31 @@ class Probes:
         # create a generator to iterate over probe paths
         path_generator = glob.iglob(f'{directory}/*.pcd')
         probe_names = []
-        probe_numbers = []
+        probe_steps = []
 
         for path in path_generator:
 
             file_name = path.split('/')[-1]  # get the local file name
             probe_info = file_name.split('.')
-            probe_name, probe_number, _ = probe_info[:]
-            probe_number = int(probe_number)
+            probe_name, probe_step, _ = probe_info[:]
+            probe_step = int(probe_step)
 
             probe_names.append(probe_name)
-            probe_numbers.append(probe_number)
+            probe_steps.append(probe_step)
 
             # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_number)] = (read_probes, path)
+            my_dict[(probe_name, probe_step)] = (read_probes, path)
 
         # iterate through the upper data dict
         my_dict = MyLazyDict(my_dict)  # modify the getter lazily read in data
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
-        self.probe_numbers = [*set(probe_numbers)]
+        self.probe_steps = [*set(probe_steps)]
 
         # assume the vars and stack is the same for all probes
         representative_dict = my_dict[(
-            self.probe_names[0], self.probe_numbers[0])]
+            self.probe_names[0], self.probe_steps[0])]
         representative_dict_keys = list(
             zip(*representative_dict.keys()))  # unzip list of tuples
         # sort and remove duplicates
@@ -127,15 +127,15 @@ class Probes:
         if 'names' not in slice_params:
             # if empty, use all probes
             slice_params['names'] = self.probe_names
-        if 'numbers' not in slice_params:
-            # if empty, use all numbers
-            slice_params['numbers'] = self.probe_numbers
+        if 'steps' not in slice_params:
+            # if empty, use all steps
+            slice_params['steps'] = self.probe_steps
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
         # get desired values
         mi_series_sliced = mi_series.loc[slice_params['names'],
-                                         slice_params['numbers']]
+                                         slice_params['steps']]
 
         st = time.time()
 
@@ -151,7 +151,7 @@ class Probes:
         mi_df = mi_df.T
 
         mi_df.index.rename(['stack', 'var'], inplace=True)
-        mi_df.columns.rename(['name', 'number'], inplace=True)
+        mi_df.columns.rename(['name', 'step'], inplace=True)
 
         et = time.time()
         elapsed_time = et - st
@@ -197,15 +197,15 @@ class Probes:
 
         data = self.slice_into_df(slice_params)
         n_names = len(slice_params['names'])
-        n_numbers = len(slice_params['numbers'])
+        n_steps = len(slice_params['steps'])
         n_vars = len(slice_params['vars'])
 
         time_sum = data.groupby(
             axis='columns', level='name').cumsum(axis='columns')
-        data_steps = pd.Series(np.arange(1, n_numbers+1))
+        data_steps = pd.Series(np.arange(1, n_steps+1))
 
         var_cum_avg = time_sum.div(
-            data_steps, axis='columns', level='number')  # cumumlative averge
+            data_steps, axis='columns', level='step')  # cumumlative averge
         var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
         data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
 
@@ -213,10 +213,10 @@ class Probes:
             var_last_avg, axis='columns', level='name'))
 
         # data_diff = data_diff[0,...] #just looking at u,0 for now
-        # plot_data = data_diff.reshape((-1, n_numbers), order = 'C')
+        # plot_data = data_diff.reshape((-1, n_steps), order = 'C')
 
         yPlot = np.tile(slice_params['stack'], 1)
-        xPlot = slice_params['numbers']
+        xPlot = slice_params['steps']
 
         self.plot_params.update(plot_params)
 
