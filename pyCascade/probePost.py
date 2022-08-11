@@ -1,3 +1,5 @@
+from pyCascade import utils
+
 import glob
 import numpy as np
 from matplotlib import pyplot as plt
@@ -18,31 +20,12 @@ def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x', 'y', 'z'])
 
 
-def ax_index(ax, i, j):
-    n_dims = np.array(ax).ndim
-    if n_dims == 0:
-        sub_ax = ax
-    elif n_dims == 1:
-        sub_ax = ax[max(i, j)]
-    else:
-        sub_ax = ax[i, j]
-    return sub_ax
-
-
-def eval_tuple(value):
-    if isinstance(value, tuple):
-        function, arg = value  # retrieve data reading function and data path
-        # read in the data, and assign it to the dict value
-        value = function(arg)
-    return value
-
-
 def parallel_functions(value):
     """ 
     Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
     This speeds up parrallel processing because less infromation is passed to subprocesses.
     """
-    return pd.Series(eval_tuple(value))
+    return pd.Series(utils.eval_tuple(value))
 
 def mean_convergence(data_df):
     n_steps = len(data_df.groupby(axis='columns', level='step').size())
@@ -59,28 +42,6 @@ def mean_convergence(data_df):
         var_last_avg, axis='columns', level='name'))
 
     return data_diff_norm
-
-def end_timer(st, description):
-    et = time.time()
-    elapsed_time = round(et - st)
-    print(f"{description} took {elapsed_time} seconds")
-
-
-class MyLazyDict(dict):
-    '''
-    Create a lazy dictionary by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
-    and memorizes data once it has been read in.
-    '''
-
-    def __getitem__(self, item):
-        # retrieve the current dictionary value
-        value = dict.__getitem__(self, item)
-        if isinstance(value, tuple):  # check if data has been read in
-            # print('reading in data')
-            value = eval_tuple(value)
-            # reset the dictionary value to the data
-            dict.__setitem__(self, item, value)
-        return value
 
 
 class Probes:
@@ -114,7 +75,7 @@ class Probes:
             my_dict[(probe_name, probe_step)] = (read_probes, path)
 
         # iterate through the upper data dict
-        my_dict = MyLazyDict(my_dict)  # modify the getter lazily read in data
+        my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
@@ -138,7 +99,7 @@ class Probes:
             # preparing for lazy location reading
             locations[probe_name] = (read_locations, location_path)
         # creating lazy dict for locations
-        self.locations = MyLazyDict(locations)
+        self.locations = utils.MyLazyDict(locations)
 
     def slice_into_df(
         self,
@@ -174,14 +135,14 @@ class Probes:
         mi_df.index.rename(['stack', 'var'], inplace=True)
         mi_df.columns.rename(['name', 'step'], inplace=True)
 
-        end_timer(st, "reading data")
+        utils.end_timer(st, "reading data")
 
         st = time.time()
 
         # memorize data that was accesed outside of self.data
         self.data.update(mi_df)  # update data dictionary
 
-        end_timer(st, "memorizing data")
+        utils.end_timer(st, "memorizing data")
 
         return mi_df  # return numpy array with all requested data
 
@@ -206,7 +167,7 @@ class Probes:
             st = time.time()
             for process_step in plot_params['processing']:
                 processed_data = process_step(data)
-            end_timer(st, 'processing data')
+            utils.end_timer(st, 'processing data')
 
         st = time.time()
 
@@ -224,7 +185,7 @@ class Probes:
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
                 plot_df = plot_df.droplevel('name', axis='columns')
-                sub_ax = ax_index(ax, i, j)
+                sub_ax = utils.ax_index(ax, i, j)
                 im = sub_ax.contourf(plot_df.columns, plot_df.index, name_df, levels=plot_levels)
                 ax_list.append(sub_ax)
 
@@ -238,7 +199,7 @@ class Probes:
                     sub_ax.set_xlabel(var)
 
             fig.colorbar(im, ax=ax_list)
-        end_timer(st, "plotting")
+        utils.end_timer(st, "plotting")
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
         # fig.show()
