@@ -262,3 +262,5 @@ class Probes:
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
         # fig.show()
+
+        return fig, ax
