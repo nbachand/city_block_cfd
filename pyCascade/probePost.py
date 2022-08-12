@@ -156,11 +156,12 @@ class Probes:
     ):
 
         vars = utils.get_input(vars, self.probe_vars, overwrite = False)
-        stack = utils.get_input(stack, self.probe_vars, overwrite = False)
+        stack = utils.get_input(stack, np.s_[::], overwrite = False)
         names = utils.get_input(names, self.probe_names, overwrite = False)
         steps = utils.get_input(steps, self.probe_steps, overwrite = False)
 
         data = self.slice_into_df(names, steps, parrallel)
+        data = data.loc[(stack,vars),:]
         n_names = len(names)
         n_vars = len(vars)
 
