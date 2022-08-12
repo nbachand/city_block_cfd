@@ -191,7 +191,17 @@ class Probes:
                 plot_df = name_df.droplevel('var', axis='index')
                 plot_df = plot_df.droplevel('name', axis='columns')
                 sub_ax = utils.ax_index(ax, i, j)
-                im = sub_ax.contourf(plot_df.columns, plot_df.index, name_df, levels=plot_levels)
+                
+                xPlot = plot_df.columns
+                if 'horizontal spacing' in plot_params:
+                    xPlot *= plot_params['horizontal spacing']
+                yPlot = plot_df.index
+                if hasattr(self, 'locations') and 'stack span' in plot_params:
+                    location = self.locations[name]
+                    yAxis = location[plot_params['stack span']]
+                    yPlot = yAxis[yPlot]
+
+                im = sub_ax.contourf(xPlot, yPlot, name_df, levels=plot_levels)
                 ax_list.append(sub_ax)
 
                 if j > 0:
