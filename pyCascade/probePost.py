@@ -3,7 +3,6 @@ from pyCascade import utils
 import glob
 import numpy as np
 from matplotlib import pyplot as plt
-import time
 from itertools import repeat
 import pandas as pd
 import pickle
@@ -103,26 +102,25 @@ class Probes:
 
     def slice_into_df(
         self,
-        slice_params={}
+        names = None,
+        steps = None,
+        parallel = False
     ):
 
-        if 'names' not in slice_params:
-            # if empty, use all probes
-            slice_params['names'] = self.probe_names
-        if 'steps' not in slice_params:
-            # if empty, use all steps
-            slice_params['steps'] = self.probe_steps
+        # if empty, use all probes
+        names = utils.get_input(names, self.probe_names, overwrite = False)
+        # if empty, use all steps
+        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
         # get desired values
-        mi_series_sliced = mi_series.loc[slice_params['names'],
-                                         slice_params['steps']]
+        mi_series_sliced = mi_series.loc[names, steps]
 
-        st = time.time()
+        st = utils.start_timer()
 
         # dont use parrall for debugging, else significant speed up
-        if 'parallel' in slice_params and slice_params['parallel'] is True:
+        if parallel:
             # initialize(36) or initialize(os.cpu_count()-1)
             pandarallel.initialize(progress_bar=True)
             # read in data directly (not indecing self.data)
@@ -137,7 +135,7 @@ class Probes:
 
         utils.end_timer(st, "reading data")
 
-        st = time.time()
+        st = utils.start_timer()
 
         # memorize data that was accesed outside of self.data
         self.data.update(mi_df)  # update data dictionary
@@ -148,28 +146,34 @@ class Probes:
 
     def contour_plots(
         self,
-        slice_params={},
+        names = None,
+        steps = None,
+        vars = None,
+        stack = None,
+        parrallel = False,
+        processing = None,
         plot_params={}
     ):
 
-        if 'vars' not in slice_params:
-            slice_params['vars'] = self.probe_vars
-        if 'stack' not in slice_params:
-            slice_params['stack'] = self.probe_stack
+        vars = utils.get_input(vars, self.probe_vars, overwrite = False)
+        stack = utils.get_input(stack, self.probe_vars, overwrite = False)
+        names = utils.get_input(names, self.probe_names, overwrite = False)
+        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
 
-        data = self.slice_into_df(slice_params)
-        n_names = len(slice_params['names'])
-        n_vars = len(slice_params['vars'])
+        data = self.slice_into_df(names, steps, parrallel)
+        n_names = len(names)
+        n_vars = len(vars)
 
-        if 'processing' not in plot_params:
+
+        if processing is None:
             processed_data = data
         else:
-            st = time.time()
-            for process_step in plot_params['processing']:
+            st = utils.start_timer()
+            for process_step in processing:
                 processed_data = process_step(data)
             utils.end_timer(st, 'processing data')
 
-        st = time.time()
+        st = utils.start_timer()
 
         self.plot_params.update(plot_params)
 

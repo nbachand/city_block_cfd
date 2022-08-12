@@ -1,4 +1,5 @@
 import numpy as np
+from pyCascade import utils
 
 
 class LES_Physics:
@@ -7,11 +8,9 @@ class LES_Physics:
         self.LES_params = {}
         self.LES_params.update(LES_params)
 
-    def calc_Uref_q(self, uStar = False, z0 = False):
-        if not uStar:
-            uStar = self.LES_params('uStar')
-        if not z0:
-            z0 = self.LES_params('z0')
+    def calc_Uref_q(self, uStar = None, z0 = None):
+        uStar = utils.get_input(uStar, self.LES_params['uStar'])
+        z0 = utils.get_input(z0, self.LES_params['z0'])
 
         # deltas = self.LES_parmas['deltas']
 
@@ -23,4 +22,9 @@ class LES_Physics:
             'q': q
         })
 
-    def plot_log_law(self, uStar = False, z0 = False, disp = False, vK_const = False):
+    def plot_log_law(self, uStar = None, z0 = None, disp = None, vK_const = None):
+        uStar = utils.get_input(uStar, self.LES_params['uStar'])
+        z0 = utils.get_input(z0, self.LES_params['z0'])
+        disp = utils.get_input(disp, self.LES_params['disp'])
+        vK_const = utils.get_input(vK_const, self.LES_params['vK_const'])
+
