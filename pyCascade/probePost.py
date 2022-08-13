@@ -219,11 +219,9 @@ class Probes:
                 # fig.colorbar(im, ax = sub_ax)
 
             norm = colors.TwoSlopeNorm(0,min(vmins),max(vmaxs))
-            sm = cm.ScalarMappable()
             for im in im_list:
                 im.set_norm(norm)
-            sm.set_norm(norm)
-            fig.colorbar(sm, ax=ax_list)
+            fig.colorbar(cm.ScalarMappable(norm=norm), ax=ax_list)
         utils.end_timer(st, "plotting")
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
