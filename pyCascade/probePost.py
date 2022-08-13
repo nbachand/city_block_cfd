@@ -3,6 +3,7 @@ from pyCascade import utils
 import glob
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import cm, colors
 from itertools import repeat
 import pandas as pd
 import pickle
@@ -50,10 +51,6 @@ class Probes:
         Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
         self.slice_int_df.
         """
-
-        self.LES_params = {}
-        self.plot_params = {}
-
         my_dict = {}  # this will be a tuple indexed 1-level dictionary.
         # create a generator to iterate over probe paths
         path_generator = glob.iglob(f'{directory}/*.pcd')
@@ -176,17 +173,19 @@ class Probes:
 
         st = utils.start_timer()
 
-        self.plot_params.update(plot_params)
-
+        # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(n_names, n_vars)
 
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            ax_list = []
-            if 'plot_levels' in self.plot_params and var in plot_params['plot_levels']:
+            if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
                 plot_levels = plot_params['plot_levels'][var]
             else:
-                plot_levels = 200
+                plot_levels = 256
 
+            ax_list = []
+            im_list = []
+            vmins = [] # for colorbar
+            vmaxs = []
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
                 plot_df = plot_df.droplevel('name', axis='columns')
@@ -203,6 +202,7 @@ class Probes:
 
                 im = sub_ax.contourf(xPlot, yPlot, name_df, levels=plot_levels)
                 ax_list.append(sub_ax)
+                im_list.append(im)
 
                 if j > 0:
                     sub_ax.yaxis.set_visible(False)
@@ -213,7 +213,16 @@ class Probes:
                 else:
                     sub_ax.set_xlabel(var)
 
-            fig.colorbar(im, ax=ax_list)
+                clims = im.get_clim()
+                vmins.append(clims[0])
+                vmaxs.append(clims[1])
+                # fig.colorbar(im, ax = sub_ax)
+
+            sm = cm.ScalarMappable()
+            for im in im_list:
+                im.set_clim(min(vmins), max(vmaxs))
+            sm.set_clim(min(vmins), max(vmaxs))
+            fig.colorbar(sm, ax=ax_list)
         utils.end_timer(st, "plotting")
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
