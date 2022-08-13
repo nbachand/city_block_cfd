@@ -218,6 +218,7 @@ class Probes:
                 vmaxs.append(clims[1])
                 # fig.colorbar(im, ax = sub_ax)
 
+            # norm = colors.DivergingNorm(0,min(vmins),max(vmaxs))
             sm = cm.ScalarMappable()
             for im in im_list:
                 im.set_clim(min(vmins), max(vmaxs))
