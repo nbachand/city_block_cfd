@@ -174,7 +174,7 @@ class Probes:
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
-        fig, ax = plt.subplots(n_names, n_vars)
+        fig, ax = plt.subplots(n_names, n_vars, constrained_layout =True)
 
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
@@ -213,15 +213,30 @@ class Probes:
                 else:
                     sub_ax.set_xlabel(var)
 
-                clims = im.get_clim()
-                vmins.append(clims[0])
-                vmaxs.append(clims[1])
+                vmin, vmax = im.get_clim()
+                vmins.append(vmin)
+                vmaxs.append(vmax)
                 # fig.colorbar(im, ax = sub_ax)
 
-            norm = colors.TwoSlopeNorm(0,min(vmins),max(vmaxs))
+            vmin = min(vmins)
+            vmax = max(vmaxs)
+            if 'ColorNorm' in plot_params:
+                if plot_params['ColorNorm'] == "TwoSlope":
+                    norm = colors.TwoSlopeNorm(0,vmin,vmax)
+                elif plot_params['ColorNorm'] == "Centered":
+                    vmagmax = max(np.abs((vmin, vmax)))
+                    norm = colors.TwoSlopeNorm(0,-vmagmax,vmagmax)
+
+            else:
+                norm = colors.Normalize(vmin,vmax)
             for im in im_list:
                 im.set_norm(norm)
             fig.colorbar(cm.ScalarMappable(norm=norm), ax=ax_list)
+        
+        if 'xlabel' in plot_params:
+            fig.supxlabel(plot_params['xlabel'])
+        if 'ylabel' in plot_params:
+            fig.supylabel(plot_params['ylabel'])
         utils.end_timer(st, "plotting")
         # plt.figure()
         # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
