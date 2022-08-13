@@ -36,7 +36,6 @@ def end_timer(st, description):
     elapsed_time = round(et - st)
     print(f"{description} took {elapsed_time} seconds")
 
-
 class MyLazyDict(dict):
     '''
     Create a lazy dictionary by modifying the __getitem__ attribute. New dictionary dynamically reads in data as it is accessed,
