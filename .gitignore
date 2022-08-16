@@ -9,6 +9,8 @@
 !*.cpp
 !.gitignore
 !README.md
+!*.sh
+!*.slurm
 
 # ...even if they are in subdirectories
 !*/
