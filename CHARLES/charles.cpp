@@ -195,12 +195,14 @@ public:
         const double absy = abs(y);
 
         const double fric_vel = 0.1;
-        const double z_0 = 0.61;
+        const double z_0 = 0.61; //used for convention, but really y_0
         const double disp = 11.1;
         const double vK_const = 0.4;
 
         // approximate log law mean profile
-        const double ux = (fric_vel/vK_const)*log(absy/z_0);
+        double y_scaled = (absy-disp)/z_0;
+        y_scaled = max(1.0, y_scaled);
+        const double ux = (fric_vel/vK_const)*log(y_scaled);
 
         u[icv][0] = ux;
         // u[icv][0] = 0.01;
