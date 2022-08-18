@@ -11,6 +11,7 @@
 !README.md
 !*.sh
 !*.slurm
+!*.txt
 
 # ...even if they are in subdirectories
 !*/

@@ -4,7 +4,6 @@ import glob
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm, colors
-from itertools import repeat
 import pandas as pd
 import pickle
 
