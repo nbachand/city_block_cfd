@@ -1,15 +1,16 @@
 import time
 import numpy as np
 
-def get_input(input, other, overwrite = True):
-    if input is None:
-        try:
-            input = other
-        except:
-            print(f'necessary input not defined')
-    elif overwrite:
-        other = input
-    return input
+class Helper:
+    def get_input(self, input, other, overwrite = True):
+        if input is None:
+            try:
+                input = other
+            except:
+                print(f'necessary input not defined')
+        elif overwrite:
+            other = input
+        return input
 
 def ax_index(ax, i, j):
     n_dims = np.array(ax).ndim

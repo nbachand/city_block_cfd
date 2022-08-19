@@ -43,7 +43,7 @@ def mean_convergence(data_df):
     return data_diff_norm
 
 
-class Probes:
+class Probes(utils.Helper):
     def __init__(self, directory):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
@@ -104,9 +104,9 @@ class Probes:
     ):
 
         # if empty, use all probes
-        names = utils.get_input(names, self.probe_names, overwrite = False)
+        names = self.get_input(names, self.probe_names, overwrite = False)
         # if empty, use all steps
-        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
+        steps = self.get_input(steps, self.probe_steps, overwrite = False)
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
@@ -151,10 +151,10 @@ class Probes:
         plot_params={}
     ):
 
-        vars = utils.get_input(vars, self.probe_vars, overwrite = False)
-        stack = utils.get_input(stack, np.s_[::], overwrite = False)
-        names = utils.get_input(names, self.probe_names, overwrite = False)
-        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
+        vars = self.get_input(vars, self.probe_vars, overwrite = False)
+        stack = self.get_input(stack, np.s_[::], overwrite = False)
+        names = self.get_input(names, self.probe_names, overwrite = False)
+        steps = self.get_input(steps, self.probe_steps, overwrite = False)
 
         data = self.slice_into_df(names, steps, parrallel)
         data = data.loc[(stack,vars),:]
