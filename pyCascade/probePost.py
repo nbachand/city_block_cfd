@@ -141,10 +141,10 @@ class Probes(utils.Helper):
 
     def contour_plots(
         self,
-        names = None,
-        steps = None,
-        quants = None,
-        stack = None,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
+        quants = "self.probe_quants",
+        stack = "self.probe_stack",
         parrallel = False,
         processing = None,
         plot_params={}
