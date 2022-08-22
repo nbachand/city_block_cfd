@@ -1,5 +1,9 @@
 #!/bin/bash
-#SBATCH --jobname=stitch
+#SBATCH --job-name=charles_city_block
+#SBATCH -c 1
+#SBATCH -N 1
+#SBATCH -n 10
+#SBATCH --time=16:00:00
 
 module purge
 
