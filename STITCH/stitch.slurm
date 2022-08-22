@@ -7,4 +7,4 @@ module load system
 module load libpng/1.2.57
 module load openmpi/2.1.1
 
-stitch.exe -i view_mesh.in
+stitch.exe -i stitch_paper.in
