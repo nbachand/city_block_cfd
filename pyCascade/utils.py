@@ -4,9 +4,9 @@ import numpy as np
 class Helper:
     def get_input(self, input, other, overwrite = True):
         if input is None:
-            try:
+            if other is not None:
                 input = other
-            except:
+            else:
                 print(f'necessary input not defined')
         elif overwrite:
             other = input
