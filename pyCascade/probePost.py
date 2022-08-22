@@ -76,13 +76,13 @@ class Probes(utils.Helper):
         # remove duplicates and sort
         self.probe_steps = [*set(probe_steps)]
 
-        # assume the vars and stack is the same for all probes
+        # assume the quants and stack is the same for all probes
         representative_dict = my_dict[(
             self.probe_names[0], self.probe_steps[0])]
         representative_dict_keys = list(
             zip(*representative_dict.keys()))  # unzip list of tuples
         # sort and remove duplicates
-        self.probe_vars = [*set(representative_dict_keys[1])]
+        self.probe_quants = [*set(representative_dict_keys[1])]
         # sort and remove duplicates
         self.probe_stack = [*set(representative_dict_keys[0])]
         self.data = my_dict
@@ -143,19 +143,19 @@ class Probes(utils.Helper):
         self,
         names = None,
         steps = None,
-        vars = None,
+        quants = None,
         stack = None,
         parrallel = False,
         processing = None,
         plot_params={}
     ):
 
-        vars, stack, names, steps = [self.get_input(input) for input in [vars, stack, names, steps]]
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,vars),:]
+        data = data.loc[(stack,quants),:]
         n_names = len(names)
-        n_vars = len(vars)
+        n_quants = len(quants)
 
 
         if processing is None:
@@ -169,7 +169,7 @@ class Probes(utils.Helper):
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
-        fig, ax = plt.subplots(n_names, n_vars, constrained_layout =True)
+        fig, ax = plt.subplots(n_names, n_quants, constrained_layout =True)
 
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
