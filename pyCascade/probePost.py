@@ -98,15 +98,14 @@ class Probes(utils.Helper):
 
     def slice_into_df(
         self,
-        names = None,
-        steps = None,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
         parallel = False
     ):
 
-        # if empty, use all probes
-        names = self.get_input(names, self.probe_names, overwrite = False)
-        # if empty, use all steps
-        steps = self.get_input(steps, self.probe_steps, overwrite = False)
+        
+        # default to all probes, setps
+        names, steps = [self.get_input(input) for input in [names, steps]]
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
@@ -151,10 +150,7 @@ class Probes(utils.Helper):
         plot_params={}
     ):
 
-        vars = self.get_input(vars, self.probe_vars, overwrite = False)
-        stack = self.get_input(stack, np.s_[::], overwrite = False)
-        names = self.get_input(names, self.probe_names, overwrite = False)
-        steps = self.get_input(steps, self.probe_steps, overwrite = False)
+        vars, stack, names, steps = [self.get_input(input) for input in [vars, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, parrallel)
         data = data.loc[(stack,vars),:]

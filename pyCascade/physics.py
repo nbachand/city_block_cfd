@@ -6,16 +6,7 @@ from matplotlib import pyplot as plt
 class LES_Physics(utils.Helper):
     def __init__(self, LES_params = {}):
         # LES params
-        self.LES_params = {
-            'uStar': None,
-            'z0': None,
-            'disp': None,
-            'vk_const': None,
-            'z_values': None,
-            'rho': None,
-            'mu': None,
-            'flatplate': {'yPlus': None}
-        }
+        self.LES_params = {}
         self.LES_params.update(LES_params)
 
     def calc_Uref_q(self, uStar = None, z0 = None):
@@ -34,18 +25,14 @@ class LES_Physics(utils.Helper):
 
     def plot_log_wind(
         self, 
-        uStar = None, 
-        z0 = None, 
-        disp = None, 
-        vK_const = None,
-        z_values = None,
+        uStar = "self.LES_params['uStar']", 
+        z0 = "self.LES_params['z0']", 
+        disp = "self.LES_params['disp']", 
+        vK_const = "self.LES_params['vK_const']",
+        z_values = "self.LES_params['z_values']",
         ):
 
-        uStar = self.get_input(uStar, self.LES_params['uStar'])
-        z0 = self.get_input(z0, self.LES_params['z0'])
-        disp = self.get_input(disp, self.LES_params['disp'])
-        vK_const = self.get_input(vK_const, self.LES_params['vK_const'])
-        z_values = self.get_input(z_values, self.LES_params['z_values'])
+        uStar, z0, disp, vK_const, z_values = [self.get_input(input) for input in [uStar, z0, disp, vK_const, z_values]]
 
         z_scaled = (z_values - disp)/z0
         z_scaled[z_scaled<1] = 1
@@ -56,23 +43,22 @@ class LES_Physics(utils.Helper):
         plt.xlabel('velocity')
         plt.ylabel('height [m]')
 
+        for key in ['uStar', 'z0', 'disp', 'vK_const', 'z_values']:
+            self.LES_params[key] = eval(key)
+
     def calc_flatplate_quantities(
         self,
-        rho = None,
-        uInf = None,
-        L = None,
-        mu = None,
-        yPlus = None
+        rho = "self.LES_params['rho']",
+        uInf = "self.LES_params['log_wind'][-1]",
+        L = "self.LES_params['z_values'][-1]",
+        mu = "self.LES_params['mu']",
+        yPlus = "self.LES_params['flatplate']['yPlus']"
         ):
 
         if 'flatplate' not in self.LES_params:
             self.LES_params['flatplate'] = {}
 
-        rho = self.get_input(rho, self.LES_params['rho'])
-        uInf = self.get_input(uInf, self.LES_params['log_wind'][-1], overwrite=False)
-        L = self.get_input(L, self.LES_params['z_values'][-1], overwrite=False)
-        mu = self.get_input(mu, self.LES_params['mu'])
-        yPlus = self.get_input(yPlus, self.LES_params['flatplate']['yPlus'])
+        rho, uInf, L, mu, yPlus = [self.get_input(input) for input in [rho, uInf, L, mu, yPlus]]
 
         Rex = rho*uInf*L/mu
         Cf = .026/Rex**(1/7)
@@ -80,12 +66,10 @@ class LES_Physics(utils.Helper):
         uFric = np.sqrt(tauW/rho)
         spacingW = yPlus*mu/(uFric*rho)
 
-        self.LES_params['flatplate'].update({
-            'Rex' : Rex,
-            'Cf' : Cf,
-            'tauW' : tauW,
-            'uFric' : uFric,
-            'spacingW' : spacingW
-        })
+        for key in ['rho', 'mu']:
+            self.LES_params[key] = eval(key)
+        
+        for key in ['yPlus', 'Rex', 'Cf', 'tauW', 'uFric', 'spacingW']:
+            self.LES_params['flatplate'][key] = eval(key)
 
 

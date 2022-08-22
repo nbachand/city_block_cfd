@@ -1,17 +1,13 @@
+from distutils.archive_util import make_archive
 import time
 import numpy as np
 
 class Helper:
-    def get_input(self, input, other, overwrite = True):
-        if input is None:
-            if other is not None:
-                input = other
-            else:
-                print(f'necessary input not defined')
-        elif overwrite:
-            other = input
+    def get_input(self, input):
+        if isinstance(input, str):
+            input = eval(input)
         return input
-
+        
 def ax_index(ax, i, j):
     n_dims = np.array(ax).ndim
     if n_dims == 0:
