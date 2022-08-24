@@ -44,7 +44,7 @@ class LES_Physics(utils.Helper):
         plt.ylabel('height [m]')
 
         for key in ['uStar', 'z0', 'disp', 'vK_const', 'z_values']:
-            self.LES_params[key] = eval(key)
+            self.LES_params[key] = eval(key) #save params
 
     def calc_flatplate_quantities(
         self,
@@ -54,6 +54,10 @@ class LES_Physics(utils.Helper):
         mu = "self.LES_params['mu']",
         yPlus = "self.LES_params['flatplate']['yPlus']"
         ):
+
+        '''
+        from https://www.cadence.com/en_US/home/tools/system-analysis/computational-fluid-dynamics/y-plus.html
+        '''
 
         if 'flatplate' not in self.LES_params:
             self.LES_params['flatplate'] = {}
@@ -66,10 +70,14 @@ class LES_Physics(utils.Helper):
         uFric = np.sqrt(tauW/rho)
         spacingW = yPlus*mu/(uFric*rho)
 
+        print(f'U infinity is {uInf} with L = {L}')
+        print(f'flat plate Reynolds number is {Rex}')
+        print(f'wall spacing is {spacingW} for y+ of {yPlus}')
+
         for key in ['rho', 'mu']:
-            self.LES_params[key] = eval(key)
+            self.LES_params[key] = eval(key) #save params
         
         for key in ['yPlus', 'Rex', 'Cf', 'tauW', 'uFric', 'spacingW']:
-            self.LES_params['flatplate'][key] = eval(key)
+            self.LES_params['flatplate'][key] = eval(key) #save params
 
 
