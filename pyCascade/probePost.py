@@ -4,7 +4,6 @@ import glob
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm, colors
-from itertools import repeat
 import pandas as pd
 import pickle
 
@@ -44,7 +43,7 @@ def mean_convergence(data_df):
     return data_diff_norm
 
 
-class Probes:
+class Probes(utils.Helper):
     def __init__(self, directory):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
@@ -77,13 +76,13 @@ class Probes:
         # remove duplicates and sort
         self.probe_steps = [*set(probe_steps)]
 
-        # assume the vars and stack is the same for all probes
+        # assume the quants and stack is the same for all probes
         representative_dict = my_dict[(
             self.probe_names[0], self.probe_steps[0])]
         representative_dict_keys = list(
             zip(*representative_dict.keys()))  # unzip list of tuples
         # sort and remove duplicates
-        self.probe_vars = [*set(representative_dict_keys[1])]
+        self.probe_quants = [*set(representative_dict_keys[1])]
         # sort and remove duplicates
         self.probe_stack = [*set(representative_dict_keys[0])]
         self.data = my_dict
@@ -99,15 +98,14 @@ class Probes:
 
     def slice_into_df(
         self,
-        names = None,
-        steps = None,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
         parallel = False
     ):
 
-        # if empty, use all probes
-        names = utils.get_input(names, self.probe_names, overwrite = False)
-        # if empty, use all steps
-        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
+        
+        # default to all probes, setps
+        names, steps = [self.get_input(input) for input in [names, steps]]
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
@@ -143,24 +141,21 @@ class Probes:
 
     def contour_plots(
         self,
-        names = None,
-        steps = None,
-        vars = None,
-        stack = None,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
+        quants = "self.probe_quants",
+        stack = "self.probe_stack",
         parrallel = False,
         processing = None,
         plot_params={}
     ):
 
-        vars = utils.get_input(vars, self.probe_vars, overwrite = False)
-        stack = utils.get_input(stack, np.s_[::], overwrite = False)
-        names = utils.get_input(names, self.probe_names, overwrite = False)
-        steps = utils.get_input(steps, self.probe_steps, overwrite = False)
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,vars),:]
+        data = data.loc[(stack,quants),:]
         n_names = len(names)
-        n_vars = len(vars)
+        n_quants = len(quants)
 
 
         if processing is None:
@@ -174,7 +169,7 @@ class Probes:
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
-        fig, ax = plt.subplots(n_names, n_vars, constrained_layout =True)
+        fig, ax = plt.subplots(n_names, n_quants, constrained_layout =True)
 
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
