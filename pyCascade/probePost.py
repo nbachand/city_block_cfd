@@ -42,6 +42,9 @@ def mean_convergence(data_df):
 
     return data_diff_norm
 
+def time_average(data_df):
+    return data_df.groupby(axis='columns', level='name').mean()
+
 
 class Probes(utils.Helper):
     def __init__(self, directory):
@@ -126,7 +129,8 @@ class Probes(utils.Helper):
         mi_df = mi_df.T
 
         mi_df.index.rename(['stack', 'var'], inplace=True)
-        mi_df.columns.rename(['name', 'step'], inplace=True)
+        if isinstance(mi_df, pd.DataFrame):
+            mi_df.columns.rename(['name', 'step'], inplace=True)
 
         utils.end_timer(st, "reading data")
 
@@ -238,3 +242,40 @@ class Probes(utils.Helper):
         # fig.show()
 
         return fig, ax
+
+    def profile_plots(
+        self,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
+        quants = "self.probe_quants",
+        stack = "self.probe_stack",
+        parrallel = False,
+        plot_params = {}
+        ):
+
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
+        data = self.slice_into_df(names, steps, parrallel)
+        data = data.loc[(stack,quants),:]
+
+        fig, ax = plt.subplots(1, 1, constrained_layout =True)
+        processed_data = time_average(data)
+        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
+            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
+                plot_df = name_df.droplevel('var', axis='index')
+                # if isinstance(plot_df, pd.DataFrame):
+                #     plot_df = plot_df.droplevel('name', axis='columns')
+
+                yPlot = plot_df.index
+                if hasattr(self, 'locations') and 'stack span' in plot_params:
+                    location = self.locations[name]
+                    yAxis = location[plot_params['stack span']]
+                    yPlot = yAxis[yPlot]
+
+                ax.plot(plot_df.values, yPlot, label=f'{name}: {var}')
+                if 'xlabel' in plot_params:
+                    fig.supxlabel(plot_params['xlabel'])
+                if 'ylabel' in plot_params:
+                    fig.supylabel(plot_params['ylabel'])
+                ax.legend()
+
+
