@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=charles_city_block
 #SBATCH -c 1
-#SBATCH -N 3
-#SBATCH -n 96
-#SBATCH --time=6:00:00
+#SBATCH -N 1
+#SBATCH -n 3
+#SBATCH --time=1:00:00
 
 module purge
 
@@ -18,4 +18,4 @@ cd $PARENT_DIR$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
-mpiexec charles.exe -i $HOME/Cascade/city_block_cfd/CHARLES/charles.in
+mpiexec $HOME/Cascade/city_block_cfd/CHARLES/charles.exe -i $HOME/Cascade/city_block_cfd/CHARLES/charles.in
