@@ -1,7 +1,7 @@
 #Read the surface
 PART SURF SBIN ../city_block_geom/SURFER/geom_final.sbin
 
-HCP_DELTA 2.5
+HCP_DELTA 5
 # HCP_DELTA 10
 
 HCP_WINDOW FAZONE ground LEVEL=3 D=25 DLAYERS=15,60
@@ -11,7 +11,7 @@ COUNT_POINTS
 SMOOTH_MODE ALL
 NSMOOTH 10
 
-WRITE_RESTART = 65M-mesh.mles
+WRITE_RESTART = 15M-mesh.mles
 
 # INTERACTIVE
 
