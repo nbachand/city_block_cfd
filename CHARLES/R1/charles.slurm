@@ -2,8 +2,8 @@
 #SBATCH --job-name=charles_city_block
 #SBATCH -c 1
 #SBATCH -N 1
-#SBATCH -n 3
-#SBATCH --time=1:00:00
+#SBATCH -n 32
+#SBATCH --time=24:00:00
 
 module purge
 

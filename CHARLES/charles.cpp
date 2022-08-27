@@ -194,9 +194,16 @@ public:
         const double y = x_cv[icv][1];
         const double absy = abs(y);
 
-        const double fric_vel = 0.1;
-        const double z_0 = 0.61; //used for convention, but really y_0
-        const double disp = 11.1;
+        const double rho = 1.225;
+        const double mu = 1.7894e-5;
+        const double Re_tau = 433;
+        const double Lz =  160;
+        const double hm = 10;
+        const double fric_vel = Re_tau*mu/(hm*rho);
+
+        const double z_0 = 0.061*hm; //used for convention, but really y_0
+        const double disp = 1.11*hm;
+        const double shear_vel = fric_vel*sqrt(1-disp/Lz);
         const double vK_const = 0.4;
 
         // approximate log law mean profile
@@ -227,9 +234,15 @@ public:
   // different.
 
   void momentumSourceHook(double * A,double (*rhs)[3]) {
+    const double mu = 1.7894e-5;
+    const double Re_tau = 433;
+    const double Lz =  160;
+    const double hm = 10;
+
     const double factor = 1.0;
     FOR_ICV {
-      rhs[icv][0] += factor*vol_cv[icv]*rho[icv];
+      double fric_vel = Re_tau*mu/(hm*rho[icv]);
+      rhs[icv][0] += factor*vol_cv[icv]*rho[icv]*pow(fric_vel,2)/Lz;
     }
   }
   void massSourceHook(double * rhs) {}
