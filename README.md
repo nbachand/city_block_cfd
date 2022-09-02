@@ -8,14 +8,14 @@
 
 ## to build custom version
 ## {First time setup) create a virtual environment:
-> conda create --name <env> --file requirements.txt
+> conda create --name \<env\> --file requirements.txt
 ## activate environemnt
-> conda activate <env>
+> conda activate \<env\>
 
 > python setup.py bdist_wheel
 
 > conda deactivate
 
-> pip install ./dist/<new_wheel_file>.whl
+> pip install ./dist/\<new_wheel_file\>.whl
 
 
