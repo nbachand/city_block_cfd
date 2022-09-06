@@ -13,4 +13,11 @@ module load system
 module load libpng/1.2.57
 module load openmpi/2.1.1
 
-mpiexec stitch.exe -i stitch.in
+PARENT_DIR="Cascade/city_block_cfd/STITCH"
+LOCAL_FOLDER=$(basename "`pwd`")
+
+cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
+
+echo "Executing charles from $(pwd)"
+
+mpiexec stitch.exe -i $HOME/$PARENT_DIR/stitch.in
