@@ -2,8 +2,8 @@
 PART SURF SBIN ../../city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
 
 #HCP_DELTA 2.5
-# HCP_DELTA 16
-HCP_DELTA 32
+HCP_DELTA 16
+# HCP_DELTA 32
 
 HCP_WINDOW FAZONE ground LEVEL=3 D=75 DLAYERS=45,180
 HCP_WINDOW FAZONE buildings LEVEl=4 D=7.5
@@ -13,7 +13,8 @@ COUNT_POINTS
 SMOOTH_MODE ALL
 NSMOOTH 10
 
-WRITE_RESTART = 700k-mesh.mles
+# WRITE_RESTART = 700k-mesh.mles
+WRITE_RESTART = 5M-mesh.mles
 
 INTERACTIVE
 
