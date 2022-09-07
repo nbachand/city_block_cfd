@@ -8,12 +8,21 @@ module rooms(wthick = .01){
     translate([20+wthick/2, wthick/2, 10+wthick/2])cube(10-wthick, false);
 }
 
-module windows(extend = .01){
-    translate([5,5,10])cube([5,5,20+2*extend], true);
-    translate([15,5,10])cube([5,5,20+2*extend], true);
-    translate([25,5,10])cube([5,5,20+2*extend], true);
-    translate([15,5,5])cube([30+2*extend,5,5], true);
-    translate([15,5,15])cube([30+2*extend,5,5], true);
+module windows(extend = .01, w = 2.5, h = 2.5){
+    translate([5,5,10])cube([w,h,20+2*extend], true);
+    translate([15,5,10])cube([w,h,20+2*extend], true);
+    translate([25,5,10])cube([w,h,20+2*extend], true);
+    translate([15,5,5])cube([30+2*extend,h,w], true);
+    translate([15,5,15])cube([30+2*extend,h,w], true);
+}
+
+module doors(extend = -.01, w = 2.5, h = 7.5){
+    h_off = w/2;
+    translate([5-h_off,.01,-extend])cube([w,h,20+extend], false);
+    translate([15-h_off,.01,-extend])cube([w,h,20+extend], false);
+    translate([25-h_off,.01,-extend])cube([w,h,20+extend], false);
+    translate([-extend,.01,5-h_off])cube([30+extend,h,w], false);
+    translate([-extend,.01,15-h_off])cube([30+extend,h,w], false);
 }
 
 module roof(){
@@ -31,7 +40,8 @@ module house(wthick = .01, interior = false){
             cube([30,10,20], false);
             if(interior){
                 rooms();
-                windows();
+                windows(); //windows will cut through interior walls too
+                doors(); //interior doors
                 }
         }
         roof();
@@ -62,3 +72,5 @@ difference(){
     domain();
     neigborhood([12,8], [6,4]);
 }
+
+// neigborhood([1,1]);
