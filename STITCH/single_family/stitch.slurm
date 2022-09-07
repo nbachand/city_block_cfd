@@ -20,4 +20,4 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$PARENT_DIR/stitch.in
+mpiexec stitch.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/stitch.in

@@ -1,5 +1,5 @@
 #Read the surface
-PART SURF SBIN ../../city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
+PART SURF SBIN /home/users/nbachand/Cascade/city_block_cfd/city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
 
 #HCP_DELTA 2.5
 HCP_DELTA 16
