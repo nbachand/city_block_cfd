@@ -197,8 +197,8 @@ public:
         const double rho = 1.225;
         const double mu = 1.7894e-5;
         const double Re_tau = 433;
-        const double Lz =  160;
-        const double hm = 10;
+        const double Lz =  480;
+        const double hm = 20;
         const double fric_vel = Re_tau*mu/(hm*rho);
 
         const double z_0 = 0.061*hm; //used for convention, but really y_0
@@ -236,8 +236,8 @@ public:
   void momentumSourceHook(double * A,double (*rhs)[3]) {
     const double mu = 1.7894e-5;
     const double Re_tau = 433;
-    const double Lz =  160;
-    const double hm = 10;
+    const double Lz =  480;
+    const double hm = 20;
 
     const double factor = 1.0;
     FOR_ICV {
