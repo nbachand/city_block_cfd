@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=charles_city_block
+#SBATCH --job-name=charles_single_family
 #SBATCH -c 1
 #SBATCH -N 1
-#SBATCH -n 1
-#SBATCH --time=12:00:00
+#SBATCH -n 32
+#SBATCH --time=24:00:00
 
 module purge
 
@@ -18,5 +18,5 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
-# mpiexec $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
-$HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
+mpiexec $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
+# $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
