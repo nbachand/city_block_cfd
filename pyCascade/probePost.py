@@ -27,13 +27,16 @@ def parallel_functions(value):
     return pd.Series(utils.eval_tuple(value))
 
 def mean_convergence(data_df):
-    n_steps = len(data_df.groupby(axis='columns', level='step').size())
+    # n_steps = len(data_df.groupby(axis='columns', level='step').size())
     time_sum = data_df.groupby(
         axis='columns', level='name').cumsum(axis='columns')
-    data_steps = pd.Series(np.arange(1, n_steps+1))
+    # data_steps = pd.Series(np.arange(1, n_steps+1))
+    data_df_index = list(zip(*data_df.keys()))  # unzip list of tuples
+    data_steps = [*set(data_df_index[1])] # sort and remove duplicates
+    n_names = len([*set(data_df_index[0])])
 
     var_cum_avg = time_sum.div(
-        data_steps, axis='columns', level='step')  # cumumlative averge
+        np.tile(data_steps, n_names), axis='columns', level='step')  # cumumlative averge
     var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
     data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
 
@@ -161,13 +164,11 @@ class Probes(utils.Helper):
         n_names = len(names)
         n_quants = len(quants)
 
-
-        if processing is None:
-            processed_data = data
-        else:
+        processed_data = data
+        if processing is not None:
             st = utils.start_timer()
             for process_step in processing:
-                processed_data = process_step(data)
+                processed_data = process_step(processed_data)
             utils.end_timer(st, 'processing data')
 
         st = utils.start_timer()
