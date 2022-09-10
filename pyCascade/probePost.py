@@ -200,6 +200,10 @@ class Probes(utils.Helper):
                     yAxis = location[plot_params['stack span']]
                     yPlot = yAxis[yPlot]
 
+                if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
+                    name_df = name_df.iloc[:,::plot_params['plot_every']]
+                    xPlot =xPlot[::plot_params['plot_every']]
+
                 im = sub_ax.contourf(xPlot, yPlot, name_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
