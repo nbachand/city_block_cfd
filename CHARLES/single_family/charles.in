@@ -1,8 +1,8 @@
 RESTART = ../../../STITCH/single_family/700k-mesh.mles
 # RESTART = ../../../STITCH/single_family/5M-mesh.mles
 # INTERP_FROM_RESTART ../coarsest.mles ../coarsest.00016000.sles
-INIT time = 0.0 step = 0 u = 0.5 0.5 0.5 p=0
-RESET_ALL
+INIT time = 0.0 step = 0 u = 0.1 0.1 0.1 p=0
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -12,11 +12,11 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 2000000
-TIMESTEP DT = 0.01
+TIMESTEP DT = 10
 CHECK_INTERVAL 100
-WRITE_RESULT NAME=data/result INTERVAL=100
+WRITE_RESULT NAME=data/result INTERVAL=1000
 
-RESET_STATS TIME = 20
+RESET_STATS TIME = 2000
 STATS u p rho
 
 # subgrid model
