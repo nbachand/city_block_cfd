@@ -196,7 +196,7 @@ public:
 
         const double rho = 1.225;
         const double mu = 1.7894e-5;
-        const double Re_tau = 433;
+        const double Re_tau = 43300; //433;
         const double Lz =  480;
         const double hm = 20;
         const double fric_vel = Re_tau*mu/(hm*rho);
@@ -211,7 +211,7 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double ux = (fric_vel/vK_const)*log(y_scaled);
 
-        u[icv][0] = ux;
+        u[icv][0] = ux+.01;
         // u[icv][0] = 0.01;
         u[icv][1] = 0.01;
         u[icv][2] = 0.01;
@@ -235,7 +235,7 @@ public:
 
   void momentumSourceHook(double * A,double (*rhs)[3]) {
     const double mu = 1.7894e-5;
-    const double Re_tau = 433;
+    const double Re_tau = 43300; //433;
     const double Lz =  480;
     const double hm = 20;
 
