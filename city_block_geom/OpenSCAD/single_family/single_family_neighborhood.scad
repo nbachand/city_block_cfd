@@ -68,9 +68,9 @@ module domain(size=[480,480,480], offest=[0,0,0]){
     translate(offest)cube(size, false);
 }
 
-//difference(){
-//    domain();
- //   neigborhood([12,8], [6,4]);
-//}
+difference(){
+   domain();
+   neigborhood([12,8], [6,4]);
+}
 
-house(wthick = .01, interior = true);
+// house(wthick = .01, interior = true);
