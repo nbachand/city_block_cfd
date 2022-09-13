@@ -1,0 +1,15 @@
+#Read the surface
+PART SURF SBIN ../../city_block_geom/SURFER/domain/domain.sbin
+
+HCP_DELTA 32
+
+HCP_WINDOW FAZONE ground LEVEL=3 D=35 DLAYERS=45,180
+COUNT_POINTS
+
+SMOOTH_MODE ALL
+NSMOOTH 10
+
+WRITE_RESTART = 200k-mesh.mles
+
+INTERACTIVE
+
