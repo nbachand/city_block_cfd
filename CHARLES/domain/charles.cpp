@@ -233,18 +233,18 @@ public:
   // step setting; as a result, the hooks for add source hooks are slightly
   // different.
 
-  void momentumSourceHook(double * A,double (*rhs)[3]) {
-    const double mu = 1.7894e-5;
-    const double Re_tau = 43300; //433;
-    const double Lz =  480;
-    const double hm = 20;
+  // void momentumSourceHook(double * A,double (*rhs)[3]) {
+  //   const double mu = 1.7894e-5;
+  //   const double Re_tau = 43300; //433;
+  //   const double Lz =  480;
+  //   const double hm = 20;
 
-    const double factor = 1.0;
-    FOR_ICV {
-      double fric_vel = Re_tau*mu/(hm*rho[icv]);
-      rhs[icv][0] += factor*vol_cv[icv]*rho[icv]*pow(fric_vel,2)/Lz;
-    }
-  }
+  //   const double factor = 1.0;
+  //   FOR_ICV {
+  //     double fric_vel = Re_tau*mu/(hm*rho[icv]);
+  //     rhs[icv][0] += factor*vol_cv[icv]*rho[icv]*pow(fric_vel,2)/Lz;
+  //   }
+  // }
   void massSourceHook(double * rhs) {}
 
 };
