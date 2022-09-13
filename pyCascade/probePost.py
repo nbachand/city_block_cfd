@@ -115,8 +115,14 @@ class Probes(utils.Helper):
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
-        # get desired values
-        mi_series_sliced = mi_series.loc[names, steps]
+        # sort for improved speed
+        mi_series.sort_index(inplace=True)
+        # get desired values, temporarily converting from multiindex to dataframe for .loc speed increase
+        st = utils.start_timer()
+        df_from_mi_series = mi_series.unstack()
+        df_sliced = df_from_mi_series.loc[names, steps]
+        mi_series_sliced = df_sliced.stack()
+        utils.end_timer(st, "slicing")
 
         st = utils.start_timer()
 
