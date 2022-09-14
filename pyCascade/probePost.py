@@ -121,6 +121,7 @@ class Probes(utils.Helper):
         st = utils.start_timer()
         df_from_mi_series = mi_series.unstack()
         df_sliced = df_from_mi_series.loc[names, steps]
+        df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
         mi_series_sliced = df_sliced.stack()
         utils.end_timer(st, "slicing")
 
