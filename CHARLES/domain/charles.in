@@ -23,8 +23,8 @@ SGS_MODEL VREMAN
 #Boundary Conditions
 buildings = WM_ALG_WALL 
 interior  = WM_ALG_WALL 
-ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
-top       = WM_ALG_WALL U_WALL 0.458 0 0
+ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 20
+top       = WALL tau_wall(0) .03 tau_wall(2) 0 U_WALL 0.458 0 0
 
 #################################
 ######### SOLVER SETUP ##########
