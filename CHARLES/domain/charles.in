@@ -61,6 +61,16 @@ WRITE_IMAGE NAME=./Images/u_y20  INTERVAL=1000 TARGET 213.25099182128906 240 244
 # POST
 # INTERACTIVE
 
+#################################
+###########  IMAGES  ############
+#################################
+
 POINTCLOUD_PROBE NAME=probes/probesOut/x_1over6  INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/x_1over6.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
 POINTCLOUD_PROBE NAME=probes/probesOut/x_3over6  INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/x_3over6.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
 POINTCLOUD_PROBE NAME=probes/probesOut/x_5over6  INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/x_5over6.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
+
+#################################
+###########  BC QUERY  ##########
+#################################
+
+QUERY_BC top INTERVAL 100 WRITE
