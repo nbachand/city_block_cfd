@@ -9,20 +9,6 @@ class LES_Physics(utils.Helper):
         self.LES_params = {}
         self.LES_params.update(LES_params)
 
-    def calc_Uref_q(self, uStar = None, z0 = None):
-        uStar = utils.get_input(uStar, self.LES_params['uStar'])
-        z0 = utils.get_input(z0, self.LES_params['z0'])
-
-        # deltas = self.LES_parmas['deltas']
-
-        Uref = uStar/0.41*np.log(1.975/z0)
-        q = 0.5*1.225*Uref**2
-
-        self.LES_params.update({
-            'Uref': Uref,
-            'q': q
-        })
-
     def plot_log_wind(
         self, 
         uStar = "self.LES_params['uStar']", 
@@ -79,5 +65,11 @@ class LES_Physics(utils.Helper):
         
         for key in ['yPlus', 'Rex', 'Cf', 'tauW', 'uFric', 'spacingW']:
             self.LES_params['flatplate'][key] = eval(key) #save params
+
+        # def calc_city_momentum_source(
+        #     self,
+        #     Re_tau,
+
+        # )
 
 
