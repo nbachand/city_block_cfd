@@ -24,7 +24,8 @@ SGS_MODEL VREMAN
 buildings = WM_ALG_WALL 
 interior  = WM_ALG_WALL 
 ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 20
-top       = WALL U_WALL .458 0 0 tauwall(0) .03 tauwall(3) 0
+# top       = WALL U_WALL .458 0 0 tauwall(0) .03 tauwall(3) 0
+top       = SLIP
 
 #################################
 ######### SOLVER SETUP ##########
@@ -73,4 +74,4 @@ POINTCLOUD_PROBE NAME=probes/probesOut/x_3over6  INTERVAL=1 PRECISION=FLOAT FORM
 ###########  BC QUERY  ##########
 #################################
 
-QUERY_BC top INTERVAL 100 WRITE
+# QUERY_BC top INTERVAL 100 WRITE
