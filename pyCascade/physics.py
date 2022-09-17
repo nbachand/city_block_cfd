@@ -66,10 +66,23 @@ class LES_Physics(utils.Helper):
         for key in ['yPlus', 'Rex', 'Cf', 'tauW', 'uFric', 'spacingW']:
             self.LES_params['flatplate'][key] = eval(key) #save params
 
-        # def calc_city_momentum_source(
-        #     self,
-        #     Re_tau,
+    def calc_norm_pressure_source(
+        self,
+        factor,
+        uStar = "self.LES_params['uStar']",
+        Lz = "self.LES_params['z_values'][-1] - self.LES_params['z_values'][0]",
 
-        # )
+        ):
+
+        uStar, Lz = [self.get_input(input) for input in [uStar, Lz]]
+
+        print(f"uStar is {uStar} and Lz is {Lz}")
+
+        norm_pressure_source = factor*(uStar**2)/Lz
+
+        print(f"the normalized pressure source is {norm_pressure_source}")
+
+        key = 'norm_pressure_source'
+        self.LES_params[key] = eval(key)
 
 
