@@ -27,6 +27,15 @@ ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 20
 # top       = WALL U_WALL .458 0 0 tauwall(0) .03 tauwall(3) 0
 top       = SLIP
 
+# body force
+ADD_BODY_FORCE NAME=forces/pressure_source INTERVAL=100 \
+  MOMENT 240.0 240.0 240.0 \
+  GEOM BOX 480.0 480.0 480.0 \
+  TYPE=PMM \
+    INERTIAL_COEFF 100.0 0.0 0.0 \
+    VISCOUS_COEFF 0.0 0.0 0.0
+    
+
 #################################
 ######### SOLVER SETUP ##########
 #################################
