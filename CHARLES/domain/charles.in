@@ -8,7 +8,7 @@ RHO = 1.225
 MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
-gravity 100 0 0
+gravity 100.0 0.0 0.0
 
 # Time + output setup
 NSTEPS = 2000000
