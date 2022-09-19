@@ -7,6 +7,7 @@
 !*.scad
 !*.ipynb
 !*.cpp
+!*.hpp
 !.gitignore
 !README.md
 !*.sh
