@@ -1,7 +1,7 @@
 # Function that creates a video out of png files
 # ARGUMENTS:
 # --directory   Directory in which the pngs can be found
-# --namefmt     Format of naming, e.g. if the images look like `pavg_Xslice.00004000.png`, enter `pavg_Xslice`.
+# --namefmt     Format of naming, e.g. if the images look like `pavg_Xslice.00004000.png`, enter `pavg_Xslice.`
 # --subsample   Frequency with which to subsample the frames
 # --dt          Timestep of simulation
 # --output      Name of video file to create
