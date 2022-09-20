@@ -188,6 +188,9 @@ public:
 
   void initialHook() {
     if (step == 0) {
+      if ( mpi_rank == 0 ) 
+        cout << ">>>>> specifying initial velocity field" << endl;
+
       FOR_ICV {
         //rho[icv] = rho_ref;
 
@@ -236,17 +239,17 @@ public:
   void momentumSourceHook(double * A,double (*rhs)[3]) {
 
     if ( mpi_rank == 0 ) 
-      cout << ">>>>> adding momentum source" << endl;
+    cout << ">>>>> adding momentum source" << endl;
 
     const double mu = 1.7894e-5;
     const double Re_tau = 43300; //433;
     const double Lz =  480;
     const double hm = 20;
-    const double factor = 100;
+    const double factor = 1;
     
     FOR_ICV {
       double fric_vel = Re_tau*mu/(hm*rho[icv]);
-      rhs[icv][0] += factor*vol_cv[icv]*rho[icv]*pow(fric_vel,2)/Lz;
+      rhs[icv][0] += factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
     }
   }
   void massSourceHook(double * rhs) {}
