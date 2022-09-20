@@ -1,5 +1,5 @@
 RESTART = ../../../STITCH/domain/200k-mesh.mles
-INIT time = 0.0 step = 0 u = 0 0 0 p=0
+INIT time = 0.0 step = 0
 # RESET_ALL
  
 #Equation of state
