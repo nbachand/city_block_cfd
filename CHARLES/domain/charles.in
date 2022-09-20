@@ -36,7 +36,7 @@ top       = SLIP
 MG_AGGLOMERATION_FACTOR 64
 MG_SPLIT_ORPHANED_COLORS true
 # Momentum equation
-MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+#MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
 MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
 MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
 MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
