@@ -10,7 +10,7 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 2000000
-TIMESTEP DT = 10
+TIMESTEP DT = 5
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -23,7 +23,7 @@ SGS_MODEL VREMAN
 #Boundary Conditions
 buildings = WM_ALG_WALL 
 interior  = WM_ALG_WALL 
-ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 20
+ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 1.22
 # top       = WALL U_WALL .458 0 0 tauwall(0) .03 tauwall(3) 0
 top       = SLIP
    

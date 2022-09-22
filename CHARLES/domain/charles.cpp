@@ -205,7 +205,7 @@ public:
         const double fric_vel = Re_tau*mu/(hm*rho);
 
         const double z_0 = 0.061*hm; //used for convention, but really y_0
-        const double disp = 1.11*hm;
+        const double disp = 0.0; //1.11*hm;
         const double shear_vel = fric_vel*sqrt(1-disp/Lz);
         const double vK_const = 0.4;
 
@@ -214,10 +214,10 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double ux = (fric_vel/vK_const)*log(y_scaled);
 
-        u[icv][0] = ux+.01;
+        u[icv][0] = ux+.00001;
         // u[icv][0] = 0.01;
-        u[icv][1] = 0.01;
-        u[icv][2] = 0.01;
+        u[icv][1] = 0.00001;
+        u[icv][2] = 0.00001;
 
       }
     }
