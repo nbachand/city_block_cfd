@@ -24,7 +24,9 @@ def eval_tuple(value):
         value = function(arg)
     return value
 
-def start_timer():
+def start_timer(description = None):
+    if description != None:
+        print(description)
     return time.time()
 
 def end_timer(st, description):

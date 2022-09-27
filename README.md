@@ -12,8 +12,13 @@
 
 ## To build custom version
 ### \[First time only\] Create a virtual environment:
-> conda create --name \<env\> --file requirements.txt
-> 
+conda:
+> conda env create -n \<env\> -f ./environment.yaml
+
+pip (untested):
+> python3 -m venv env
+> source env/bin/activate
+> pip install -r requirements.txt
 ### Activate environemnt
 > conda activate \<env\>
 
