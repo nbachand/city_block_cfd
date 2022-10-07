@@ -23,3 +23,14 @@ def y_col(x, z, y_range, n_probes):
     tile[:,1] = np.linspace(y_min, y_max, n_probes)
     return tile
 
+def probe_fill(x_range, y_range, z_range):
+    n_x = np.size(x_range)
+    n_y = np.size(y_range)
+    n_z = np.size(z_range)
+    n_probes = n_x*n_y*n_z
+    n_probes = np.size(x_range)*np.size(z_range)*np.size(y_range)
+    tile = np.zeros((n_probes, 3))
+    tile[:,0] = np.tile(x_range, n_y*n_z)
+    tile[:,1] = np.tile(np.repeat(y_range, n_x), n_z)
+    tile[:,2] = np.repeat(z_range, n_x*n_z)
+    return tile
