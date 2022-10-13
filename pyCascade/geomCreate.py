@@ -1,44 +1,70 @@
 from solid import *
+import numpy as np
+from pyCascade import probeSetup
 
-class probed_geom:
-    def __init__(self, geom, probes: "list"):
+class ProbedGeom:
+    def __init__(self, geom, probes = []):
         self.geom = geom
         self.probes = probes
 
-    def __add__(self, x: "probed_geom"):
+    def __add__(self, x: "ProbedGeom"):
         """
-        This makes u = a + b also combine the associated probes
+        This makes u = a + b also aggegate the associated probes
         """
-        return probed_geom(self.geom+x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom+x.geom, self.probes+x.probes)
 
-    def __radd__(self, x: "probed_geom"):
-        """
-        This makes u = a + b also combine the associated probes
-        """
-        return probed_geom(self.geom+x.geom, self.probes+x.probes)
+    # def __radd__(self, x: "ProbedGeom"):
+    #     """
+    #     This makes u = a + b also aggegate the associated probes
+    #     """
+    #     return ProbedGeom(self.geom+x.geom, self.probes+x.probes)
 
-    def __sub__(self, x: "probed_geom"):
+    def __sub__(self, x: "ProbedGeom"):
         """
-        This makes u = a - b also combine the associated probes
+        This makes u = a - b also aggegate the associated probes
         """
-        return probed_geom(self.geom-x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom-x.geom, self.probes+x.probes)
 
-    def __mul__(self, x: "probed_geom"):
+    def __mul__(self, x: "ProbedGeom"):
         """
-        This makes u = a * b also combine the associated probes
+        This makes u = a * b also aggegate the associated probes
         """
-        return probed_geom(self.geom*x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom*x.geom, self.probes+x.probes)
 
     def translate(self, v):
+        """
+        translates geometry and probes
+        """
         self.geom = translate(v)(self.geom)
-        self.probes = [probe_instance+v for probe_instance in self.probes]
+        self.probes = [probe_instance["tile"]+v for probe_instance in self.probes]
 
     def scale(self, v):
+        """
+        scales geometry and probes
+        """
         self.geom = scale(v)(self.geom)
-        self.probes = [probe_instance*v for probe_instance in self.probes]
+        self.probes = [probe_instance["tile"]*v for probe_instance in self.probes]
 
+def sumProbedGeom(items: "list"):
+    for i, item in enumerate(items):
+        if i == 0:
+            summed = item
+        else:
+            summed += item
+    return summed
 
-# def makeProbedOpening()
+def makeProbedCube(size, nprobes, name):
+    geom = cube(size)
+    probe_span = []
+    for i,n in enumerate(nprobes):
+        probe_span.append(np.linspace(0, size[i], n))
+    tile = probeSetup.probe_fill(*probe_span)
+    probes = [{
+        "tile": tile,
+        "name": name
+    }]
+    return ProbedGeom(geom, probes)
+
 
 def makeRooms(x, y, z, wthick = .01, nx=1, ny=1, nz=1):
     offset = wthick/2
@@ -66,7 +92,7 @@ def makeRooms(x, y, z, wthick = .01, nx=1, ny=1, nz=1):
         'nz': nz
     }
 
-    return rooms, rooms_params
+    return ProbedGeom(rooms), rooms_params
 
 def makeRoof(x_range,y_range,z_range):
     """
@@ -75,14 +101,16 @@ def makeRoof(x_range,y_range,z_range):
     x1, x2 = x_range[:]
     y1, y2 = y_range[:]
     z1, z2 = z_range[:]
-    return polyhedron(
+    geom =  polyhedron(
         points=([x1,y1,z1],[x2,y1,z1],[x2,y1,z2],[x1,y1,z2],  # the four points at base
                 [(x2-x1)/2,y2,(z1+z2)/2]),                                        # the apex point 
         faces=([0,1,4],[1,2,4],[2,3,4],[3,0,4],                               # each triangle side
                     [1,0,3],[2,1,3])                                          # two triangles for square base
         )
 
-def makeDoors(rooms_params, w, h):#, nw_probes, nh_probes):
+    return ProbedGeom(geom)
+
+def makeDoors(rooms_params, w, h, nprobes_w, nprobes_h):
     x = rooms_params['x']
     y = rooms_params['y']
     z = rooms_params['z']
@@ -90,8 +118,6 @@ def makeDoors(rooms_params, w, h):#, nw_probes, nh_probes):
     nx = rooms_params['nx']
     ny = rooms_params['ny']
     nz = rooms_params['nz']
-
-    makeDoor = lambda disp, size : translate(disp)(cube(size, True))
 
     doors_list = []
     for i in range(nx):
@@ -99,16 +125,23 @@ def makeDoors(rooms_params, w, h):#, nw_probes, nh_probes):
             if i > 0:
                 disp = (x*i, y/2, z*(k+.5))
                 size = (wthick*2, h, w)
-                # probe_space = (1, nh_probes, nw_probes)
-                doors_list.append(makeDoor(disp, size))
+                nprobes = (1, nprobes_h, nprobes_w)
+                door = makeProbedCube(size, nprobes, f"xdoor_{i},{k}")
+                door.translate(disp)
+                doors_list.append(door)
             if k > 0:
                 disp = (x*(i+.5), y/2, z*k)
                 size = (w, h, wthick*2)
-                doors_list.append(makeDoor(disp, size))
+                nprobes = (nprobes_w, nprobes_h, 1)
+                door = makeProbedCube(size, nprobes, f"zdoor_{i},{k}")
+                door.translate(disp)
+                doors_list.append(door)
 
-    return sum(doors_list)
+    
 
-def makeWindows(rooms_params, w, h):
+    return sumProbedGeom(doors_list)
+
+def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
     x = rooms_params['x']
     y = rooms_params['y']
     z = rooms_params['z']
@@ -117,21 +150,25 @@ def makeWindows(rooms_params, w, h):
     ny = rooms_params['ny']
     nz = rooms_params['nz']
 
-    makeWindow = lambda disp, size : translate(disp)(cube(size, True))
-
     windows_list = []
     for i in range(nx):
         for k in range(nz):
             if i == 0 or i == (nx-1):
                 disp = (x*(i+(i!=0)), y/2, z*(k+.5))
                 size = (wthick*2, h, w)
-                windows_list.append(makeWindow(disp, size))
+                nprobes = (1, nprobes_h, nprobes_w)
+                window = makeProbedCube(size, nprobes, f"xwindow_{i},{k}")
+                window.translate(disp)
+                windows_list.append(window)
             if k == 0 or k == (nz-1):
                 disp = (x*(i+.5), y/2, z*(k+(k!=0)))
                 size = (w, h, wthick*2)
-                windows_list.append(makeWindow(disp, size))
+                nprobes = (nprobes_w, nprobes_h, 1)
+                window = makeProbedCube(size, nprobes, f"zwindow_{i},{k}")
+                window.translate(disp)
+                windows_list.append(window)
 
-    return sum(windows_list)
+    return sumProbedGeom(windows_list)
 
 
 

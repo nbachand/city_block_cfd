@@ -32,5 +32,5 @@ def probe_fill(x_range, y_range, z_range):
     tile = np.zeros((n_probes, 3))
     tile[:,0] = np.tile(x_range, n_y*n_z)
     tile[:,1] = np.tile(np.repeat(y_range, n_x), n_z)
-    tile[:,2] = np.repeat(z_range, n_x*n_z)
+    tile[:,2] = np.repeat(z_range, n_x*n_y)
     return tile
