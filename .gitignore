@@ -13,6 +13,7 @@
 !*.sh
 !*.slurm
 !Makefile
+!*_template-run-folder_*/
 
 # ...even if they are in subdirectories
 !*/

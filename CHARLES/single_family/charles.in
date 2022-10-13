@@ -12,7 +12,7 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 2000000
-TIMESTEP DT = 10
+TIMESTEP DT = 2
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -36,7 +36,7 @@ top       = SLIP
 MG_AGGLOMERATION_FACTOR 64
 MG_SPLIT_ORPHANED_COLORS true
 # Momentum equation
-MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+# MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
 MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
 MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
 MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
