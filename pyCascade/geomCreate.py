@@ -57,10 +57,12 @@ def makeProbedCube(size, nprobes, name, centered = False):
     geom = cube(size, centered)
     probe_span = []
     for i,n in enumerate(nprobes):
+        cheby_points = np.arange(n)
+        cheby_points = np.cos((2*cheby_points-1)*np.pi/(2*n))
+        cheby_points *= size[i]/2
         if centered == False:
-            probe_span.append(np.linspace(0, size[i], n))
-        elif centered == True:
-            probe_span.append(np.linspace(-size[i]/2, size[i]/2, n))
+            cheby_points += size[i]/2
+        probe_span.append(cheby_points)
     tile = probeSetup.probe_fill(*probe_span)
     probes = [{
         "tile": tile,
@@ -172,6 +174,20 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
                 windows_list.append(window)
 
     return sumProbedGeom(windows_list)
+
+# def makeHouseRow(num_houses = 12, i_interior = -1):
+#     for(i=[0:num_houses-1]):
+#         if i == i_interior:
+#             house = 
+#         interior = i==i_interior ? true : false
+#         translate([5+i*40,0,0])house(interior = interior)
+
+# def makeNeigborhood(grid_size = [12,8], cord_interior = [0,0]):
+#     for(k=[0:grid_size[1]-1]):
+#         i_interior = k==cord_interior[1] ? cord_interior[0] : -1
+#         one_odd = k%2
+#         x_offset = one_odd*-20
+#         translate([x_offset,0,20+k*60])house_row(grid_size[0]+one_odd, i_interior=i_interior)
 
 
 
