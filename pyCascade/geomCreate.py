@@ -11,39 +11,39 @@ class ProbedGeom:
         """
         This makes u = a + b also aggegate the associated probes
         """
-        return ProbedGeom(self.geom+x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom+x.geom, self.probes + x.probes)
 
     # def __radd__(self, x: "ProbedGeom"):
     #     """
     #     This makes u = a + b also aggegate the associated probes
     #     """
-    #     return ProbedGeom(self.geom+x.geom, self.probes+x.probes)
+    #     return ProbedGeom(self.geom+x.geom, self.probes + x.probes)
 
     def __sub__(self, x: "ProbedGeom"):
         """
         This makes u = a - b also aggegate the associated probes
         """
-        return ProbedGeom(self.geom-x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom-x.geom, self.probes + x.probes)
 
     def __mul__(self, x: "ProbedGeom"):
         """
         This makes u = a * b also aggegate the associated probes
         """
-        return ProbedGeom(self.geom*x.geom, self.probes+x.probes)
+        return ProbedGeom(self.geom*x.geom, self.probes + x.probes)
 
     def translate(self, v):
         """
         translates geometry and probes
         """
         self.geom = translate(v)(self.geom)
-        self.probes = [probe_instance["tile"]+v for probe_instance in self.probes]
+        for probe_instance in self.probes: probe_instance["tile"]+=v 
 
     def scale(self, v):
         """
         scales geometry and probes
         """
         self.geom = scale(v)(self.geom)
-        self.probes = [probe_instance["tile"]*v for probe_instance in self.probes]
+        for probe_instance in self.probes: probe_instance["tile"]*=v
 
 def sumProbedGeom(items: "list"):
     for i, item in enumerate(items):
@@ -53,11 +53,14 @@ def sumProbedGeom(items: "list"):
             summed += item
     return summed
 
-def makeProbedCube(size, nprobes, name):
-    geom = cube(size)
+def makeProbedCube(size, nprobes, name, centered = False):
+    geom = cube(size, centered)
     probe_span = []
     for i,n in enumerate(nprobes):
-        probe_span.append(np.linspace(0, size[i], n))
+        if centered == False:
+            probe_span.append(np.linspace(0, size[i], n))
+        elif centered == True:
+            probe_span.append(np.linspace(-size[i]/2, size[i]/2, n))
     tile = probeSetup.probe_fill(*probe_span)
     probes = [{
         "tile": tile,
@@ -126,14 +129,14 @@ def makeDoors(rooms_params, w, h, nprobes_w, nprobes_h):
                 disp = (x*i, y/2, z*(k+.5))
                 size = (wthick*2, h, w)
                 nprobes = (1, nprobes_h, nprobes_w)
-                door = makeProbedCube(size, nprobes, f"xdoor_{i},{k}")
+                door = makeProbedCube(size, nprobes, f"xdoor_{i},{k}", True)
                 door.translate(disp)
                 doors_list.append(door)
             if k > 0:
                 disp = (x*(i+.5), y/2, z*k)
                 size = (w, h, wthick*2)
                 nprobes = (nprobes_w, nprobes_h, 1)
-                door = makeProbedCube(size, nprobes, f"zdoor_{i},{k}")
+                door = makeProbedCube(size, nprobes, f"zdoor_{i},{k}", True)
                 door.translate(disp)
                 doors_list.append(door)
 
@@ -157,14 +160,14 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
                 disp = (x*(i+(i!=0)), y/2, z*(k+.5))
                 size = (wthick*2, h, w)
                 nprobes = (1, nprobes_h, nprobes_w)
-                window = makeProbedCube(size, nprobes, f"xwindow_{i},{k}")
+                window = makeProbedCube(size, nprobes, f"xwindow_{i},{k}", True)
                 window.translate(disp)
                 windows_list.append(window)
             if k == 0 or k == (nz-1):
                 disp = (x*(i+.5), y/2, z*(k+(k!=0)))
                 size = (w, h, wthick*2)
                 nprobes = (nprobes_w, nprobes_h, 1)
-                window = makeProbedCube(size, nprobes, f"zwindow_{i},{k}")
+                window = makeProbedCube(size, nprobes, f"zwindow_{i},{k}", True)
                 window.translate(disp)
                 windows_list.append(window)
 
