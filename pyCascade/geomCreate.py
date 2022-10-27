@@ -45,6 +45,13 @@ class ProbedGeom:
         self.geom = scale(v)(self.geom)
         for probe_instance in self.probes: probe_instance["tile"]*=v
 
+    def write_probes(self, directory):
+        for probe in self.probes:
+            tile = probe["tile"]
+            fileName = f"{directory}{probe['name']}.txt"
+            probeSetup.writeProbes(tile, fileName)
+
+
 def sumProbedGeom(items: "list"):
     for i, item in enumerate(items):
         if i == 0:
@@ -131,14 +138,14 @@ def makeDoors(rooms_params, w, h, nprobes_w, nprobes_h):
                 disp = (x*i, y/2, z*(k+.5))
                 size = (wthick*2, h, w)
                 nprobes = (1, nprobes_h, nprobes_w)
-                door = makeProbedCube(size, nprobes, f"xdoor_{i},{k}", True)
+                door = makeProbedCube(size, nprobes, f"xdoor_{i}-{k}", True)
                 door.translate(disp)
                 doors_list.append(door)
             if k > 0:
                 disp = (x*(i+.5), y/2, z*k)
                 size = (w, h, wthick*2)
                 nprobes = (nprobes_w, nprobes_h, 1)
-                door = makeProbedCube(size, nprobes, f"zdoor_{i},{k}", True)
+                door = makeProbedCube(size, nprobes, f"zdoor_{i}-{k}", True)
                 door.translate(disp)
                 doors_list.append(door)
 
@@ -174,20 +181,3 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
                 windows_list.append(window)
 
     return sumProbedGeom(windows_list)
-
-# def makeHouseRow(num_houses = 12, i_interior = -1):
-#     for(i=[0:num_houses-1]):
-#         if i == i_interior:
-#             house = 
-#         interior = i==i_interior ? true : false
-#         translate([5+i*40,0,0])house(interior = interior)
-
-# def makeNeigborhood(grid_size = [12,8], cord_interior = [0,0]):
-#     for(k=[0:grid_size[1]-1]):
-#         i_interior = k==cord_interior[1] ? cord_interior[0] : -1
-#         one_odd = k%2
-#         x_offset = one_odd*-20
-#         translate([x_offset,0,20+k*60])house_row(grid_size[0]+one_odd, i_interior=i_interior)
-
-
-
