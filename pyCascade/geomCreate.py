@@ -169,14 +169,14 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
                 disp = (x*(i+(i!=0)), y/2, z*(k+.5))
                 size = (wthick*2, h, w)
                 nprobes = (1, nprobes_h, nprobes_w)
-                window = makeProbedCube(size, nprobes, f"xwindow_{i},{k}", True)
+                window = makeProbedCube(size, nprobes, f"xwindow_{i}-{k}", True)
                 window.translate(disp)
                 windows_list.append(window)
             if k == 0 or k == (nz-1):
                 disp = (x*(i+.5), y/2, z*(k+(k!=0)))
                 size = (w, h, wthick*2)
                 nprobes = (nprobes_w, nprobes_h, 1)
-                window = makeProbedCube(size, nprobes, f"zwindow_{i},{k}", True)
+                window = makeProbedCube(size, nprobes, f"zwindow_{i}-{k}", True)
                 window.translate(disp)
                 windows_list.append(window)
 
