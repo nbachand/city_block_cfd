@@ -82,15 +82,22 @@ class Probes(utils.Helper):
         # remove duplicates and sort
         self.probe_steps = [*set(probe_steps)]
 
-        # assume the quants and stack is the same for all probes
-        representative_dict = my_dict[(
-            self.probe_names[0], self.probe_steps[0])]
-        representative_dict_keys = list(
-            zip(*representative_dict.keys()))  # unzip list of tuples
+        # get the all quants and (max) stack across all probes
+        quants = ()
+        stack = ()
+        for name in self.probe_names:
+            representative_dict = my_dict[(
+                name, self.probe_steps[0])]
+            representative_dict_keys = list(
+                zip(*representative_dict.keys()))  # unzip list of tuples
+            # sort and remove duplicates
+            quants += representative_dict_keys[1]
+            # sort and remove duplicates
+            stack += representative_dict_keys[0]
         # sort and remove duplicates
-        self.probe_quants = [*set(representative_dict_keys[1])]
+        self.probe_quants = [*set(quants)]
         # sort and remove duplicates
-        self.probe_stack = [*set(representative_dict_keys[0])]
+        self.probe_stack = [*set(stack)]
         self.data = my_dict
 
     def get_locations(self, dir_locations):
@@ -274,6 +281,7 @@ class Probes(utils.Helper):
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
+                plot_df = plot_df.dropna()
                 # if isinstance(plot_df, pd.DataFrame):
                 #     plot_df = plot_df.droplevel('name', axis='columns')
 
@@ -289,5 +297,9 @@ class Probes(utils.Helper):
                 if 'ylabel' in plot_params:
                     fig.supylabel(plot_params['ylabel'])
                 ax.legend()
+
+    # def time_plots(
+    #     pass
+    # )
 
 
