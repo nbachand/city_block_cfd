@@ -7,11 +7,14 @@
 !*.scad
 !*.ipynb
 !*.cpp
+!*.hpp
 !.gitignore
 !README.md
 !*.sh
 !*.slurm
-!*.txt
+!Makefile
+!*_template-run-folder_*/
+!runs.txt
 
 # ...even if they are in subdirectories
 !*/

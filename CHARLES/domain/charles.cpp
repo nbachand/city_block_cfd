@@ -205,7 +205,7 @@ public:
         const double fric_vel = Re_tau*mu/(hm*rho);
 
         const double z_0 = 0.061*hm; //used for convention, but really y_0
-        const double disp = 1.11*hm;
+        const double disp = 0.0; //1.11*hm;
         const double shear_vel = fric_vel*sqrt(1-disp/Lz);
         const double vK_const = 0.4;
 
@@ -232,9 +232,9 @@ public:
   }
 
 
-  // the Helmholtz solver has implicit time advancement in a fractional
-  // step setting; as a result, the hooks for add source hooks are slightly
-  // different.
+// the Helmholtz solver has implicit time advancement in a fractional
+// step setting; as a result, the hooks for add source hooks are slightly
+// different.
 
   void momentumSourceHook(double * A,double (*rhs)[3]) {
 
@@ -246,7 +246,7 @@ public:
     const double Lz =  480;
     const double hm = 20;
     const double factor = 1;
-
+    
     FOR_ICV {
       double fric_vel = Re_tau*mu/(hm*rho[icv]);
       rhs[icv][0] += factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
