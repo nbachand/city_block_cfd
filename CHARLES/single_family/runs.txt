@@ -1,0 +1,7 @@
+R1 - I think this had no mementum source - wecivil (and sherlock)
+R2 - good standard run but no internal probes, large course mesh - wecivil
+R3 - Test of geometry setup, probes may be in the wrong place for Nat Vent. Course mesh, ~700k - wecivil
+R4 - Internal probes. First run with geometry built directly from python. Finer mesh, 10 elements per window, 4M total - wecivil
+R5 - Testing R4 with interp restart from R2 - sherlock
+
+

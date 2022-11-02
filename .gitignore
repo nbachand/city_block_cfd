@@ -14,6 +14,7 @@
 !*.slurm
 !Makefile
 !*_template-run-folder_*/
+!runs.txt
 
 # ...even if they are in subdirectories
 !*/
