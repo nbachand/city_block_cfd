@@ -203,6 +203,7 @@ class Probes(utils.Helper):
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
                 plot_df = plot_df.droplevel('name', axis='columns')
+                plot_df = plot_df.dropna()
                 sub_ax = utils.ax_index(ax, i, j)
                 
                 xPlot = plot_df.columns
@@ -215,10 +216,10 @@ class Probes(utils.Helper):
                     yPlot = yAxis[yPlot]
 
                 if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
-                    name_df = name_df.iloc[:,::plot_params['plot_every']]
+                    name_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
 
-                im = sub_ax.contourf(xPlot, yPlot, name_df, levels=plot_levels)
+                im = sub_ax.contourf(xPlot, yPlot, plot_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
 
