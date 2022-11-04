@@ -212,12 +212,12 @@ public:
         // approximate log law mean profile
         double y_scaled = (absy-disp)/z_0;
         y_scaled = max(1.0, y_scaled);
-        const double ux = (fric_vel/vK_const)*log(y_scaled);
+        const double uz = (fric_vel/vK_const)*log(y_scaled);
 
-        u[icv][0] = ux+.00001;
+        u[icv][2] = uz+.00001;
         // u[icv][0] = 0.01;
         u[icv][1] = 0.00001;
-        u[icv][2] = 0.00001;
+        u[icv][0] = 0.00001;
 
       }
     }
@@ -249,7 +249,7 @@ public:
 
     FOR_ICV {
       double fric_vel = Re_tau*mu/(hm*rho[icv]);
-      rhs[icv][0] += factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
+      rhs[icv][2] += factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
     }
   }
   void massSourceHook(double * rhs) {}
