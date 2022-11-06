@@ -1,3 +1,7 @@
+#!/bin/bash
+
+source ~/.bash_profile
+
 module purge
 
 module load system
