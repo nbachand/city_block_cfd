@@ -1,9 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=charles_single_family
 #SBATCH -N 1
-#SBATCH -n 1
-#SBATCH --time=0:10:00
-#SBATCH --mem 64G
+#SBATCH -n 32
+#SBATCH --time=24:00:00
 
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
