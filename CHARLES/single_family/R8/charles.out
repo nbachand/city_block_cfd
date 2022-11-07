@@ -1,0 +1,1229 @@
+../45_deg/charles.exe running on 11 cores, 1 nodes (11 cores per node)
+version: heads/master-0-g7ba1aaa3d built: Fri Mar 11 12:20:28 PST 2022
+================= init params: output of raw sources ==================
+# ------------------ param(s) from input file: ../45_deg/charles_700k.in...
+RESTART = ../../../STITCH/single_family/700k-mesh.mles
+# INTERP_FROM_RESTART ./result.00221000.sles
+INIT time = 0.0 step = 0 u = 0.1 0.1 0.1 p=0
+# RESET_ALL
+ 
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+# Time + output setup
+NSTEPS = 4000000
+TIMESTEP DT = 2
+CHECK_INTERVAL 100
+WRITE_RESULT NAME=data/result INTERVAL=1000
+
+RESET_STATS TIME = 2000
+STATS u p rho
+
+# subgrid model
+SGS_MODEL VREMAN
+
+#Boundary Conditions
+buildings = WM_ALG_WALL 
+interior  = WM_ALG_WALL 
+ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top       = SLIP
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# advanced multigrid solver options
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+# Momentum equation
+# MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+MOMENTUM_MAXITER 100 
+MOMENTUM_ZERO 1e-6
+# Pressure equation
+PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+PRESSURE_MG_NSMOOTH 20,20 # first is fine grid  #if smoother=1, half this 5,5
+PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+PRESSURE_MAXITER 100 
+PRESSURE_ZERO 1e-6
+
+#################################
+###########  PROBING  ###########
+#################################
+
+WRITE_IMAGE NAME=./Images/u_y2   INTERVAL=1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 2 240 0 1 0  VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y5  INTERVAL=1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 5 240 0 1 0  VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y8  INTERVAL=1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 8 240 0 1 0  VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y20  INTERVAL=1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 20 240 0 1 0  VAR=mag(u)
+
+#WRITE_IMAGE NAME=./Images/avgWind  INTERVAL=100000 TARGET 0.419 0.96 -0.0181 CAMERA   0.500  0.960  -9.251   UP 0 1 0 SIZE 1856 888 WIDTH 5.22  HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_avg
+#WRITE_IMAGE NAME=./Images/avgLee   INTERVAL=100000 TARGET 0.616 1.06 -0.154  CAMERA   0.672  0.945  11.24    UP 0 1 0 SIZE 1856 888 WIDTH 6.035 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_avg
+#WRITE_IMAGE NAME=./Images/avgFront INTERVAL=100000 TARGET 0.489 1.06 -0.0271 CAMERA -10.91   1.265   0.0187  UP 0 1 0 SIZE 1856 888 WIDTH 6.035 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_avg
+#WRITE_IMAGE NAME=./Images/avgRear  INTERVAL=100000 TARGET 0.496 1.06 -0.301  CAMERA  11.89   1.293  -0.126   UP 0 1 0 SIZE 1856 888 WIDTH 6.210 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_avg
+
+#WRITE_IMAGE NAME=./Images/rmsTop   INTERVAL=100000 TARGET 0.340 1.21 -0.325  CAMERA   0.248 12.607  -0.3087  UP 0 0 1 SIZE 1856 888 WIDTH 6.40  HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_rms
+#WRITE_IMAGE NAME=./Images/rmsWind  INTERVAL=100000 TARGET 0.419 0.96 -0.0181 CAMERA   0.500  0.960  -9.251   UP 0 1 0 SIZE 1856 888 WIDTH 5.22  HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_rms
+#WRITE_IMAGE NAME=./Images/rmsLee   INTERVAL=100000 TARGET 0.616 1.06 -0.154  CAMERA   0.672  0.945  11.24    UP 0 1 0 SIZE 1856 888 WIDTH 6.035 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_rms
+#WRITE_IMAGE NAME=./Images/rmsFront INTERVAL=100000 TARGET 0.489 1.06 -0.0271 CAMERA -10.91   1.265   0.0187  UP 0 1 0 SIZE 1856 888 WIDTH 6.035 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_rms
+#WRITE_IMAGE NAME=./Images/rmsRear  INTERVAL=100000 TARGET 0.496 1.06 -0.301  CAMERA  11.89   1.293  -0.126   UP 0 1 0 SIZE 1856 888 WIDTH 6.210 HIDE_ZONES 0,2,3,4 VAR_ON_SURFACE p_rms
+
+# POST
+# INTERACTIVE
+
+POINTCLOUD_PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=probes/probesOut/col_9-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=probes/probesOut/col_9-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2)
+=================== init params: end of raw sources ===================
+================ init params: expand loops and defines ================
+RESTART ../../../STITCH/single_family/700k-mesh.mles
+INIT time 0.0 step 0 u 0.1 0.1 0.1 p 0
+EOS HELMHOLTZ
+RHO 1.225
+MU 1.7894e-5
+HELMHOLTZ_SOS 340.65
+NSTEPS 4000000
+TIMESTEP DT 2
+CHECK_INTERVAL 100
+WRITE_RESULT NAME data/result INTERVAL 1000
+RESET_STATS TIME 2000
+STATS u p rho
+SGS_MODEL VREMAN
+buildings WM_ALG_WALL
+interior WM_ALG_WALL
+ground WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top SLIP
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+MOMENTUM_MG_NSMOOTH 10,10
+# eval check: MOMENTUM_MG_NSMOOTH 10
+MOMENTUM_MG_SMOOTHER 2,2
+# eval check: MOMENTUM_MG_SMOOTHER 2
+MOMENTUM_RELAX 1.0
+MOMENTUM_MAXITER 100
+MOMENTUM_ZERO 1e-6
+PRESSURE_MG_NLEVEL 2
+PRESSURE_MG_NSMOOTH 20,20
+# eval check: PRESSURE_MG_NSMOOTH 20
+PRESSURE_MG_SMOOTHER 3,3
+# eval check: PRESSURE_MG_SMOOTHER 3
+PRESSURE_RELAX 1.0
+PRESSURE_MAXITER 100
+PRESSURE_ZERO 1e-6
+WRITE_IMAGE NAME ./Images/u_y2 INTERVAL 1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 2 240 0 1 0 VAR mag(u)
+WRITE_IMAGE NAME ./Images/u_y5 INTERVAL 1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 5 240 0 1 0 VAR mag(u)
+WRITE_IMAGE NAME ./Images/u_y8 INTERVAL 1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 8 240 0 1 0 VAR mag(u)
+WRITE_IMAGE NAME ./Images/u_y20 INTERVAL 1000 TARGET 213.25099182128906 240 244.1697540283203 CAMERA 213.25099182128906 655.6920166015625 244.1697540283203 UP -4.7072799702618795e-7 0 1 SIZE 2496 1248 WIDTH 1002.2283325195312 GEOM PLANE 240 20 240 0 1 0 VAR mag(u)
+POINTCLOUD_PROBE NAME probes/probesOut/col_3-2 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_3-2.txt VARS comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME probes/probesOut/col_3-6 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_3-6.txt VARS comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME probes/probesOut/col_9-2 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_9-2.txt VARS comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME probes/probesOut/col_9-6 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_9-6.txt VARS comp(u,0) comp(u,1) comp(u,2)
+======================== end of init params ===========================
+checking license...
+ > Found env CTI_LICENSE=/home/nbachand/Documents/Cascade/license.dat
+========================== license summary ============================
+ > License Verification Successful!
+ >   User:              Nicholas Bachand
+ >   Organization:      Stanford University
+ >   Serial Number:     3bbd901646243388
+ >   Expiration Date:   Tue Jan 10 00:00:00 2023
+ >   Fingerprint Check: Found Matching ID!
+====================== end of license summary =========================
+ > Using home directory for WebUI run log ... /home/nbachand/cti_rdb.db
+ > Appended to WebUI log successfully, rank_0_Host ... wecivil1.stanford.edu
+StaticSolver::registerData()
+ > CtiRegister: int "mpi_rank"
+ > CtiRegister: double[3] array "x_vv" with io
+ > setting this data as position X
+ > CtiRegister: double array "r_vv" with io
+ > CtiRegister: double[3] array "x_cv" with io
+ > CtiRegister: double array "vol_cv" with io
+ > CtiRegister: double array "inv_vol" with io
+ > CtiRegister: int array "group_fa" with io
+ > CtiRegister: double[3] array "n_fa" with io
+ > CtiRegister: double array "area_over_delta_fa" with io
+ > CtiRegister: double[3] array "x_no" without io X
+ > setting this data as position X
+ > CtiRegister: int array "group_ef" without io
+ > CtiRegister: double[3] array "n_ef" without io X
+ > CtiRegister: double[3] array "c_ef" without io X
+ > CtiRegister: int "step"
+ > CtiRegister: double "time"
+ > CtiRegister: double "dt"
+ > CtiRegister: double array "cmag_cv" with io
+ > CtiRegister: double array "dd" with io
+ > No gravity
+ > CtiRegister: double array "rho" with io
+ > CtiRegister: double array "rho0" with io
+ > CtiRegister: double array "rho00" with io
+ > CtiRegister: double[3] array "u" with io
+ > CtiRegister: double[3] array "u0" with io
+ > CtiRegister: double[3] array "u00" with io
+ > CtiRegister: double array "p" with io
+ > CtiRegister: double[3] array "dpdx" with io
+ > CtiRegister: double array "mf" with io
+ > CtiRegister: double array "mf0" with io
+ > CtiRegister: double array "mf00" with io
+ > CtiRegister: double array "mu_lam" with io
+ > CtiRegister: double array "mu_sgs" with io
+ > CtiRegister: double array "a_sgs" with io
+ > CtiRegister: double array "a_sgs_sponge" with io
+ > CtiRegister: double array "rho_uncorrected" with io
+StripedMesh::read_mles ../../../STITCH/single_family/700k-mesh.mles on 11 ranks...
+ > unknown header: 90 "UGP_IO_TIMESTAMP", skipping.
+ > unknown header: 91 "UGP_IO_PARAMS", skipping.
+ > nno_global: 4233799 nbf_global: 104556 nfa_global: 4801450 ncv_global: 705571
+ > nfa_global/ncv_global: 6.8050558
+ > b_surface: 1
+ > mles hash: lwEnW0reqepb2h/LO7PLfNN2gHM=
+ > bf zone "buildings", nbf_global: 67518, area_global: 169557.82, n_global: [ -6.8731687e-12 -57000 -7.2564177e-13 ], x_global: [ 239.51575 8.6643263 239.68421 ]
+ > bf zone "ground", nbf_global: 30130, area_global: 172800, n_global: [ 0 -172800 0 ], x_global: [ 239.28127 -1.1691673e-18 240.00427 ]
+ > bf zone "top", nbf_global: 255, area_global: 230400, n_global: [ 0 230400 0 ], x_global: [ 232.4964 480 240.0032 ]
+ > bf zone "interior", nbf_global: 6653, area_global: 4530.0206, n_global: [ -1.9706459e-13 -600 3.0304969e-14 ], x_global: [ 260 6.443737 270 ]
+ > cvobf_global...
+ > noobf_i and noobf_v_global...
+ > spobf_i/v/wgt...
+ > sbobf_i and sbobf_v_global...
+ > cvofa_global...
+ > noofa_i and noofa_v_global...
+ > periodic transform(s): 2
+ > bit pair 0 PERIODIC_TRANSFORM_CART [ 480 0 0 ]
+ > bit pair 1 PERIODIC_TRANSFORM_CART [ 0 0 480 ]
+ > pbi_pno...
+ > x_no...
+ > cv zone "fluid", ncv_global: 705571
+ > vol_cv...
+ > x_vv...
+ > r_vv...
+ > unknown header: 2115 "vv_bbox", skipping.
+ > x_cv...
+ > n_bf...
+ > x_bf...
+ > area_bf...
+ > area_over_delta_bf...
+ > Gij_bf...
+ > n_fa...
+ > x_fa...
+ > surface (xp,spost,znost)...
+ > unknown header: 802 "surface periodic info", skipping.
+ > read_mles summary: ncv_global: 705571 file size: 0.69849614 [GB] read rate: 0.15311481 [GB/s]
+StaticSolver::registerBoundaryConditions()
+ > CtiRegister: int "buildings:index"
+ > CtiRegister: double "buildings:area_global"
+ > CtiRegister: double "buildings:area_over_delta_global"
+ > CtiRegister: double[3] "buildings:x_global"
+ > CtiRegister: double[3] "buildings:n_global"
+ > CtiRegister: double array "buildings:area_bf" with io
+ > CtiRegister: double array "buildings:area_over_delta_bf" with io
+ > CtiRegister: double[3] array "buildings:x_bf" with io
+ > setting this data as position X
+ > CtiRegister: double[3] array "buildings:n_bf" with io
+ > CtiRegister: int "ground:index"
+ > CtiRegister: double "ground:area_global"
+ > CtiRegister: double "ground:area_over_delta_global"
+ > CtiRegister: double[3] "ground:x_global"
+ > CtiRegister: double[3] "ground:n_global"
+ > CtiRegister: double array "ground:area_bf" with io
+ > CtiRegister: double array "ground:area_over_delta_bf" with io
+ > CtiRegister: double[3] array "ground:x_bf" with io
+ > setting this data as position X
+ > CtiRegister: double[3] array "ground:n_bf" with io
+ > CtiRegister: int "top:index"
+ > CtiRegister: double "top:area_global"
+ > CtiRegister: double "top:area_over_delta_global"
+ > CtiRegister: double[3] "top:x_global"
+ > CtiRegister: double[3] "top:n_global"
+ > CtiRegister: double array "top:area_bf" with io
+ > CtiRegister: double array "top:area_over_delta_bf" with io
+ > CtiRegister: double[3] array "top:x_bf" with io
+ > setting this data as position X
+ > CtiRegister: double[3] array "top:n_bf" with io
+ > CtiRegister: int "interior:index"
+ > CtiRegister: double "interior:area_global"
+ > CtiRegister: double "interior:area_over_delta_global"
+ > CtiRegister: double[3] "interior:x_global"
+ > CtiRegister: double[3] "interior:n_global"
+ > CtiRegister: double array "interior:area_bf" with io
+ > CtiRegister: double array "interior:area_over_delta_bf" with io
+ > CtiRegister: double[3] array "interior:x_bf" with io
+ > setting this data as position X
+ > CtiRegister: double[3] array "interior:n_bf" with io
+ > CtiRegister: double array "buildings:tau_wall" with io
+ > CtiRegister: double array "ground:tau_wall" with io
+ > CtiRegister: double array "interior:tau_wall" with io
+StaticSolver::registerStats
+ > add stats for DN3_DATA|CV_DATA "u"
+CtiRegister::registerStats(): u b_init: 0
+ > add stats for DN_DATA|CV_DATA "p"
+CtiRegister::registerStats(): p b_init: 0
+ > add stats for DN_DATA|CV_DATA "rho"
+CtiRegister::registerStats(): rho b_init: 0
+StaticSolver::loadBalanceHook()
+StaticSolver::loadBalance()
+ > cv_lb_cost: 10 fa_lb_cost: 1 ef_lb_cost: 1
+ > lb_cost for zone "buildings" 1
+ > lb_cost for zone "ground" 1
+ > lb_cost for zone "top" 1
+ > lb_cost for zone "interior" 1
+ > load balance: ncv min:avg:max: 63080:64142.818:65657 cost ratio min:avg:max: 0.99999069:1.0:1.0000123
+StaticSolver::redistReorderMesh()
+ > dumpRange: noobf_v_global, 0:299095
+ > dumpRange: noofa_v_global, 0:4233798
+ > node bf normal check (should be small): 5.0298257e-09 2.0480967e-15
+ > node fa normal check (should be small): 1.0574364e-06 1.4654843e-10
+ > dumpRange: GCL compact faces, 0: -1.1115449e-07:1.1115491e-07, 1: -1.1265288e-07:6.6290915e-08, 2: -1.8569846e-07:1.856989e-07
+ > dumpRange: compact faces per cv, 4:23
+StaticSolver::buildCvPrcomm()
+ > dumpRange: vol_cv, 0.51601194:27423.902
+StaticSolver::buildCv2Prcomm()
+StaticSolver::calcBoundingBox(): X -15.9968:480.33681, Y 0:480, Z -0.01979102:480.02619
+StaticSolver::buildFaocv()
+StaticSolver::buildBfocv()
+StaticSolver::buildCvocv()
+StaticSolver::calcCvGradCoeff()
+StaticSolver::checkCvGradCoeff()
+ > dumpRange: cv grad coeff check (should be order one), 0: -0.99392188:0.27549495, 1: -0.81860145:0.090036445, 2: -0.68957443:0.12327612
+ > dumpRange: cv grad coeff check -- internal only (should be zero), 0: -1.2352418e-08:2.9857952e-09, 1: -9.7250101e-09:1.4035695e-09, 2: -1.3708705e-08:4.0417676e-09
+StaticSolver::buildNoPrcomm()
+StaticSolver::buildFaPrcomm()
+ > face communicator x check (should be zero): 3.1671532e-14
+ > face communicator n check (should be zero): 0
+ extended faces flagged for potential grouping: 0 out of 0 (-nan%)
+ sensitivity check: additional extended faces flagged if c2_over_n2_ratio_zero reduced: 0 0 0 0
+Number of grouped extended faces: 0
+Max number of serial area-based extended face groups: 0
+Max number of serial orientation-based extended face sub-groups (expect 4:12 in 2d and 8:16 in 3d): 1
+Actual tol for dp matching for extended faces: 0
+ compact faces flagged for potential grouping: 582 out of 5065384 (0.011489751%)
+ sensitivity check: additional compact faces flagged if c4_over_n2_ratio_zero reduced: 1263 1934 3181 3415
+Final count of grouped compact faces: 0
+Max number of serial area-based compact face groups: 0
+Max number of serial orientation-based compact face sub-groups (expect 2:6 in 2d and 4:12 in 3d): 1
+Actual tol for dp matching for compact faces: 0
+FlowSolver::initData()
+FlowSolver::initScalars() 
+> transporting passive scalars : 0
+ > initializing 1 multigrid levels.
+CoarseGrid::initCoarseGrid(), level: 1, requested ncc_global: 11024
+Multigrid::colorCvsPadt(), requested colors: 11024
+calcCvPartPadt(), size: 8
+ > ncv_global: 705571 (705.5K)
+ > partition time: 1.1531059 [s]. Partition timing per level: 
+ > level: 0 max wtime: 0.69104725 [s], min wtime: 0.66091372 imbalance: 7.0864591e-06
+ > level: 1 max wtime: 0.37497116 [s], min wtime: 0.09673664 imbalance: 7.0864591e-06
+ > level: 2 max wtime: 0.05507418 [s], min wtime: 0.03203439 imbalance: 7.0864591e-06
+ > final partition imbalance: 7.0864591e-06
+ > current/total: 8/11024
+ > current/total: 16/11024
+ > current/total: 32/11024
+ > current/total: 64/11024
+ > current/total: 128/11024
+ > current/total: 256/11024
+ > current/total: 512/11024
+ > current/total: 1024/11024
+ > current/total: 2048/11024
+ > current/total: 4096/11024
+ > current/total: 8192/11024
+ > current/total: 11024/11024
+Multigrid::splitOrphanedColors()
+ > ncolor0: 11024, ncolor: 11249
+ final ncc_global: 11249
+ > dumpRange: ncc internal, 441:947
+ > dumpRange: ncc active, 799:1434
+ > dumpRange: ncc, 1063:1689
+CoarseGrid::buildCcIPrcomm()
+ > dumpRange: vol_cc check, 0:0
+ > dumpRange: x_cc check, 0: 0:0, 1: 0:0, 2: 0:0
+ > dumpRange: x_cc check2, 0: 0:0, 1: 0:0, 2: 0:0
+ > vol diff: -6.5565109e-07, centroid diff: -8.2422957e-13 5.1159077e-13 -1.3073986e-12
+CoarseGrid::buildCcPrcomm()
+ > dumpRange: vol_cc, 0.59775513:1971489.5
+ > dumpRange: x_cc, 0: 1.1951065:478.34164, 1: 0.70985724:442.4303, 2: 4.9743981:475.58745
+ > dumpRange: delta_cf, 0.48945292:662.38156
+ > dumpRange: area_cf, 3.4349909e-09:29813.423
+ > dumpRange: n_cf, 0: -19818.098:19818.098, 1: -6985.8562:13054.316, 2: -21778.647:21778.647
+ > dumpRange: x_cf, 0: 0.0032:479.09675, 1: 0.32827528:466.48054, 2: 1.2861379:478.72026
+CoarseGrid::buildCfIPrcomm()
+ > dumpRange: area_cf check, 0:0
+ > dumpRange: x_cf check, 0: 0:0, 1: 0:0, 2: 0:0
+ > dumpRange: n_cf check, 0: 0:0, 1: 0:0, 2: 0:0
+ > dumpRange: delta_cb, 0.047178332:92.154145
+ > dumpRange: area_cb, 0.0038489461:14716.885
+ > dumpRange: n_cb, 0: -180.959:197.10116, 1: -316.93034:14716.885, 2: -198.78428:211.33823
+ > dumpRange: x_cb, 0: 1.2199504:478.76849, 1: -2.220446e-16:480, 2: 6.2952401:474.00848
+ > dumpRange: gcl, 0: -15598.631:10589.665, 1: -819.41393:827.89855, 2: -17270.67:10889.323
+CoarseGrid::buildCbIPrcomm()
+ > dumpRange: area_cb check, -1.8189894e-12:3.6379788e-12
+ > dumpRange: x_cb check, 0: -2.8421709e-13:1.7053026e-13, 1: -1.1368684e-13:1.1368684e-13, 2: -1.7053026e-13:2.2737368e-13
+ > zone: 0, area_global check: 1.3096724e-09, n_global check: [ 7.4984463e-12 2.4738256e-10 3.8458126e-13 ], x_global check: [ -9.094947e-13 -2.0783375e-13 -5.2580162e-12 ]
+ > zone: 1, area_global check: 1.5133992e-09, n_global check: [ 0 -1.5133992e-09 0 ], x_global check: [ -1.4495072e-12 4.6222319e-33 -4.0927262e-12 ]
+ > zone: 2, area_global check: -1.4551915e-10, n_global check: [ 0 -1.4551915e-10 0 ], x_global check: [ 2.5579538e-13 -1.7053026e-13 -1.4210855e-13 ]
+ > zone: 3, area_global check: 8.1854523e-12, n_global check: [ 2.4547031e-13 -4.5474735e-13 -1.6094114e-14 ], x_global check: [ -7.9580786e-13 -9.7699626e-15 -3.9790393e-13 ]
+StaticSolver::buildCvPrcomm()
+StaticSolver::buildCvocv()
+Found roughness height 0.0032 for ground WM_ALG_WALL, using rough wall algebraic closure
+CtiRegister::_initData()
+
+====================== registeredDataMap ===========================
+ > "a_sgs" type: DN_DATA topo: CV_DATA flag: 0
+ > "a_sgs_sponge" type: DN_DATA topo: CV_DATA flag: 0
+ > "area_over_delta_fa" type: DN_DATA topo: UNSIGNED_FA_DATA flag: 0
+ > "buildings:area_bf" type: DN_DATA topo: BF_DATA 0 flag: 0
+ > "buildings:area_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "buildings:area_over_delta_bf" type: DN_DATA topo: BF_DATA 0 flag: 0
+ > "buildings:area_over_delta_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "buildings:index" type: I_DATA topo: VALUE_DATA flag: 0
+ > "buildings:n_bf" type: DN3_DATA topo: BF_DATA 0 flag: 0
+ > "buildings:n_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "buildings:tau_wall" type: DN_DATA topo: BF_DATA 0 flag: 0
+ > "buildings:x_bf" type: DN3_DATA topo: BF_DATA 0 flag: 0
+ > "buildings:x_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "c_ef" type: DN3_DATA topo: EF_DATA flag: 0
+ > "cmag_cv" type: DN_DATA topo: CV_DATA flag: 0
+ > "dd" type: DN_DATA topo: CV_DATA flag: 0
+ > "dpdx" type: DN3_DATA topo: CV_DATA flag: 0
+ > "dt" type: D_DATA topo: VALUE_DATA flag: 0
+ > "ground:area_bf" type: DN_DATA topo: BF_DATA 1 flag: 0
+ > "ground:area_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "ground:area_over_delta_bf" type: DN_DATA topo: BF_DATA 1 flag: 0
+ > "ground:area_over_delta_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "ground:index" type: I_DATA topo: VALUE_DATA flag: 0
+ > "ground:n_bf" type: DN3_DATA topo: BF_DATA 1 flag: 0
+ > "ground:n_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "ground:tau_wall" type: DN_DATA topo: BF_DATA 1 flag: 0
+ > "ground:x_bf" type: DN3_DATA topo: BF_DATA 1 flag: 0
+ > "ground:x_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "group_ef" type: IN_DATA topo: EF_DATA flag: 0
+ > "group_fa" type: IN_DATA topo: UNSIGNED_FA_DATA flag: 0
+ > "interior:area_bf" type: DN_DATA topo: BF_DATA 3 flag: 0
+ > "interior:area_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "interior:area_over_delta_bf" type: DN_DATA topo: BF_DATA 3 flag: 0
+ > "interior:area_over_delta_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "interior:index" type: I_DATA topo: VALUE_DATA flag: 0
+ > "interior:n_bf" type: DN3_DATA topo: BF_DATA 3 flag: 0
+ > "interior:n_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "interior:tau_wall" type: DN_DATA topo: BF_DATA 3 flag: 0
+ > "interior:x_bf" type: DN3_DATA topo: BF_DATA 3 flag: 0
+ > "interior:x_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "inv_vol" type: DN_DATA topo: CV_DATA flag: 0
+ > "mf" type: DN_DATA topo: SIGNED_FA_DATA flag: 0
+ > "mf0" type: DN_DATA topo: SIGNED_FA_DATA flag: 0
+ > "mf00" type: DN_DATA topo: SIGNED_FA_DATA flag: 0
+ > "mpi_rank" type: I_DATA topo: VALUE_DATA flag: 0
+ > "mu_lam" type: DN_DATA topo: CV_DATA flag: 0
+ > "mu_sgs" type: DN_DATA topo: CV_DATA flag: 0
+ > "n_ef" type: DN3_DATA topo: EF_DATA flag: 0
+ > "n_fa" type: DN3_DATA topo: UNSIGNED_FA_DATA flag: 0
+ > "p" type: DN_DATA topo: CV_DATA flag: 0
+ > "p_avg" type: DN_DATA topo: CV_DATA flag: 0
+ > "p_rms" type: DN_DATA topo: CV_DATA flag: 0
+ > "p_wgt" type: D_DATA topo: VALUE_DATA flag: 0
+ > "r_vv" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho0" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho00" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho_avg" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho_rms" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho_uncorrected" type: DN_DATA topo: CV_DATA flag: 0
+ > "rho_wgt" type: D_DATA topo: VALUE_DATA flag: 0
+ > "step" type: I_DATA topo: VALUE_DATA flag: 0
+ > "time" type: D_DATA topo: VALUE_DATA flag: 0
+ > "top:area_bf" type: DN_DATA topo: BF_DATA 2 flag: 0
+ > "top:area_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "top:area_over_delta_bf" type: DN_DATA topo: BF_DATA 2 flag: 0
+ > "top:area_over_delta_global" type: D_DATA topo: VALUE_DATA flag: 0
+ > "top:index" type: I_DATA topo: VALUE_DATA flag: 0
+ > "top:n_bf" type: DN3_DATA topo: BF_DATA 2 flag: 0
+ > "top:n_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "top:x_bf" type: DN3_DATA topo: BF_DATA 2 flag: 0
+ > "top:x_global" type: D3_DATA topo: VALUE_DATA flag: 0
+ > "u" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u0" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u00" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u_avg" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u_rey" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u_rms" type: DN3_DATA topo: CV_DATA flag: 0
+ > "u_wgt" type: D_DATA topo: VALUE_DATA flag: 0
+ > "vol_cv" type: DN_DATA topo: CV_DATA flag: 0
+ > "x_cv" type: DN3_DATA topo: CV_DATA flag: 0
+ > "x_no" type: DN3_DATA topo: NO_DATA 0 flag: 0
+ > "x_vv" type: DN3_DATA topo: CV_DATA flag: 0
+==================== end of registeredDataMap ==========================
+processing INIT commands:
+ > initializing time to 0
+ > initializing step to 0
+ > initializing comp(u,0) to 0.1
+ > initializing comp(u,1) to 0.1
+ > initializing comp(u,2) to 0.1
+ > initializing p to 0
+ > RESET_STATS TIME set to 2000
+
+====================== currentDataMap ===========================
+"0" 0x19a37d8 D_DATA value: 0 mem_flag: 1 
+"0.1" 0x19a3cb8 D_DATA value: 0.1 mem_flag: 1 
+==================== end of currentDataMap ==========================
+ > boundary length scale clipped in 12039 faces.
+processing INIT commands:
+ > initializing time to 0
+ > initializing step to 0
+ > initializing comp(u,0) to 0.1
+ > initializing comp(u,1) to 0.1
+ > initializing comp(u,2) to 0.1
+ > initializing p to 0
+>>>>> specifying initial velocity field
+ > dumpRange: DPDX, 0: 0:0, 1: 0:0, 2: 0:0
+=====================================================================
+running with CHECK_INTERVAL=100...
+=====================================================================
+ > Appended to WebUI log successfully, rank_0_Host ... wecivil1.stanford.edu
+CtiCanvas::writeImage() ./Images/u_y2.00000000.png
+CtiCanvas::writeImage() ./Images/u_y5.00000000.png
+CtiCanvas::writeImage() ./Images/u_y8.00000000.png
+CtiCanvas::writeImage() ./Images/u_y20.00000000.png
+initPointCloudProbe() "POINTCLOUD_PROBE NAME probes/probesOut/col_3-2 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_3-2.txt VARS comp(u,0) comp(u,1) comp(u,2)"...
+PointCloudProbe::readPointsAscii("probes/locations/col_3-2.txt")...
+StaticSolver::buildCvAdt()
+ > point cloud probe npt_global: 481
+ > dumpRange: point cloud probe x_pt, 0: 120:120, 1: 0:480, 2: 135:135
+PointCloudProbe::writePointsAscii(): probes/probesOut/col_3-2.pxyz
+ > max barycentric distance outside of tet (non-convexity): 0
+initPointCloudProbe() "POINTCLOUD_PROBE NAME probes/probesOut/col_3-6 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_3-6.txt VARS comp(u,0) comp(u,1) comp(u,2)"...
+PointCloudProbe::readPointsAscii("probes/locations/col_3-6.txt")...
+ > point cloud probe npt_global: 481
+ > dumpRange: point cloud probe x_pt, 0: 120:120, 1: 0:480, 2: 390:390
+PointCloudProbe::writePointsAscii(): probes/probesOut/col_3-6.pxyz
+ > max barycentric distance outside of tet (non-convexity): 0
+initPointCloudProbe() "POINTCLOUD_PROBE NAME probes/probesOut/col_9-2 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_9-2.txt VARS comp(u,0) comp(u,1) comp(u,2)"...
+PointCloudProbe::readPointsAscii("probes/locations/col_9-2.txt")...
+ > point cloud probe npt_global: 481
+ > dumpRange: point cloud probe x_pt, 0: 380:380, 1: 0:480, 2: 120:120
+PointCloudProbe::writePointsAscii(): probes/probesOut/col_9-2.pxyz
+ > max barycentric distance outside of tet (non-convexity): 1.1390568e-15
+initPointCloudProbe() "POINTCLOUD_PROBE NAME probes/probesOut/col_9-6 INTERVAL 1 PRECISION FLOAT FORMAT FLOAT GEOM FILE probes/locations/col_9-6.txt VARS comp(u,0) comp(u,1) comp(u,2)"...
+PointCloudProbe::readPointsAscii("probes/locations/col_9-6.txt")...
+ > point cloud probe npt_global: 460
+ > dumpRange: point cloud probe x_pt, 0: 380:380, 1: 20:480, 2: 390:390
+PointCloudProbe::writePointsAscii(): probes/probesOut/col_9-6.pxyz
+ > max barycentric distance outside of tet (non-convexity): 0
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+MF_INIT: extrapolation off for 2 more step(s) while time history is populated
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+MF_INIT: extrapolation off for 1 more step(s) while time history is populated
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+
+----------------------------------------------------------
+ starting step: 100 time: 200 dt: 2
+----------------------------------------------------------
+ > advanceSolution()
+correctContinuityAlgebraic()
+ > dumpRange: continuity, -6.0254024e-12:5.7127636e-12
+solveU()
+>>>>> adding momentum source
+ > solveCvJacobi iter, res_max: 3 5.9088666e-07
+solvePAndCorrectU()
+solveHelmholtzMg()
+ > solveHelmholtz iter, res_max: 1 1.7261118e-07
+ > dumpRange: continuity, -1.6355227e-06:1.6182499e-06
+ > dumpRange: rho, 1.225:1.225
+ > dumpRange: u, 0: -0.01683546:0.32998299, 1: -0.024776278:0.016840332, 2: -0.017402431:0.32974271
+ > dumpRange: p, -0.0013418952:0.0012266831
+ > dumpRange: mu_lam, 1.7894e-05:1.7894e-05
+ > dumpRange: mu_sgs, 1.2038499e-07:0.0028312192
+ > dumpRange: a_sgs, 0:0
+ > dumpRange: mf, -376.9428:376.9428
+ > dumpRange: mf0, -376.94369:376.94369
+ > dumpRange: mf00, -376.94457:376.94457
+ > dumpRange: CFL, 8.1947661e-05:0.24318244
+ > time: 200 total mass, momentum: 1.3454173e+08 35634693 173.3109 35601955
+ > updateStats() "u", total averaging time: 200
+ > updateStats() "p", total averaging time: 200
+ > updateStats() "rho", total averaging time: 200
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+ > time since last check: 867.35412 [s] normalized speed: 135.22233 [core-s/Mcv/step] cores: 11 cvs: 705571 cvs/core: 64142.818
+ > STATS will be reset in 1800s
+ > NSTEPS set to 4000000. Stopping in 3999900 more steps
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
+>>>>> adding momentum source
+writePointCloudProbe(): probes/probesOut/col_3-2
+writePointCloudProbe(): probes/probesOut/col_3-6
+writePointCloudProbe(): probes/probesOut/col_9-2
+writePointCloudProbe(): probes/probesOut/col_9-6
