@@ -249,7 +249,7 @@ public:
 
     FOR_ICV {
       double fric_vel = Re_tau*mu/(hm*rho[icv]);
-      mom_source = factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
+      double mom_source = factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
       rhs[icv][0] += sqrt(2)/2*mom_source;
     }
   }
