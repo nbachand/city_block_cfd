@@ -251,6 +251,7 @@ public:
       double fric_vel = Re_tau*mu/(hm*rho[icv]);
       double mom_source = factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
       rhs[icv][0] += sqrt(2)/2*mom_source;
+      rhs[icv][2] += sqrt(2)/2*mom_source;
     }
   }
   void massSourceHook(double * rhs) {}
