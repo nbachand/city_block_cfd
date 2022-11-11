@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=charles_single_family
+#SBATCH --job-name=csf_R7
 #SBATCH -N 1
 #SBATCH -n 32
 #SBATCH --time=24:00:00
@@ -19,5 +19,5 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
-mpiexec $HOME/$PARENT_DIR/0_deg/charles.exe -i $HOME/$PARENT_DIR/0_deg/charles.in
+mpiexec $HOME/$PARENT_DIR/0_deg_restart/charles.exe -i $HOME/$PARENT_DIR/0_deg/charles.in
 # $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
