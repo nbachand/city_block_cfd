@@ -1,6 +1,8 @@
 from solid import *
 import numpy as np
 from pyCascade import probeSetup
+# from numpy.polynomial import chebyshev as cheb
+# from chaospy.quadrature import clenshaw_curtis
 
 class ProbedGeom:
     def __init__(self, geom, probes = []):
@@ -64,8 +66,10 @@ def makeProbedCube(size, nprobes, name, centered = False):
     geom = cube(size, centered)
     probe_span = []
     for i,n in enumerate(nprobes):
-        cheby_points = np.arange(n)
-        cheby_points = np.cos((2*cheby_points-1)*np.pi/(2*n))
+        cheby_points = np.arange(1,n+1)
+        cheby_points = np.cos((2*cheby_points-1)*np.pi/(2*n))  #Chebyshev Nodes
+        # cheby_points, _ = cheb.chebgauss(n)
+        # print(cheby_points)
         cheby_points *= size[i]/2
         if centered == False:
             cheby_points += size[i]/2
