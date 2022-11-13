@@ -56,9 +56,16 @@ def ClenshawCurtis_Quadrature(data_df):
     b = [(1+(-1)**k)/(k+1) for k in range(N)]
     ws = np.linalg.solve(A,b)
     CC_weights = np.squeeze(ws[:,None])
-    Quad_weights = np.tile(CC_weights, 10) * np.repeat(CC_weights, 10) * interval**2
-    wighted_data = data_df.multiply(Quad_weights, axis='rows', level='stack')
-    integrated_data = wighted_data.groupby(axis='rows', level='var').sum()
+
+    ## correcting for inforrect probes locations untill R10
+    Warning('Quadrature weights shifted to match R<=10. Delete this in the future')
+    CC_weights = np.roll(CC_weights, 1)
+    #############
+
+    Quad_weights = np.tile(CC_weights, 10) * np.repeat(CC_weights, 10) * (interval/2)**2
+    Quad_weights = Quad_weights[..., np.newaxis]
+    wighted_data = data_df.groupby(axis='index', level='var').apply(lambda x: x*Quad_weights)
+    integrated_data = wighted_data.groupby(axis='index', level='var').sum()
 
     return integrated_data
 
@@ -341,82 +348,34 @@ class Probes(utils.Helper):
                 processed_data = process_step(processed_data)
             utils.end_timer(st, 'processing data')
 
-        # st = utils.start_timer()
+        st = utils.start_timer()
 
-        # # plt.rcParams['text.usetex'] = True
-        # fig, ax = plt.subplots(n_names, n_quants, constrained_layout =True)
+        # plt.rcParams['text.usetex'] = True
+        fig, ax = plt.subplots(1, 1, constrained_layout =True)
 
-        # for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-        #     if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
-        #         plot_levels = plot_params['plot_levels'][var]
-        #     else:
-        #         plot_levels = 256
-
-        #     ax_list = []
-        #     im_list = []
-        #     vmins = [] # for colorbar
-        #     vmaxs = []
-        #     for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-        #         plot_df = name_df.droplevel('var', axis='index')
-        #         plot_df = plot_df.droplevel('name', axis='columns')
-        #         plot_df = plot_df.dropna()
-        #         sub_ax = utils.ax_index(ax, i, j)
+        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
+            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
+                plot_df = name_df.droplevel('name', axis='columns')
+                plot_df = plot_df.dropna()
                 
-        #         xPlot = plot_df.columns
-        #         if 'horizontal spacing' in plot_params:
-        #             xPlot *= plot_params['horizontal spacing']
-        #         yPlot = plot_df.index
-        #         if hasattr(self, 'locations') and 'stack span' in plot_params:
-        #             location = self.locations[name]
-        #             yAxis = location[plot_params['stack span']]
-        #             yPlot = yAxis[yPlot]
+                xPlot = plot_df.columns
+                if 'horizontal spacing' in plot_params:
+                    xPlot *= plot_params['horizontal spacing']
 
-        #         if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
-        #             name_df = plot_df.iloc[:,::plot_params['plot_every']]
-        #             xPlot =xPlot[::plot_params['plot_every']]
+                if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
+                    name_df = plot_df.iloc[:,::plot_params['plot_every']]
+                    xPlot =xPlot[::plot_params['plot_every']]
 
-        #         im = sub_ax.contourf(xPlot, yPlot, plot_df, levels=plot_levels)
-        #         ax_list.append(sub_ax)
-        #         im_list.append(im)
+                yPlot =  np.squeeze(plot_df.values)
 
-        #         if j > 0:
-        #             sub_ax.yaxis.set_visible(False)
-        #         else:
-        #             sub_ax.set_ylabel(name)
-        #         if i < n_names-1:
-        #             sub_ax.xaxis.set_visible(False)
-        #         else:
-        #             sub_ax.set_xlabel(var)
-
-        #         vmin, vmax = im.get_clim()
-        #         vmins.append(vmin)
-        #         vmaxs.append(vmax)
-        #         # fig.colorbar(im, ax = sub_ax)
-
-        #     vmin = min(vmins)
-        #     vmax = max(vmaxs)
-        #     if 'ColorNorm' in plot_params:
-        #         if plot_params['ColorNorm'] == "TwoSlope":
-        #             norm = colors.TwoSlopeNorm(0,vmin,vmax)
-        #         elif plot_params['ColorNorm'] == "Centered":
-        #             vmagmax = max(np.abs((vmin, vmax)))
-        #             norm = colors.TwoSlopeNorm(0,-vmagmax,vmagmax)
-
-        #     else:
-        #         norm = colors.Normalize(vmin,vmax)
-        #     for im in im_list:
-        #         im.set_norm(norm)
-        #     fig.colorbar(cm.ScalarMappable(norm=norm), ax=ax_list)
+                ax.plot(xPlot, yPlot, label=f'{name}: {var}')
+                if 'xlabel' in plot_params:
+                    fig.supxlabel(plot_params['xlabel'])
+                if 'ylabel' in plot_params:
+                    fig.supylabel(plot_params['ylabel'])
+                ax.legend()
         
-        # if 'xlabel' in plot_params:
-        #     fig.supxlabel(plot_params['xlabel'])
-        # if 'ylabel' in plot_params:
-        #     fig.supylabel(plot_params['ylabel'])
-        # utils.end_timer(st, "plotting")
-        # # plt.figure()
-        # # plt.contourf(xPlot, yPlot, plot_data, plot_levels = plot_params['plot_levels'])
-        # # fig.show()
 
-        # return fig, ax
+        return fig, ax
 
 
