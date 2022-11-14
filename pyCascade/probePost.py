@@ -48,6 +48,13 @@ def mean_convergence(data_df):
 def time_average(data_df):
     return data_df.groupby(axis='columns', level='name').mean()
 
+def time_rms(data_df):
+    mean = time_average(data_df)
+    norm_data = data_df.sub(mean, axis='columns', level='name')
+    diff_squared = norm_data**2
+    return time_average(diff_squared)
+
+
 def ClenshawCurtis_Quadrature(data_df):
     N = 10
     interval = 2.5
@@ -377,5 +384,34 @@ class Probes(utils.Helper):
         
 
         return fig, ax
+
+    def statistics(
+        self,
+        names = "self.probe_names",
+        steps = "self.probe_steps",
+        quants = "self.probe_quants",
+        stack = "self.probe_stack",
+        parrallel = False,
+        processing = None,
+        plot_params={}
+    ):
+
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
+
+        data = self.slice_into_df(names, steps, parrallel)
+        data = data.loc[(stack,quants),:]
+        n_names = len(names)
+        n_quants = len(quants)
+
+        processed_data = data
+        if processing is not None:
+            st = utils.start_timer()
+            for process_step in processing:
+                processed_data = process_step(processed_data)
+            utils.end_timer(st, 'processing data')
+
+        st = utils.start_timer()
+
+        return processed_data
 
 
