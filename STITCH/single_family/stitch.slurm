@@ -5,7 +5,7 @@
 #SBATCH -n 4
 # SBATCH -p bigmem
 #SBATCH --time=1:00:00
-#SBATCH --mem=52G    #512G
+#SBATCH --mem=128G #512G
 
 module purge
 
@@ -18,6 +18,6 @@ LOCAL_FOLDER=$(basename "`pwd`")
 
 cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
-echo "Executing charles from $(pwd)"
+echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/stitch.in
+mpiexec stitch.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/stitch-fine.in
