@@ -244,6 +244,9 @@ class Probes(utils.Helper):
                     yAxis = location[plot_params['stack span']]
                     yPlot = yAxis[yPlot]
 
+                if 'veritcal scaling' in plot_params:
+                   yPlot*=plot_params['veritcal scaling']
+
                 if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
                     name_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
@@ -298,6 +301,7 @@ class Probes(utils.Helper):
         steps = "self.probe_steps",
         quants = "self.probe_quants",
         stack = "self.probe_stack",
+        processing = None,
         parrallel = False,
         plot_params = {}
         ):
@@ -306,8 +310,14 @@ class Probes(utils.Helper):
         data = self.slice_into_df(names, steps, parrallel)
         data = data.loc[(stack,quants),:]
 
+        processed_data = data
+        if processing is not None:
+            st = utils.start_timer()
+            for process_step in processing:
+                processed_data = process_step(processed_data)
+            utils.end_timer(st, 'processing data')
+
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
-        processed_data = time_average(data)
         for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
             for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('var', axis='index')
@@ -320,6 +330,9 @@ class Probes(utils.Helper):
                     location = self.locations[name]
                     yAxis = location[plot_params['stack span']]
                     yPlot = yAxis[yPlot]
+
+                if 'veritcal scaling' in plot_params:
+                   yPlot*=plot_params['veritcal scaling']
 
                 ax.plot(plot_df.values, yPlot, label=f'{name}: {var}')
                 if 'xlabel' in plot_params:
@@ -374,6 +387,8 @@ class Probes(utils.Helper):
                     xPlot =xPlot[::plot_params['plot_every']]
 
                 yPlot =  np.squeeze(plot_df.values)
+                if 'veritcal scaling' in plot_params:
+                   yPlot*=plot_params['veritcal scaling']
 
                 ax.plot(xPlot, yPlot, label=f'{name}: {var}')
                 if 'xlabel' in plot_params:
