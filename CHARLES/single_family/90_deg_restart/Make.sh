@@ -6,6 +6,4 @@ module load openmpi/2.1.1
 
 module list
 
-source ~/.bash_profile
-
 make

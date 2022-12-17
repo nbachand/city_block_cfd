@@ -1,8 +1,12 @@
 R1 - I think this had no mementum source - wecivil (and sherlock)
 R2 - good standard run but no internal probes, large course mesh - wecivil
 R3 - Test of geometry setup, probes may be in the wrong place for Nat Vent. Course mesh, ~700k - wecivil
-R4 - Internal probes. First run with geometry built directly from python. Finer mesh, 10 elements per window, 4M total - wecivil
+R4 - Internal probes. First run with geometry built directly from python. Finer mesh, 10 elements per window, 4M - wecivil
 R5 - Testing R4 with interp restart from R2 - sherlock
-R6 - 90 deg. Spinning up run for other wind direction. Course mesh ~700k - wecivil
+R6 - Running course mesh with 90 deg flow, ~700k - wecivil
+R7 - Running from R5 with added outputs - sherlock
+R8 - Running 45 deg, ~700k - wecivil
+R9 - Running from R7, 4M. CFL too high, need to rerun - sherlock
+R10 - Running 45 deg from R8,  4M - sherlock
 
 
