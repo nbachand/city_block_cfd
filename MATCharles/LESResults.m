@@ -5,7 +5,7 @@ casePath = '../CHARLES/single_family/R4';
 
 probePath = '/probes/probesOut';
 probeNames = {'col_3-2'};
-t0 = 19000; % first step
+t0 = 28000; % first step
 tf = 29000; % last step
 dt = 2; % save dt, not simulation dt
 save_interval = 1; % interval at which probes were written
