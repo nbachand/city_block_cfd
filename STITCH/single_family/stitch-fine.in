@@ -1,9 +1,9 @@
 #Read the surface
-# PART SURF SBIN /home/users/nbachand/Cascade/city_block_cfd/city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
-PART SURF SBIN ../../city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
+PART SURF SBIN /home/users/nbachand/Cascade/city_block_cfd/city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
+# PART SURF SBIN ../../city_block_geom/SURFER/single_family/single_family_neighborhood.sbin
 
 # HCP_DELTA 16
-HCP_DELTA 9.6
+HCP_DELTA 6
 
 HCP_WINDOW FAZONE ground LEVEL=4 D=3 DLAYERS=19.5,13.5,54
 HCP_WINDOW FAZONE buildings LEVEl=5 D=1.5 DLAYERS=3

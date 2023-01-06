@@ -1,0 +1,120 @@
+RESTART = ../../../STITCH/single_family/4M-mesh.mles #./data/result.00010000.sles
+# INTERP_FROM_RESTART ../R8/data/result.00080000.sles
+INIT time = 0.0 step = 0 u = 1 0.001 0.001 p=0
+# RESET_ALL
+ 
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+# Time + output setup
+NSTEPS = 100000000
+TIMESTEP DT = .075
+CHECK_INTERVAL 100
+WRITE_RESULT NAME=data/result INTERVAL=1000
+
+RESET_STATS TIME = 2000
+STATS u p rho
+
+# subgrid model
+SGS_MODEL VREMAN
+
+#Boundary Conditions
+buildings = WM_ALG_WALL 
+interior  = WM_ALG_WALL 
+ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top       = SLIP
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# advanced multigrid solver options
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+# Momentum equation
+# MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+MOMENTUM_MAXITER 100 
+MOMENTUM_ZERO 1e-6
+# Pressure equation
+PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+PRESSURE_MG_NSMOOTH 20,20 # first is fine grid  #if smoother=1, half this 5,5
+PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+PRESSURE_MAXITER 100 
+PRESSURE_ZERO 1e-6
+
+# #################################
+# ###########  Images  ###########
+# #################################
+
+FLUSH_IMAGES 24
+
+# #ABL
+# WRITE_IMAGE NAME=./Images/u_y5   INTERVAL=100 TARGET 260 240 270 CAMERA 260 -240 270 SIZE 920 920 WIDTH 120 GEOM PLANE 240 5 240 0 -1 0   VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_y10  INTERVAL=100 TARGET 260 240 270 CAMERA 260 -240 270 SIZE 920 920 WIDTH 120 GEOM PLANE 240 10 240 0 -1 0  VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_z265 INTERVAL=100 TARGET 240 120 240 CAMERA 240 120 480 SIZE 1600 800 WIDTH 480 GEOM PLANE 240 240 265 0 0 1 VAR=mag(u)
+
+# #Window Profiles
+# WRITE_IMAGE NAME=./Images/u_z265_window INTERVAL=100 TARGET 260 10 265 CAMERA 260 10 480  SIZE 1380 690 WIDTH 40 GEOM PLANE 240 20 265 0 0 1 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_z275_window INTERVAL=100 TARGET 260 10 275 CAMERA 260 10 480  SIZE 1380 690 WIDTH 40 GEOM PLANE 240 20 275 0 0 1 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_x250_window INTERVAL=100 TARGET 250 10 270 CAMERA -480 15 270 SIZE 1380 920 WIDTH 30 GEOM PLANE 250 20 270 -1 0 0 UP=0 1 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_x260_window INTERVAL=100 TARGET 260 10 270 CAMERA -480 15 270 SIZE 1380 920 WIDTH 30 GEOM PLANE 260 20 270 -1 0 0 UP=0 1 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_x270_window INTERVAL=100 TARGET 270 10 270 CAMERA -480 15 270 SIZE 1380 920 WIDTH 30 GEOM PLANE 270 20 270 -1 0 0 UP=0 1 0 VAR=mag(u)
+
+# #Interior House Pressures
+# WRITE_IMAGE NAME=./Images/pavg_z260_h1 INTERVAL=1000 TARGET 260 5 260 CAMERA 260 5 259 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_z280_h1 INTERVAL=1000 TARGET 260 5 280 CAMERA 260 5 281 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_x245_h1 INTERVAL=1000 TARGET 245 5 270 CAMERA 244 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_x275_h1 INTERVAL=1000 TARGET 275 5 270 CAMERA 276 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_avg
+
+# WRITE_IMAGE NAME=./Images/prms_z260_h1 INTERVAL=1000 TARGET 260 5 260 CAMERA 260 5 259 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_z280_h1 INTERVAL=1000 TARGET 260 5 280 CAMERA 260 5 281 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_x245_h1 INTERVAL=1000 TARGET 245 5 270 CAMERA 244 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_x275_h1 INTERVAL=1000 TARGET 275 5 270 CAMERA 276 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_rms
+
+# #Exterior House Pressures
+# WRITE_IMAGE NAME=./Images/pavg_z260_h1 INTERVAL=1000 TARGET 300 5 260 CAMERA 300 5 259 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_z280_h1 INTERVAL=1000 TARGET 300 5 280 CAMERA 300 5 281 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_x285_h1 INTERVAL=1000 TARGET 285 5 270 CAMERA 284 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_avg
+# WRITE_IMAGE NAME=./Images/pavg_x315_h1 INTERVAL=1000 TARGET 315 5 270 CAMERA 316 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_avg
+
+# WRITE_IMAGE NAME=./Images/prms_z260_h1 INTERVAL=1000 TARGET 300 5 260 CAMERA 300 5 259 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_z280_h1 INTERVAL=1000 TARGET 300 5 280 CAMERA 300 5 281 SIZE 1380 460 WIDTH 30 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_x285_h1 INTERVAL=1000 TARGET 285 5 270 CAMERA 284 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_rms
+# WRITE_IMAGE NAME=./Images/prms_x315_h1 INTERVAL=1000 TARGET 315 5 270 CAMERA 316 5 270 SIZE 920 460  WIDTH 20 UP=0 1 0 VAR_ON_SURFACE=p_rms
+
+
+# # POST
+# # INTERACTIVE
+
+# #################################
+# ###########  PROBING  ###########
+# #################################
+
+# POINTCLOUD_PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/col_9-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+# POINTCLOUD_PROBE NAME=probes/probesOut/col_9-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
