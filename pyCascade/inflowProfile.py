@@ -9,7 +9,7 @@
 # --ustar    Friction velocity of log law
 # --UatZ     Instead of friction velocity, specify U at some altitude
 # --method   'ASCE' for the method prescribed in ASCE7, 'Stull' for the method from the Stull textbook. Defaults to ASCE
-# --filename Where to write the .dat file
+# --filename Where to write the .dat file (other files must have standard name, so not an option)
 # --plot     Flag to plot resulting profiles
 
 import numpy as np
