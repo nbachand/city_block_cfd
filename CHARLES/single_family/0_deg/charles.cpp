@@ -222,9 +222,12 @@ public:
 
         // add perturbations
         const double perturbation_scaling = 0.1;
-        u[icv][0] += ux*perturbation_scaling*(double(rand())/double(RAND_MAX)-0.5);
-        u[icv][1] += ux*perturbation_scaling*(double(rand())/double(RAND_MAX)-0.5);
-        u[icv][2] += ux*perturbation_scaling*(double(rand())/double(RAND_MAX)-0.5);
+        double uy_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+        double uz_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+
+        u[icv][0] -= uy_pert+uz_pert;
+        u[icv][1] += uy_pert;
+        u[icv][2] += uz_pert;
 
       }
     }

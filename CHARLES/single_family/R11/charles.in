@@ -1,6 +1,6 @@
 RESTART = ../../../STITCH/single_family/4M-mesh.mles #./data/result.00010000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
-INIT time = 0.0 step = 0 u = 1 0.001 0.001 p=0
+INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
  
 #Equation of state
@@ -11,8 +11,8 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 100000000
-TIMESTEP DT = .075
-CHECK_INTERVAL 100
+TIMESTEP DT = .001
+# CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
 RESET_STATS TIME = 2000
