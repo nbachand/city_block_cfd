@@ -1,8 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=csf_R11
+#SBATCH --job-name=csf_R13
 #SBATCH -n 32
-#SBATCH --time=00:01:00
-# SBATCH -N 1
+#SBATCH --time=01:00:00
+#SBATCH -N 1
+#SBATCH --mem 0
 
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
