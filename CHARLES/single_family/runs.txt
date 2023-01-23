@@ -8,7 +8,7 @@ R7 - Running from R5 with added outputs - sherlock
 R8 - Running 45 deg, ~700k - wecivil
 R9 - Running from R7, 4M. CFL too high, need to rerun - sherlock
 R10 - Running 45 deg from R8,  4M - sherlock
-R11 - Trying to run equivalent of R7 with 6m house and random turbulence initialization, 4M - sherlock
+R11 - Trying to run equivalent of R7 with 6m house and random turbulence initialization, 4M - sherlock [1400 takes about 4:20]
 R12 - Testing scaling of runnin 1 node instead of 4 (R11)
-R13 - Testing effect of output on run speed by removing all outputs
-
+R13 - Testing effect of output on run speed by removing all outputs [ran to 1400 in 1 hr]
+R14 - Testing probes insted of pointcloud_probes. Get similar performance to R13 even with outputs [ran 2800 in 2 hr]
