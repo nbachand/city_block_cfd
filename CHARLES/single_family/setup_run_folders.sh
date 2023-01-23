@@ -7,10 +7,11 @@ echo "Creating folder in $(pwd)"
 mkdir $LOCAL_FOLDER
 mkdir $LOCAL_FOLDER/"plots"
 mkdir $LOCAL_FOLDER/"Videos"
+mkdir $LOCAL_FOLDER/"tables"
 
-# cd $SCRATCH/$PARENT_DIR/
+cd $SCRATCH/$PARENT_DIR/
 
-# echo "Creating folder in $(pwd)"
+echo "Creating folder in $(pwd)"
 
 mkdir $LOCAL_FOLDER
 mkdir $LOCAL_FOLDER/"data"

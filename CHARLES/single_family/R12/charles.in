@@ -1,6 +1,6 @@
-RESTART = ../../../STITCH/single_family/4M-mesh.mles #./data/result.00002000.sles
+RESTART = ../../../STITCH/single_family/4M-mesh.mles #./data/result.00006000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
-INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
+# INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
  
 #Equation of state
@@ -12,7 +12,7 @@ HELMHOLTZ_SOS 340.65
 # Time + output setup
 NSTEPS = 100000000
 TIMESTEP DT = .01
-# CHECK_INTERVAL 100
+CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
 RESET_STATS TIME = 2000
@@ -49,9 +49,9 @@ PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
 PRESSURE_MAXITER 100 
 PRESSURE_ZERO 1e-6
 
-# #################################
-# ###########  Images  ###########
-# #################################
+ #################################
+ ###########  Images  ###########
+ #################################
 
 FLUSH_IMAGES 24
 
@@ -97,24 +97,24 @@ WRITE_IMAGE NAME=./Images/prms_x315_h1 INTERVAL=1000 TARGET 94.5 1.5 81 CAMERA 9
 ###########  PROBING  ###########
 #################################
 
-# POINTCLOUD_PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/col_9-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
-# POINTCLOUD_PROBE NAME=probes/probesOut/col_9-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zdoor_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zdoor_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_0-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_0-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_1-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_1-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-0 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-0.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/xwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/xwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/zwindow_2-1 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/zwindow_2-1.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/col_9-2 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=probes/probesOut/col_9-6 INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probes/locations/col_9-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
