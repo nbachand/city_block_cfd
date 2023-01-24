@@ -186,52 +186,69 @@ public:
 
   ~MyHelmholtzSolver() {}
 
-  void initialHook() {
+    void initialHook() {
     if (step == 0) {
       if ( mpi_rank == 0 ) 
         cout << ">>>>> specifying initial velocity field" << endl;
-
-      FOR_ICV {
-        //rho[icv] = rho_ref;
-
+      
+      const double u_bulk = 5.686382916184899;
+      const double domain_height = 144;
+      
+      FOR_ICV {        
         const double y = x_cv[icv][1];
-        const double absy = abs(y);
 
-        const double vK_const = 0.4;
-        const double rho = 1.225;
-        const double mu = 1.7894e-5;
-
-        const double hm = 6;
-        const double z_0 = 0.061*hm; //used for convention, but really y_0
-        const double Lz =  24*hm;
-        const double z_ref = 10;
-        const double U_ref = 4;
-        const double shear_vel = vK_const*U_ref/log(z_ref/z_0);
-
-        const double disp = 1.11*hm;
-
-        // approximate log law mean profile
-        double y_scaled = (absy-disp)/z_0;
-        y_scaled = max(1.0, y_scaled);
-        const double ux = (shear_vel/vK_const)*log(y_scaled);
-
-        u[icv][0] = ux;
-        // u[icv][0] = 0.01;
-        u[icv][1] = 0;
-        u[icv][2] = 0;
-
-        // add perturbations
-        const double perturbation_scaling = 0.1;
-        double uy_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
-        double uz_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
-
-        u[icv][0] -= uy_pert+uz_pert;
-        u[icv][1] += uy_pert;
-        u[icv][2] += uz_pert;
-
+        u[icv][0] = u_bulk*2*(1-y/domain_height);
+        u[icv][1] = .000001;
+        u[icv][2] = .000001;
       }
     }
   }
+  // void initialHook() {
+  //   if (step == 0) {
+  //     if ( mpi_rank == 0 ) 
+  //       cout << ">>>>> specifying initial velocity field" << endl;
+
+  //     FOR_ICV {
+  //       //rho[icv] = rho_ref;
+
+  //       const double y = x_cv[icv][1];
+  //       const double absy = abs(y);
+
+  //       const double vK_const = 0.4;
+  //       const double rho = 1.225;
+  //       const double mu = 1.7894e-5;
+
+  //       const double hm = 6;
+  //       const double z_0 = 0.061*hm; //used for convention, but really y_0
+  //       const double Lz =  24*hm;
+  //       const double z_ref = 10;
+  //       const double U_ref = 4;
+  //       const double shear_vel = vK_const*U_ref/log(z_ref/z_0);
+
+  //       const double disp = 1.11*hm;
+
+  //       // approximate log law mean profile
+  //       double y_scaled = (absy-disp)/z_0;
+  //       y_scaled = max(1.0, y_scaled);
+  //       const double ux = (shear_vel/vK_const)*log(y_scaled);
+
+  //       u[icv][0] = ux;
+  //       // u[icv][0] = 0.01;
+  //       u[icv][1] = 0;
+  //       u[icv][2] = 0;
+
+  //       // add perturbations
+  //       const double perturbation_scaling = 0.1;
+  //       double uy_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+  //       double uz_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+
+  //       u[icv][0] -= uy_pert+uz_pert;
+  //       u[icv][1] += uy_pert;
+  //       u[icv][2] += uz_pert;
+
+  //     }
+  //   }
+  // }
 
   void temporalHook() {}
 
