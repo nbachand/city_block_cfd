@@ -24,12 +24,11 @@ class LES_Physics(utils.Helper):
         z_scaled[z_scaled<1] = 1
 
         log_wind = (uStar/vK_const)*np.log(z_scaled)
-        self.LES_params['log_wind'] = log_wind
         plt.plot(log_wind, z_values)
         plt.xlabel('velocity')
         plt.ylabel('height [m]')
 
-        for key in ['uStar', 'z0', 'disp', 'vK_const', 'z_values']:
+        for key in ['uStar', 'z0', 'disp', 'vK_const', 'z_values', 'log_wind']:
             self.LES_params[key] = eval(key) #save params
 
     def calc_flatplate_quantities(
@@ -85,4 +84,27 @@ class LES_Physics(utils.Helper):
         key = 'norm_pressure_source'
         self.LES_params[key] = eval(key)
 
+    def plot_spinup_velocity(
+        self, 
+        log_wind = "self.LES_params['log_wind']", 
+        z_values = "self.LES_params['z_values']"
+        ):
+
+        log_wind, z_values = [self.get_input(input) for input in [log_wind, z_values]]
+        
+        domain_height = np.max(z_values)
+        u_bulk = np.trapz(log_wind, z_values)/domain_height
+        print(f'u_bulk is {u_bulk}')
+        print(f'domain height is {domain_height}')
+
+        spinup_profile = u_bulk*2*(1-z_values/domain_height)
+
+        plt.plot(spinup_profile, z_values)
+        plt.xlabel('velocity')
+        plt.ylabel('height [m]')
+
+        for key in ['log_wind', 'z_values', 'u_bulk']:
+            self.LES_params[key] = eval(key) #save params
+
+        
 
