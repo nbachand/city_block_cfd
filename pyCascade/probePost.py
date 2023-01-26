@@ -10,8 +10,15 @@ import pickle
 from pandarallel import pandarallel
 
 
-def read_probes(filename):
+def read_pointcloud_probes(filename):
     df = pd.read_csv(filename, delim_whitespace=True)  # read as dataframe
+    return df.stack().to_dict()  # save as tuple indexed dictionary
+
+def read_probes(filename):
+    df = pd.read_csv(filename, delim_whitespace=True, comment = "#", header = None).transpose()  # read as dataframe
+    new_header = df.iloc[1] #grab the first row for the header
+    df = df[3:] #take the data less the header row
+    df.columns = new_header #set the header row as the df header
     return df.stack().to_dict()  # save as tuple indexed dictionary
 
 
@@ -20,7 +27,7 @@ def read_locations(filename):
 
 
 def parallel_functions(value):
-    """ 
+    """
     Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
     This speeds up parrallel processing because less infromation is passed to subprocesses.
     """
@@ -79,10 +86,78 @@ def ClenshawCurtis_Quadrature(data_df):
 
 
 class Probes(utils.Helper):
-    def __init__(self, directory):
+    def __init__(self, directory, probe_type = "PROBES"):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
         Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
+        self.slice_into_df.
+        """
+
+        self.probe_type = probe_type
+        
+        if probe_type == "POINTCLOUD_PROBES":
+            self.import_pointcloud_probes(directory)
+        elif probe_type == "PROBES":
+            self.import_probes(directory)
+        else:
+            raise("probe_type not recognized")
+
+    def import_probes(self, directory):
+        """
+        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
+        Data is indexed as self.data[(name, quant)][(stack, step)]. This format mimics the multiIndex DataFrame created in
+        self.slice_int_df.
+        """
+        my_dict = {}  # this will be a tuple indexed 1-level dictionary.
+        # create a generator to iterate over probe paths
+        path_generator = glob.iglob(f'{directory}/*.*')
+        probe_names = []
+        probe_quants = []
+
+        for path in path_generator:
+
+            if "README" in path:
+                continue
+
+            file_name = path.split('/')[-1]  # get the local file name
+            probe_info = file_name.split('.')
+            probe_name, probe_quant = probe_info[:]
+
+            probe_names.append(probe_name)
+            probe_quants.append(probe_quant)
+
+            # store the pcd path and pcd reader function
+            my_dict[(probe_name, probe_quant)] = (read_probes, path)
+
+        # iterate through the upper data dict
+        my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
+
+        self.probe_names = [*set(probe_names)]  # remove duplicates
+        # remove duplicates and sort
+        self.probe_quants = [*set(probe_quants)]
+
+        # get the all quants and (max) stack across all probes
+        steps = ()
+        stack = ()
+        for name in self.probe_names:
+            representative_dict = my_dict[(
+                name, self.probe_quants[0])]
+            representative_dict_keys = list(
+                zip(*representative_dict.keys()))  # unzip list of tuples
+            # sort and remove duplicates
+            steps += representative_dict_keys[1]
+            # sort and remove duplicates
+            stack += representative_dict_keys[0]
+        # sort and remove duplicates
+        self.probe_steps = [*set(steps)]
+        # sort and remove duplicates
+        self.probe_stack = [*set(stack)]
+        self.data = my_dict
+
+    def import_pointcloud_probes(self, directory):
+        """
+        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
+        Data is indexed as self.data[(name,step)][(stack, quant)]. This format mimics the multiIndex DataFrame created in
         self.slice_int_df.
         """
         my_dict = {}  # this will be a tuple indexed 1-level dictionary.
@@ -102,7 +177,7 @@ class Probes(utils.Helper):
             probe_steps.append(probe_step)
 
             # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_step)] = (read_probes, path)
+            my_dict[(probe_name, probe_step)] = (read_pointcloud_probes, path)
 
         # iterate through the upper data dict
         my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
