@@ -89,120 +89,73 @@ class Probes(utils.Helper):
     def __init__(self, directory, probe_type = "PROBES"):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
-        self.slice_into_df.
+        For POINTCLOUD_PROBES data is indexed as self.data[(name,step)][(stack, quant)]. For PROBES data is indexed as 
+        self.data[(name, quant)][(stack, step)]. This format mimics the multiIndex DataFrame created in self.slice_into_df.
         """
 
         self.probe_type = probe_type
-        
-        if probe_type == "POINTCLOUD_PROBES":
-            self.import_pointcloud_probes(directory)
-        elif probe_type == "PROBES":
-            self.import_probes(directory)
-        else:
-            raise("probe_type not recognized")
 
-    def import_probes(self, directory):
-        """
-        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name, quant)][(stack, step)]. This format mimics the multiIndex DataFrame created in
-        self.slice_int_df.
-        """
         my_dict = {}  # this will be a tuple indexed 1-level dictionary.
         # create a generator to iterate over probe paths
         path_generator = glob.iglob(f'{directory}/*.*')
         probe_names = []
-        probe_quants = []
+        probe_tbd1s = []
 
         for path in path_generator:
 
-            if "README" in path:
-                continue
-
-            file_name = path.split('/')[-1]  # get the local file name
-            probe_info = file_name.split('.')
-            probe_name, probe_quant = probe_info[:]
+            if self.probe_type == "POINTCLOUD_PROBES":
+                if ".pcb" not in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1, _ = probe_info[:]
+                probe_tbd1 = int(probe_tbd1)
+                # store the pcd path and pcd reader function
+                my_dict[(probe_name, probe_tbd1)] = (read_pointcloud_probes, path)
+            elif self.probe_type == "PROBES":
+                if "README" in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1 = probe_info[:]
+                # store the pcd path and pcd reader function
+                my_dict[(probe_name, probe_tbd1)] = (read_probes, path)
 
             probe_names.append(probe_name)
-            probe_quants.append(probe_quant)
-
-            # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_quant)] = (read_probes, path)
+            probe_tbd1s.append(probe_tbd1)
 
         # iterate through the upper data dict
         my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
-        self.probe_quants = [*set(probe_quants)]
+        probe_tbd1s = [*set(probe_tbd1s)]
 
         # get the all quants and (max) stack across all probes
-        steps = ()
+        tbd2s = ()
         stack = ()
         for name in self.probe_names:
             representative_dict = my_dict[(
-                name, self.probe_quants[0])]
+                name, probe_tbd1s[0])]
             representative_dict_keys = list(
                 zip(*representative_dict.keys()))  # unzip list of tuples
             # sort and remove duplicates
-            steps += representative_dict_keys[1]
+            tbd2s += representative_dict_keys[1]
             # sort and remove duplicates
             stack += representative_dict_keys[0]
         # sort and remove duplicates
-        self.probe_steps = [*set(steps)]
+        probe_tbd2s = [*set(tbd2s)]
         # sort and remove duplicates
         self.probe_stack = [*set(stack)]
+        if self.probe_type == "POINTCLOUD_PROBE":
+            self.probe_steps = probe_tbd1s
+            self.probe_quants = probe_tbd2s
+        elif self.probe_type == "PROBES":
+            self.probe_steps = probe_tbd2s
+            self.probe_quants = probe_tbd1s
+
         self.data = my_dict
-
-    def import_pointcloud_probes(self, directory):
-        """
-        File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name,step)][(stack, quant)]. This format mimics the multiIndex DataFrame created in
-        self.slice_int_df.
-        """
-        my_dict = {}  # this will be a tuple indexed 1-level dictionary.
-        # create a generator to iterate over probe paths
-        path_generator = glob.iglob(f'{directory}/*.pcd')
-        probe_names = []
-        probe_steps = []
-
-        for path in path_generator:
-
-            file_name = path.split('/')[-1]  # get the local file name
-            probe_info = file_name.split('.')
-            probe_name, probe_step, _ = probe_info[:]
-            probe_step = int(probe_step)
-
-            probe_names.append(probe_name)
-            probe_steps.append(probe_step)
-
-            # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_step)] = (read_pointcloud_probes, path)
-
-        # iterate through the upper data dict
-        my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
-
-        self.probe_names = [*set(probe_names)]  # remove duplicates
-        # remove duplicates and sort
-        self.probe_steps = [*set(probe_steps)]
-
-        # get the all quants and (max) stack across all probes
-        quants = ()
-        stack = ()
-        for name in self.probe_names:
-            representative_dict = my_dict[(
-                name, self.probe_steps[0])]
-            representative_dict_keys = list(
-                zip(*representative_dict.keys()))  # unzip list of tuples
-            # sort and remove duplicates
-            quants += representative_dict_keys[1]
-            # sort and remove duplicates
-            stack += representative_dict_keys[0]
-        # sort and remove duplicates
-        self.probe_quants = [*set(quants)]
-        # sort and remove duplicates
-        self.probe_stack = [*set(stack)]
-        self.data = my_dict
+        
 
     def get_locations(self, dir_locations):
         locations = {}
