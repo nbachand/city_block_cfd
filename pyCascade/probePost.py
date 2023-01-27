@@ -76,6 +76,14 @@ def ClenshawCurtis_Quadrature(data_df):
 
     return integrated_data
 
+# use to define lambda function with mul preset
+def mul_names(data_df, names, mul):
+    data_df = data_df.T
+    sliced_data = data_df.loc[names]
+    sliced_data*=mul
+    data_df.update(sliced_data)
+    return data_df.T
+
 
 
 class Probes(utils.Helper):
