@@ -10,8 +10,15 @@ import pickle
 from pandarallel import pandarallel
 
 
-def read_probes(filename):
+def read_pointcloud_probes(filename):
     df = pd.read_csv(filename, delim_whitespace=True)  # read as dataframe
+    return df.stack().to_dict()  # save as tuple indexed dictionary
+
+def read_probes(filename):
+    df = pd.read_csv(filename, delim_whitespace=True, comment = "#", header = None).transpose()  # read as dataframe
+    new_header = df.iloc[1] #grab the first row for the header
+    df = df[3:].reset_index(drop=True) #take the data less the header row
+    df.columns = new_header #set the header row as the df header
     return df.stack().to_dict()  # save as tuple indexed dictionary
 
 
@@ -20,7 +27,7 @@ def read_locations(filename):
 
 
 def parallel_functions(value):
-    """ 
+    """
     Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
     This speeds up parrallel processing because less infromation is passed to subprocesses.
     """
@@ -35,13 +42,13 @@ def mean_convergence(data_df):
     data_steps = [*set(data_df_index[1])] # sort and remove duplicates
     n_names = len([*set(data_df_index[0])])
 
-    var_cum_avg = time_sum.div(
+    quant_cum_avg = time_sum.div(
         np.tile(data_steps, n_names), axis='columns', level='step')  # cumumlative averge
-    var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
-    data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
+    quant_last_avg = quant_cum_avg.groupby(axis='columns', level='name').last()
+    data_diff = quant_cum_avg.sub(quant_last_avg, axis='columns', level='name')
 
     data_diff_norm = abs(data_diff.div(
-        var_last_avg, axis='columns', level='name'))
+        quant_last_avg, axis='columns', level='name'))
 
     return data_diff_norm
 
@@ -71,8 +78,8 @@ def ClenshawCurtis_Quadrature(data_df):
 
     Quad_weights = np.tile(CC_weights, 10) * np.repeat(CC_weights, 10) * (interval/2)**2
     Quad_weights = Quad_weights[..., np.newaxis]
-    wighted_data = data_df.groupby(axis='index', level='var').apply(lambda x: x*Quad_weights)
-    integrated_data = wighted_data.groupby(axis='index', level='var').sum()
+    wighted_data = data_df.groupby(axis='index', level='quant').apply(lambda x: x*Quad_weights)
+    integrated_data = wighted_data.groupby(axis='index', level='quant').sum()
 
     return integrated_data
 
@@ -87,55 +94,76 @@ def mul_names(data_df, names, mul):
 
 
 class Probes(utils.Helper):
-    def __init__(self, directory):
+    def __init__(self, directory, probe_type = "PROBES"):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
-        self.slice_int_df.
+        For POINTCLOUD_PROBES data is indexed as self.data[(name,step)][(stack, quant)]. For PROBES data is indexed as 
+        self.data[(name, quant)][(stack, step)]. This format mimics the multiIndex DataFrame created in self.slice_into_df.
         """
+
+        self.probe_type = probe_type
+
         my_dict = {}  # this will be a tuple indexed 1-level dictionary.
         # create a generator to iterate over probe paths
-        path_generator = glob.iglob(f'{directory}/*.pcd')
+        path_generator = glob.iglob(f'{directory}/*.*')
         probe_names = []
-        probe_steps = []
+        probe_tbd1s = []
 
         for path in path_generator:
 
-            file_name = path.split('/')[-1]  # get the local file name
-            probe_info = file_name.split('.')
-            probe_name, probe_step, _ = probe_info[:]
-            probe_step = int(probe_step)
+            if self.probe_type == "POINTCLOUD_PROBES":
+                if ".pcb" not in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1, _ = probe_info[:]
+                probe_tbd1 = int(probe_tbd1)
+                # store the pcd path and pcd reader function
+                my_dict[(probe_name, probe_tbd1)] = (read_pointcloud_probes, path)
+            elif self.probe_type == "PROBES":
+                if "README" in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1 = probe_info[:]
+                # store the pcd path and pcd reader function
+                my_dict[(probe_name, probe_tbd1)] = (read_probes, path)
 
             probe_names.append(probe_name)
-            probe_steps.append(probe_step)
-
-            # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_step)] = (read_probes, path)
+            probe_tbd1s.append(probe_tbd1)
 
         # iterate through the upper data dict
         my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
-        self.probe_steps = [*set(probe_steps)]
+        probe_tbd1s = [*set(probe_tbd1s)]
 
         # get the all quants and (max) stack across all probes
-        quants = ()
-        stack = ()
+        probe_tbd2s = ()
+        probe_stack = ()
         for name in self.probe_names:
             representative_dict = my_dict[(
-                name, self.probe_steps[0])]
+                name, probe_tbd1s[0])]
             representative_dict_keys = list(
                 zip(*representative_dict.keys()))  # unzip list of tuples
             # sort and remove duplicates
-            quants += representative_dict_keys[1]
+            probe_tbd2s += representative_dict_keys[1]
             # sort and remove duplicates
-            stack += representative_dict_keys[0]
+            probe_stack += representative_dict_keys[0]
         # sort and remove duplicates
-        self.probe_quants = [*set(quants)]
+        probe_tbd2s = [*set(probe_tbd2s)]
         # sort and remove duplicates
-        self.probe_stack = [*set(stack)]
+        self.probe_stack = [*set(probe_stack)]
+        if self.probe_type == "POINTCLOUD_PROBE":
+            self.probe_steps = probe_tbd1s
+            self.probe_quants = probe_tbd2s
+        elif self.probe_type == "PROBES":
+            self.probe_steps = probe_tbd2s
+            self.probe_quants = probe_tbd1s
+
         self.data = my_dict
+        
 
     def get_locations(self, dir_locations):
         locations = {}
@@ -150,12 +178,15 @@ class Probes(utils.Helper):
         self,
         names = "self.probe_names",
         steps = "self.probe_steps",
+        quants = "self.probe_quants",
         parallel = False
     ):
-
-        
-        # default to all probes, setps
-        names, steps = [self.get_input(input) for input in [names, steps]]
+        # default to all probes, setps/quants
+        names, steps, quants = [self.get_input(input) for input in [names, steps, quants]]
+        if self.probe_type == "POINTCLOULD_PROBES":
+            second_ind = steps
+        elif self.probe_type == "PROBES":
+            second_ind = quants
 
         # turn outer dict into series for vectorzed opperations
         mi_series = pd.Series(self.data)
@@ -164,7 +195,7 @@ class Probes(utils.Helper):
         # get desired values, temporarily converting from multiindex to dataframe for .loc speed increase
         st = utils.start_timer()
         df_from_mi_series = mi_series.unstack()
-        df_sliced = df_from_mi_series.loc[names, steps]
+        df_sliced = df_from_mi_series.loc[names, second_ind]
         df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
         mi_series_sliced = df_sliced.stack()
         utils.end_timer(st, "slicing")
@@ -181,8 +212,10 @@ class Probes(utils.Helper):
             mi_df = mi_series_sliced.apply(parallel_functions)
 
         mi_df = mi_df.T
+        if self.probe_type == 'PROBES':
+            mi_df = mi_df.unstack().stack(level=-2)#.swaplevel(axis=0)
 
-        mi_df.index.rename(['stack', 'var'], inplace=True)
+        mi_df.index.rename(['stack', 'quant'], inplace=True)
         if isinstance(mi_df, pd.DataFrame):
             mi_df.columns.rename(['name', 'step'], inplace=True)
 
@@ -210,7 +243,7 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
+        data = self.slice_into_df(names, steps, quants, parrallel)
         data = data.loc[(stack,quants),:]
         n_names = len(names)
         n_quants = len(quants)
@@ -227,9 +260,9 @@ class Probes(utils.Helper):
         # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(n_names, n_quants, constrained_layout =True)
 
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
-                plot_levels = plot_params['plot_levels'][var]
+        for j, (quant, quant_df) in enumerate(processed_data.groupby(axis='index', level='quant')):
+            if 'plot_levels' in plot_params and quant in plot_params['plot_levels']:
+                plot_levels = plot_params['plot_levels'][quant]
             else:
                 plot_levels = 256
 
@@ -237,8 +270,8 @@ class Probes(utils.Helper):
             im_list = []
             vmins = [] # for colorbar
             vmaxs = []
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('var', axis='index')
+            for i, (name, name_df) in enumerate(quant_df.groupby(axis='columns', level='name')):
+                plot_df = name_df.droplevel('quant', axis='index')
                 plot_df = plot_df.droplevel('name', axis='columns')
                 plot_df = plot_df.dropna()
                 sub_ax = utils.ax_index(ax, i, j)
@@ -270,7 +303,7 @@ class Probes(utils.Helper):
                 if i < n_names-1:
                     sub_ax.xaxis.set_visible(False)
                 else:
-                    sub_ax.set_xlabel(var)
+                    sub_ax.set_xlabel(quant)
 
                 vmin, vmax = im.get_clim()
                 vmins.append(vmin)
@@ -315,7 +348,7 @@ class Probes(utils.Helper):
         ):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
-        data = self.slice_into_df(names, steps, parrallel)
+        data = self.slice_into_df(names, steps,quants, parrallel)
         data = data.loc[(stack,quants),:]
 
         processed_data = data
@@ -326,9 +359,9 @@ class Probes(utils.Helper):
             utils.end_timer(st, 'processing data')
 
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('var', axis='index')
+        for j, (quant, quant_df) in enumerate(processed_data.groupby(axis='index', level='quant')):
+            for i, (name, name_df) in enumerate(quant_df.groupby(axis='columns', level='name')):
+                plot_df = name_df.droplevel('quant', axis='index')
                 plot_df = plot_df.dropna()
                 # if isinstance(plot_df, pd.DataFrame):
                 #     plot_df = plot_df.droplevel('name', axis='columns')
@@ -342,7 +375,7 @@ class Probes(utils.Helper):
                 if 'veritcal scaling' in plot_params:
                    yPlot*=plot_params['veritcal scaling']
 
-                ax.plot(plot_df.values, yPlot, label=f'{name}: {var}')
+                ax.plot(plot_df.values, yPlot, label=f'{name}: {quant}')
                 if 'xlabel' in plot_params:
                     fig.supxlabel(plot_params['xlabel'])
                 if 'ylabel' in plot_params:
@@ -381,8 +414,8 @@ class Probes(utils.Helper):
         # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
 
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
+        for j, (quant, quant_df) in enumerate(processed_data.groupby(axis='index', level='quant')):
+            for i, (name, name_df) in enumerate(quant_df.groupby(axis='columns', level='name')):
                 plot_df = name_df.droplevel('name', axis='columns')
                 plot_df = plot_df.dropna()
                 
@@ -398,7 +431,7 @@ class Probes(utils.Helper):
                 if 'veritcal scaling' in plot_params:
                    yPlot*=plot_params['veritcal scaling']
 
-                ax.plot(xPlot, yPlot, label=f'{name}: {var}')
+                ax.plot(xPlot, yPlot, label=f'{name}: {quant}')
                 if 'xlabel' in plot_params:
                     fig.supxlabel(plot_params['xlabel'])
                 if 'ylabel' in plot_params:
