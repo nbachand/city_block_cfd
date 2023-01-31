@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib import cm, colors
 import pandas as pd
 import pickle
+from pyarrow import csv
 
 from pandarallel import pandarallel
 
@@ -14,9 +15,19 @@ def read_pointcloud_probes(filename):
     df = pd.read_csv(filename, delim_whitespace=True)  # read as dataframe
     return df.stack().to_dict()  # save as tuple indexed dictionary
 
+def skip_comment(row):
+    if row.text.startswith("# "):
+        return 'skip'
+    else:
+        return 'error'
+
 def read_probes(filename):
-    df = pd.read_csv(filename, delim_whitespace=True, comment = "#", header = None).transpose()  # read as dataframe
-    new_header = df.iloc[1] #grab the first row for the header
+    read_options = csv.ReadOptions(skip_rows = 5, autogenerate_column_names = True)
+    parse_options = csv.ParseOptions(delimiter=" ", invalid_row_handler=skip_comment)
+    pyarrow_table = csv.read_csv(filename, read_options, parse_options)
+    df = pyarrow_table.to_pandas()
+    df = df.transpose()
+    new_header = df.iloc[1] #grab the second row for the header
     df = df[3:].reset_index(drop=True) #take the data less the header row
     df.columns = new_header #set the header row as the df header
     return df.stack().to_dict()  # save as tuple indexed dictionary
