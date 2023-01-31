@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib import cm, colors
 import pandas as pd
 import pickle
-from pyarrow import csv
+from pyarrow import csv, cpu_count
 
 from pandarallel import pandarallel
 
@@ -22,6 +22,7 @@ def skip_comment(row):
         return 'error'
 
 def read_probes(filename):
+    print(f"Pyarrow reading PROBE file on {cpu_count()} threads")
     read_options = csv.ReadOptions(skip_rows = 5, autogenerate_column_names = True)
     parse_options = csv.ParseOptions(delimiter=" ", invalid_row_handler=skip_comment)
     pyarrow_table = csv.read_csv(filename, read_options, parse_options)
@@ -162,6 +163,8 @@ class Probes(utils.Helper):
             probe_tbd2s += representative_dict_keys[1]
             # sort and remove duplicates
             probe_stack += representative_dict_keys[0]
+            if self.probe_type == "PROBES":
+                break
         # sort and remove duplicates
         probe_tbd2s = [*set(probe_tbd2s)]
         # sort and remove duplicates
@@ -214,7 +217,7 @@ class Probes(utils.Helper):
         st = utils.start_timer()
 
         # dont use parrall for debugging, else significant speed up
-        if parallel:
+        if parallel and self.probe_type == "POINTCLOUD_PROBES":
             # initialize(36) or initialize(os.cpu_count()-1)
             pandarallel.initialize(progress_bar=True)
             # read in data directly (not indecing self.data)
@@ -352,7 +355,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         processing = None,
         parrallel = False,
         plot_params = {}
@@ -400,7 +403,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
@@ -457,7 +460,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
