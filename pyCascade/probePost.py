@@ -6,7 +6,8 @@ from matplotlib import pyplot as plt
 from matplotlib import cm, colors
 import pandas as pd
 import pickle
-from pyarrow import csv, cpu_count
+from pyarrow import csv, cpu_count, set_cpu_count
+import os
 
 from pandarallel import pandarallel
 
@@ -22,6 +23,7 @@ def skip_comment(row):
         return 'error'
 
 def read_probes(filename):
+    set_cpu_count(os.cpu_count())
     print(f"Pyarrow reading PROBE file on {cpu_count()} threads")
     read_options = csv.ReadOptions(skip_rows = 5, autogenerate_column_names = True)
     parse_options = csv.ParseOptions(delimiter=" ", invalid_row_handler=skip_comment)
