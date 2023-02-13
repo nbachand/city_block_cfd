@@ -8,37 +8,31 @@ import pandas as pd
 from dask import dataframe as dd
 from pandarallel import pandarallel
 
-
 def read_pointcloud_probes(filename):
-    df = pd.read_csv(filename, delim_whitespace=True)  # read as dataframe
-    return df.stack().to_dict()  # save as tuple indexed dictionary
-
-def skip_comment(row):
-    if row.text.startswith("# "):
-        return 'skip'
-    else:
-        return 'error'
+    return dd.read_csv(filename, delim_whitespace=True)  # read as dataframe
 
 def read_probes(filename):
     ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
-    df = ddf.compute()
-    df = df.transpose()
-    new_header = df.iloc[1] #grab the second row for the header
-    df = df[3:].reset_index(drop=True) #take the data less the header row
-    df.columns = new_header #set the header row as the df header
-    return df.stack().to_dict()  # save as tuple indexed dictionary
+    new_index = ddf.iloc[:, 1] #grab the second column for the index
+    ddf = ddf.iloc[:, 3:] #take the data less the index rows
+    ddf.index = new_index #set the index column as the df index
 
+    _, n_cols = ddf.shape
+    ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
+    ddf.index.name = 'Time'
+    ddf.columns.name = 'Stack'
+    return ddf 
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x', 'y', 'z'])
 
 
-def parallel_functions(value):
+def ddf_to_MIseries(ddf):
     """
     Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
     This speeds up parrallel processing because less infromation is passed to subprocesses.
     """
-    return pd.Series(utils.eval_tuple(value))
+    return ddf.compute().transpose().stack()
 
 def mean_convergence(data_df):
     # n_steps = len(data_df.groupby(axis='columns', level='step').size())
@@ -134,30 +128,22 @@ class Probes(utils.Helper):
                 probe_info = file_name.split('.')
                 probe_name, probe_tbd1 = probe_info[:]
                 # store the pcd path and pcd reader function
-                my_dict[(probe_name, probe_tbd1)] = (read_probes, path)
+                my_dict[(probe_name, probe_tbd1)] = read_probes(path)
 
             probe_names.append(probe_name)
             probe_tbd1s.append(probe_tbd1)
-
-        # iterate through the upper data dict
-        my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
         probe_tbd1s = [*set(probe_tbd1s)]
 
         # get the all quants and (max) stack across all probes
-        probe_tbd2s = ()
-        probe_stack = ()
+        probe_tbd2s = np.array([])
+        probe_stack = np.array([])
         for name in self.probe_names:
-            representative_dict = my_dict[(
-                name, probe_tbd1s[0])]
-            representative_dict_keys = list(
-                zip(*representative_dict.keys()))  # unzip list of tuples
-            # sort and remove duplicates
-            probe_tbd2s += representative_dict_keys[1]
-            # sort and remove duplicates
-            probe_stack += representative_dict_keys[0]
+            representative_df = my_dict[(name, probe_tbd1s[0])].compute()
+            probe_tbd2s = np.append(probe_tbd2s, representative_df.index.values)
+            probe_stack = np.append(probe_stack, representative_df.columns.values)
             if self.probe_type == "PROBES":
                 break
         # sort and remove duplicates
@@ -216,12 +202,13 @@ class Probes(utils.Helper):
             # initialize(36) or initialize(os.cpu_count()-1)
             pandarallel.initialize(progress_bar=True)
             # read in data directly (not indecing self.data)
-            mi_df = mi_series_sliced.parallel_apply(parallel_functions)
+            mi_df = mi_series_sliced.parallel_apply(ddf_to_MIseries)
         else:
-            mi_df = mi_series_sliced.apply(parallel_functions)
+            mi_df = mi_series_sliced.apply(ddf_to_MIseries)
 
         mi_df = mi_df.T
         if self.probe_type == 'PROBES':
+            mi_df.columns.names = ['Stack', 'Time']
             mi_df = mi_df.unstack().stack(level=-2)#.swaplevel(axis=0)
 
         mi_df.index.rename(['stack', 'quant'], inplace=True)
