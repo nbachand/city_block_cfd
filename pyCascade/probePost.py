@@ -183,30 +183,13 @@ class Probes(utils.Helper):
         elif self.probe_type == "PROBES":
             second_ind = quants
 
-        # turn outer dict into series for vectorzed opperations
-        mi_series = pd.Series(self.data)
-        # sort for improved speed
-        mi_series.sort_index(inplace=True)
-        # get desired values, temporarily converting from multiindex to dataframe for .loc speed increase
         st = utils.start_timer()
-        df_from_mi_series = mi_series.unstack()
-        df_sliced = df_from_mi_series.loc[names, second_ind]
-        df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
-        mi_series_sliced = df_sliced.stack()
-        utils.end_timer(st, "slicing")
+        new_dict = {}
+        for name in names:
+            for ind in second_ind:
+                new_dict[(name, ind)] = ddf_to_MIseries(self.data[(name, ind)])
 
-        st = utils.start_timer()
-
-        # dont use parrall for debugging, else significant speed up
-        if parallel and self.probe_type == "POINTCLOUD_PROBES":
-            # initialize(36) or initialize(os.cpu_count()-1)
-            pandarallel.initialize(progress_bar=True)
-            # read in data directly (not indecing self.data)
-            mi_df = mi_series_sliced.parallel_apply(ddf_to_MIseries)
-        else:
-            mi_df = mi_series_sliced.apply(ddf_to_MIseries)
-
-        mi_df = mi_df.T
+        mi_df = pd.DataFrame(new_dict)
         if self.probe_type == 'PROBES':
             mi_df.columns.names = ['Stack', 'Time']
             mi_df = mi_df.unstack().stack(level=-2)#.swaplevel(axis=0)
