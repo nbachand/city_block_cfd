@@ -192,9 +192,9 @@ class Probes(utils.Helper):
         df_from_mi_series = mi_series.unstack()
         df_sliced = df_from_mi_series.loc[names, second_ind]
         df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
-        mi_series_sliced = df_sliced.stack(dropna=False)
+        mi_series_sliced = df_sliced.stack()
 
-        assign_ddf = lambda key: probes.data[key]
+        assign_ddf = lambda key: self.data[key]
         st = utils.start_timer()
 
         # dont use parrall for debugging, else significant speed up
@@ -202,13 +202,12 @@ class Probes(utils.Helper):
             # initialize(36) or initialize(os.cpu_count()-1)
             pandarallel.initialize(progress_bar=True)
             # read in data directly (not indecing self.data)
-            mi_df = mi_series_sliced.parallel_apply(assign_ddf)
-            mi_df = mi_df.parallel_apply(ddf_to_MIseries)
+            mi_series_sliced = mi_series_sliced.parallel_apply(assign_ddf)
         else:
-            mi_df = mi_series_sliced.apply(assign_ddf)
-            mi_df = mi_df.apply(ddf_to_MIseries)
-
-        mi_df = mi_df.T
+            mi_series_sliced = mi_series_sliced.apply(assign_ddf)
+        mi_series_sliced = mi_series_sliced.map(ddf_to_MIseries)
+        mi_df = pd.concat(mi_series_sliced.values, axis = 1)
+        mi_df.columns = mi_series_sliced.index
 
         # st = utils.start_timer()
         # new_dict = {}
@@ -218,10 +217,11 @@ class Probes(utils.Helper):
 
         # mi_df = pd.DataFrame.from_dict(new_dict)
         if self.probe_type == 'PROBES':
-            mi_df.columns.names = ['Stack', 'Time']
+            mi_df.columns.names = ['neame', 'quant']
             mi_df = mi_df.unstack().stack(level=-2)#.swaplevel(axis=0)
 
         mi_df.index.rename(['stack', 'quant'], inplace=True)
+        mi_df.columns.names = ['neame', 'time']
         if isinstance(mi_df, pd.DataFrame):
             mi_df.columns.rename(['name', 'step'], inplace=True)
 
@@ -241,7 +241,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
@@ -250,7 +250,7 @@ class Probes(utils.Helper):
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, quants, parrallel)
-        data = data.loc[(stack,quants),:]
+        data = data.loc[(stack,quants),(names, steps)]
         n_names = len(names)
         n_quants = len(quants)
 
@@ -298,7 +298,8 @@ class Probes(utils.Helper):
                     name_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
 
-                im = sub_ax.contourf(xPlot, yPlot, plot_df, levels=plot_levels)
+                x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
+                im = sub_ax.contour(x_mesh, y_mesh, plot_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
 
@@ -355,7 +356,7 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
         data = self.slice_into_df(names, steps,quants, parrallel)
-        data = data.loc[(stack,quants),:]
+        data = data.loc[(stack,quants),(names, steps)]
 
         processed_data = data
         if processing is not None:
@@ -404,7 +405,7 @@ class Probes(utils.Helper):
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
+        data = data.loc[(stack,quants),(names, steps)]
         n_names = len(names)
         n_quants = len(quants)
 
@@ -461,7 +462,7 @@ class Probes(utils.Helper):
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
+        data = data.loc[(stack,quants),(names, steps)]
         n_names = len(names)
         n_quants = len(quants)
 
