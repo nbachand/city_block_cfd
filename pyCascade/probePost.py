@@ -120,7 +120,6 @@ class Probes(utils.Helper):
                 probe_name, probe_tbd1, _ = probe_info[:]
                 probe_tbd1 = int(probe_tbd1)
                 # store the pcd path and pcd reader function
-                my_dict[(probe_name, probe_tbd1)] = (read_pointcloud_probes, path)
             elif self.probe_type == "PROBES":
                 if "README" in path:
                     continue
@@ -132,6 +131,8 @@ class Probes(utils.Helper):
 
             probe_names.append(probe_name)
             probe_tbd1s.append(probe_tbd1)
+
+        self.data = my_dict
 
         self.probe_names = [*set(probe_names)]  # remove duplicates
         # remove duplicates and sort
@@ -157,6 +158,10 @@ class Probes(utils.Helper):
             self.probe_steps = probe_tbd2s
             self.probe_quants = probe_tbd1s
 
+
+        self.data = my_dict
+        
+        
         self.data = my_dict
         
 
@@ -183,13 +188,35 @@ class Probes(utils.Helper):
         elif self.probe_type == "PROBES":
             second_ind = quants
 
-        st = utils.start_timer()
-        new_dict = {}
-        for name in names:
-            for ind in second_ind:
-                new_dict[(name, ind)] = ddf_to_MIseries(self.data[(name, ind)])
+        mi_series = pd.Series(self.data.keys(), index = self.data.keys())
+        df_from_mi_series = mi_series.unstack()
+        df_sliced = df_from_mi_series.loc[names, second_ind]
+        df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
+        mi_series_sliced = df_sliced.stack(dropna=False)
 
-        mi_df = pd.DataFrame(new_dict)
+        assign_ddf = lambda key: probes.data[key]
+        st = utils.start_timer()
+
+        # dont use parrall for debugging, else significant speed up
+        if parallel and self.probe_type == "POINTCLOUD_PROBES":
+            # initialize(36) or initialize(os.cpu_count()-1)
+            pandarallel.initialize(progress_bar=True)
+            # read in data directly (not indecing self.data)
+            mi_df = mi_series_sliced.parallel_apply(assign_ddf)
+            mi_df = mi_df.parallel_apply(ddf_to_MIseries)
+        else:
+            mi_df = mi_series_sliced.apply(assign_ddf)
+            mi_df = mi_df.apply(ddf_to_MIseries)
+
+        mi_df = mi_df.T
+
+        # st = utils.start_timer()
+        # new_dict = {}
+        # for name in names:
+        #     for ind in second_ind:
+        #         new_dict[(name, ind)] = ddf_to_MIseries(read_probes(self.data[(name, ind)]))
+
+        # mi_df = pd.DataFrame.from_dict(new_dict)
         if self.probe_type == 'PROBES':
             mi_df.columns.names = ['Stack', 'Time']
             mi_df = mi_df.unstack().stack(level=-2)#.swaplevel(axis=0)
