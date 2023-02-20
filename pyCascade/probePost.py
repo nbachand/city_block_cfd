@@ -15,7 +15,7 @@ def read_probes(filename):
     ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
     new_index = ddf.iloc[:, 1] #grab the second column for the index
     ddf = ddf.iloc[:, 3:] #take the data less the index rows
-    ddf.index = new_index #set the index column as the df index
+    ddf = ddf.set_index(new_index) #set the index column as the df index
 
     _, n_cols = ddf.shape
     ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
@@ -45,7 +45,7 @@ def mean_convergence(data_df):
         axis='columns', level='name').cumsum(axis='columns')
     # data_steps = pd.Series(np.arange(1, n_steps+1))
     data_df_index = list(zip(*data_df.keys()))  # unzip list of tuples
-    data_steps = [*set(data_df_index[1])] # sort and remove duplicates
+    data_steps = utils.sort_and_remove_duplicates(data_df_index[1]) # sort and remove duplicates
     n_names = len([*set(data_df_index[0])])
 
     quant_cum_avg = time_sum.div(
@@ -139,9 +139,9 @@ class Probes(utils.Helper):
 
         self.data = my_dict
 
-        self.probe_names = [*set(probe_names)]  # remove duplicates
+        self.probe_names = utils.sort_and_remove_duplicates(probe_names)  # remove duplicates
         # remove duplicates and sort
-        probe_tbd1s = [*set(probe_tbd1s)]
+        probe_tbd1s = utils.sort_and_remove_duplicates(probe_tbd1s)
 
         # get the all quants and (max) stack across all probes
         probe_tbd2s = np.array([])
@@ -153,9 +153,9 @@ class Probes(utils.Helper):
             if self.probe_type == "PROBES":
                 break
         # sort and remove duplicates
-        probe_tbd2s = [*set(probe_tbd2s)]
+        probe_tbd2s = utils.sort_and_remove_duplicates(probe_tbd2s)
         # sort and remove duplicates
-        self.probe_stack = [*set(probe_stack)]
+        self.probe_stack = utils.sort_and_remove_duplicates(probe_stack)
         if self.probe_type == "POINTCLOUD_PROBE":
             self.probe_steps = probe_tbd1s
             self.probe_quants = probe_tbd2s
@@ -193,7 +193,8 @@ class Probes(utils.Helper):
         processed_data  = {}
         for name in names:
             for quant in quants:
-                processed_data[(name, quant)] = self.data[(name, quant)]
+                ddf = self.data[(name, quant)]
+                processed_data[(name, quant)] = ddf[stack].loc[steps]
                 if processing is not None:
                     for process_step in processing:
                         processed_data[(name, quant)] = process_step(processed_data[(name, quant)])
@@ -218,7 +219,7 @@ class Probes(utils.Helper):
         n_names = len(names)
         n_quants = len(quants)
 
-        processed_data = self.process_data(names, quants, steps, stack, processing)
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         st = utils.start_timer()
 

@@ -24,6 +24,11 @@ def eval_tuple(value):
         value = function(arg)
     return value
 
+def sort_and_remove_duplicates(l):
+    l = [*set(l)]
+    l.sort()
+    return l
+
 def start_timer(description = None):
     if description != None:
         print(description)
