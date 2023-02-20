@@ -35,7 +35,7 @@ def ddf_to_MIseries(ddf):
     return ddf.compute().transpose().stack()
 
 def ddf_to_pdf(df):
-    if isinstance(df, dd.core.DataFrame):
+    if isinstance(df, (dd.core.DataFrame, dd.core.Series)):
        df = df.compute()
     return df
 
@@ -59,7 +59,7 @@ def mean_convergence(data_df):
     return data_diff_norm
 
 def time_average(data_df):
-    return data_df.groupby(axis='columns', level='name').mean()
+    return data_df.mean(axis='index')
 
 def time_rms(data_df):
     mean = time_average(data_df)
@@ -179,6 +179,29 @@ class Probes(utils.Helper):
         # creating lazy dict for locations
         self.locations = utils.MyLazyDict(locations)
 
+    def process_data(
+        self, 
+        names = "self.probe_names",
+        steps = "self.probe_steps",
+        quants = "self.probe_quants",
+        stack = "np.s_[::]",
+        processing = None):
+
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
+        st = utils.start_timer()
+
+        processed_data  = {}
+        for name in names:
+            for quant in quants:
+                processed_data[(name, quant)] = self.data[(name, quant)]
+                if processing is not None:
+                    for process_step in processing:
+                        processed_data[(name, quant)] = process_step(processed_data[(name, quant)])
+        
+        utils.end_timer(st, 'processing data')
+        return processed_data
+
+
     def contour_plots(
         self,
         names = "self.probe_names",
@@ -195,12 +218,7 @@ class Probes(utils.Helper):
         n_names = len(names)
         n_quants = len(quants)
 
-        processed_data = self.data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, quants, steps, stack, processing)
 
         st = utils.start_timer()
 
@@ -240,7 +258,7 @@ class Probes(utils.Helper):
                     xPlot =xPlot[::plot_params['plot_every']]
 
                 x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
-                im = sub_ax.contour(x_mesh, y_mesh, plot_df, levels=plot_levels)
+                im = sub_ax.contourf(x_mesh, y_mesh, plot_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
 
@@ -296,20 +314,13 @@ class Probes(utils.Helper):
         ):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
-        data = self.slice_into_df(names, steps,quants, parrallel)
-        data = data.loc[(stack,quants),(names, steps)]
 
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
-        for j, (quant, quant_df) in enumerate(processed_data.groupby(axis='index', level='quant')):
-            for i, (name, name_df) in enumerate(quant_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('quant', axis='index')
+        for j, quant in enumerate(quants):
+            for i, name in enumerate(names):
+                plot_df = ddf_to_pdf(processed_data[(name, quant)])
                 plot_df = plot_df.dropna()
                 # if isinstance(plot_df, pd.DataFrame):
                 #     plot_df = plot_df.droplevel('name', axis='columns')
