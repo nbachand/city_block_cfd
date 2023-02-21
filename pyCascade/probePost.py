@@ -40,21 +40,12 @@ def ddf_to_pdf(df):
     return df
 
 def mean_convergence(data_df):
-    # n_steps = len(data_df.groupby(axis='columns', level='step').size())
-    time_sum = data_df.groupby(
-        axis='columns', level='name').cumsum(axis='columns')
-    # data_steps = pd.Series(np.arange(1, n_steps+1))
-    data_df_index = list(zip(*data_df.keys()))  # unzip list of tuples
-    data_steps = utils.sort_and_remove_duplicates(data_df_index[1]) # sort and remove duplicates
-    n_names = len([*set(data_df_index[0])])
-
-    quant_cum_avg = time_sum.div(
-        np.tile(data_steps, n_names), axis='columns', level='step')  # cumumlative averge
-    quant_last_avg = quant_cum_avg.groupby(axis='columns', level='name').last()
-    data_diff = quant_cum_avg.sub(quant_last_avg, axis='columns', level='name')
-
-    data_diff_norm = abs(data_diff.div(
-        quant_last_avg, axis='columns', level='name'))
+    time_sum = data_df.cumsum(axis='index')
+    cum_avg = time_sum.div(time_sum.index, axis='index')  # cumumlative averge
+    last_time = cum_avg.index.compute()[-1]
+    last_avg = cum_avg.loc[last_time]
+    data_diff = cum_avg - last_avg.values
+    data_diff_norm = np.abs(data_diff/last_avg.values)
 
     return data_diff_norm
 
@@ -255,7 +246,7 @@ class Probes(utils.Helper):
                    yPlot*=plot_params['veritcal scaling']
 
                 if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
-                    name_df = plot_df.iloc[:,::plot_params['plot_every']]
+                    plot_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
 
                 x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
