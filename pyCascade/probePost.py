@@ -39,27 +39,33 @@ def ddf_to_pdf(df):
        df = df.compute()
     return df
 
-def mean_convergence(data_df):
-    time_sum = data_df.cumsum(axis='index')
-    cum_avg = time_sum.div(time_sum.index, axis='index')  # cumumlative averge
-    last_time = cum_avg.index.compute()[-1]
-    last_avg = cum_avg.loc[last_time]
-    data_diff = cum_avg - last_avg.values
-    data_diff_norm = np.abs(data_diff/last_avg.values)
+def mean_convergence(data_dict):
+    def df_func(data_df):
+        time_sum = data_df.cumsum(axis='index')
+        cum_avg = time_sum.div(time_sum.index, axis='index')  # cumumlative averge
+        last_time = cum_avg.index.compute()[-1]
+        last_avg = cum_avg.loc[last_time]
+        data_diff = cum_avg - last_avg.values
+        data_diff_norm = np.abs(data_diff/last_avg.values)
+        return data_diff_norm
 
-    return data_diff_norm
+    return utils.dict_apply(df_func)(data_dict)
 
-def time_average(data_df):
-    return data_df.mean(axis='index')
+def time_average(data_dict):
+    df_func = lambda df: df.mean(axis='index')
+    return utils.dict_apply(df_func)(data_dict)
 
-def time_rms(data_df):
-    mean = time_average(data_df)
-    norm_data = data_df.sub(mean, axis='columns', level='name')
-    diff_squared = norm_data**2
-    return time_average(diff_squared)
+def time_rms(data_dict):
+    def df_func(data_df):
+        mean = time_average(data_df)
+        norm_data = data_df.sub(mean, axis='columns', level='name')
+        diff_squared = norm_data**2
+        return diff_squared
+
+    return utils.dict_apply(df_func)(data_dict)
 
 
-def ClenshawCurtis_Quadrature(data_df):
+def ClenshawCurtis_Quadrature(data_dict):
     N = 10
     interval = 2.5
     xs = [np.cos((2*(N-k)-1)*np.pi/(2*N)) for k in range(N)]
@@ -68,25 +74,27 @@ def ClenshawCurtis_Quadrature(data_df):
     ws = np.linalg.solve(A,b)
     CC_weights = np.squeeze(ws[:,None])
 
-    ## correcting for inforrect probes locations untill R10
-    Warning('Quadrature weights shifted to match R<=10. Delete this in the future')
-    CC_weights = np.roll(CC_weights, 1)
-    #############
+    # ## correcting for inforrect probes locations untill R10
+    # Warning('Quadrature weights shifted to match R<=10. Delete this in the future')
+    # CC_weights = np.roll(CC_weights, 1)
+    # #############
 
     Quad_weights = np.tile(CC_weights, 10) * np.repeat(CC_weights, 10) * (interval/2)**2
-    Quad_weights = Quad_weights[..., np.newaxis]
-    wighted_data = data_df.groupby(axis='index', level='quant').apply(lambda x: x*Quad_weights)
-    integrated_data = wighted_data.groupby(axis='index', level='quant').sum()
 
-    return integrated_data
+    def df_func(data_df):
+        wighted_data = data_df*Quad_weights
+        integrated_data = wighted_data.sum(axis=1)
+        return integrated_data
+
+    return utils.dict_apply(df_func)(data_dict)
 
 # use to define lambda function with mul preset
-def mul_names(data_df, names, mul):
-    data_df = data_df.T
-    sliced_data = data_df.loc[names]
-    sliced_data*=mul
-    data_df.update(sliced_data)
-    return data_df.T
+def mul_names(data_dict, names, mul):
+    for k, v in data_dict.items():
+        name, _ = k
+        if name in names:
+            data_dict[k] = mul*v
+    return data_dict
 
 
 
@@ -186,9 +194,10 @@ class Probes(utils.Helper):
             for quant in quants:
                 ddf = self.data[(name, quant)]
                 processed_data[(name, quant)] = ddf[stack].loc[steps]
-                if processing is not None:
-                    for process_step in processing:
-                        processed_data[(name, quant)] = process_step(processed_data[(name, quant)])
+
+        if processing is not None:
+            for process_step in processing:
+                processed_data = process_step(processed_data)
         
         utils.end_timer(st, 'processing data')
         return processed_data
@@ -348,29 +357,18 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),(names, steps)]
-        n_names = len(names)
-        n_quants = len(quants)
-
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
 
-        for j, (quant, quant_df) in enumerate(processed_data.groupby(axis='index', level='quant')):
-            for i, (name, name_df) in enumerate(quant_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('name', axis='columns')
-                plot_df = plot_df.dropna()
+        for j, quant in enumerate(quants):
+            for i, name in enumerate(names):
+                plot_df = ddf_to_pdf(processed_data[(name, quant)])
                 
-                xPlot = plot_df.columns
+                xPlot = plot_df.index
                 if 'horizontal spacing' in plot_params:
                     xPlot *= plot_params['horizontal spacing']
 
@@ -405,19 +403,7 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),(names, steps)]
-        n_names = len(names)
-        n_quants = len(quants)
-
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
-
-        st = utils.start_timer()
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         return processed_data
 

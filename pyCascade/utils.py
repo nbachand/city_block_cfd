@@ -29,6 +29,9 @@ def sort_and_remove_duplicates(l):
     l.sort()
     return l
 
+def dict_apply(f):
+    return lambda d: {k: f(v) for k, v in d.items()}
+
 def start_timer(description = None):
     if description != None:
         print(description)
