@@ -35,7 +35,7 @@ def ddf_to_MIseries(ddf):
     return ddf.compute().transpose().stack()
 
 def ddf_to_pdf(df):
-    if isinstance(df, (dd.core.DataFrame, dd.core.Series)):
+    if isinstance(df, (dd.core.DataFrame, dd.core.Series, dd.core.Scalar)):
        df = df.compute()
     return df
 
@@ -57,10 +57,11 @@ def time_average(data_dict):
 
 def time_rms(data_dict):
     def df_func(data_df):
-        mean = time_average(data_df)
-        norm_data = data_df.sub(mean, axis='columns', level='name')
-        diff_squared = norm_data**2
-        return diff_squared
+        mean = data_df.mean(axis='index')
+        norm_data = data_df - mean
+        diff_squared = (norm_data**2)
+        rms = np.sqrt(diff_squared.mean())
+        return rms
 
     return utils.dict_apply(df_func)(data_dict)
 
@@ -404,7 +405,8 @@ class Probes(utils.Helper):
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
         processed_data = self.process_data(names, steps, quants, stack, processing)
-
-        return processed_data
+        processed_data = utils.dict_apply(ddf_to_pdf)(processed_data)
+        df_data = pd.Series(processed_data).unstack()
+        return df_data
 
 
