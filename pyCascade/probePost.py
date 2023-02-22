@@ -5,57 +5,68 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm, colors
 import pandas as pd
-import pickle
-
+from dask import dataframe as dd
 from pandarallel import pandarallel
 
+def read_pointcloud_probes(filename):
+    return dd.read_csv(filename, delim_whitespace=True)  # read as dataframe
 
 def read_probes(filename):
-    df = pd.read_csv(filename, delim_whitespace=True)  # read as dataframe
-    return df.stack().to_dict()  # save as tuple indexed dictionary
+    ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
+    new_index = ddf.iloc[:, 1] #grab the second column for the index
+    ddf = ddf.iloc[:, 3:] #take the data less the index rows
+    ddf = ddf.set_index(new_index) #set the index column as the df index
 
+    _, n_cols = ddf.shape
+    ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
+    ddf.index.name = 'Time'
+    ddf.columns.name = 'Stack'
+    return ddf 
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x', 'y', 'z'])
 
 
-def parallel_functions(value):
-    """ 
+def ddf_to_MIseries(ddf):
+    """
     Function to read in data directly instead of accessing it through indexing the lazy dictionary. 
     This speeds up parrallel processing because less infromation is passed to subprocesses.
     """
-    return pd.Series(utils.eval_tuple(value))
+    return ddf.compute().transpose().stack()
 
-def mean_convergence(data_df):
-    # n_steps = len(data_df.groupby(axis='columns', level='step').size())
-    time_sum = data_df.groupby(
-        axis='columns', level='name').cumsum(axis='columns')
-    # data_steps = pd.Series(np.arange(1, n_steps+1))
-    data_df_index = list(zip(*data_df.keys()))  # unzip list of tuples
-    data_steps = [*set(data_df_index[1])] # sort and remove duplicates
-    n_names = len([*set(data_df_index[0])])
+def ddf_to_pdf(df):
+    if isinstance(df, (dd.core.DataFrame, dd.core.Series, dd.core.Scalar)):
+       df = df.compute()
+    return df
 
-    var_cum_avg = time_sum.div(
-        np.tile(data_steps, n_names), axis='columns', level='step')  # cumumlative averge
-    var_last_avg = var_cum_avg.groupby(axis='columns', level='name').last()
-    data_diff = var_cum_avg.sub(var_last_avg, axis='columns', level='name')
+def mean_convergence(data_dict):
+    def df_func(data_df):
+        time_sum = data_df.cumsum(axis='index')
+        cum_avg = time_sum.div(time_sum.index, axis='index')  # cumumlative averge
+        last_time = cum_avg.index.compute()[-1]
+        last_avg = cum_avg.loc[last_time]
+        data_diff = cum_avg - last_avg.values
+        data_diff_norm = np.abs(data_diff/last_avg.values)
+        return data_diff_norm
 
-    data_diff_norm = abs(data_diff.div(
-        var_last_avg, axis='columns', level='name'))
+    return utils.dict_apply(df_func)(data_dict)
 
-    return data_diff_norm
+def time_average(data_dict):
+    df_func = lambda df: df.mean(axis='index')
+    return utils.dict_apply(df_func)(data_dict)
 
-def time_average(data_df):
-    return data_df.groupby(axis='columns', level='name').mean()
+def time_rms(data_dict):
+    def df_func(data_df):
+        mean = data_df.mean(axis='index')
+        norm_data = data_df - mean
+        diff_squared = (norm_data**2)
+        rms = np.sqrt(diff_squared.mean())
+        return rms
 
-def time_rms(data_df):
-    mean = time_average(data_df)
-    norm_data = data_df.sub(mean, axis='columns', level='name')
-    diff_squared = norm_data**2
-    return time_average(diff_squared)
+    return utils.dict_apply(df_func)(data_dict)
 
 
-def ClenshawCurtis_Quadrature(data_df):
+def ClenshawCurtis_Quadrature(data_dict):
     N = 10
     interval = 2.5
     xs = [np.cos((2*(N-k)-1)*np.pi/(2*N)) for k in range(N)]
@@ -64,70 +75,100 @@ def ClenshawCurtis_Quadrature(data_df):
     ws = np.linalg.solve(A,b)
     CC_weights = np.squeeze(ws[:,None])
 
-    ## correcting for inforrect probes locations untill R10
-    Warning('Quadrature weights shifted to match R<=10. Delete this in the future')
-    CC_weights = np.roll(CC_weights, 1)
-    #############
+    # ## correcting for inforrect probes locations untill R10
+    # Warning('Quadrature weights shifted to match R<=10. Delete this in the future')
+    # CC_weights = np.roll(CC_weights, 1)
+    # #############
 
     Quad_weights = np.tile(CC_weights, 10) * np.repeat(CC_weights, 10) * (interval/2)**2
-    Quad_weights = Quad_weights[..., np.newaxis]
-    wighted_data = data_df.groupby(axis='index', level='var').apply(lambda x: x*Quad_weights)
-    integrated_data = wighted_data.groupby(axis='index', level='var').sum()
 
-    return integrated_data
+    def df_func(data_df):
+        wighted_data = data_df*Quad_weights
+        integrated_data = wighted_data.sum(axis=1)
+        return integrated_data
+
+    return utils.dict_apply(df_func)(data_dict)
+
+# use to define lambda function with mul preset
+def mul_names(data_dict, names, mul):
+    for k, v in data_dict.items():
+        name, _ = k
+        if name in names:
+            data_dict[k] = mul*v
+    return data_dict
 
 
 
 class Probes(utils.Helper):
-    def __init__(self, directory):
+    def __init__(self, directory, probe_type = "PROBES"):
         """
         File info is stored in a tuple-indexed dictionary. Once data is access, it is read in as a (nested) tuple-indexed dictionary.
-        Data is indexed as self.data[(name,step)][(stack, var)]. This format mimics the multiIndex DataFrame created in
-        self.slice_int_df.
+        For POINTCLOUD_PROBES data is indexed as self.data[(name,step)][(stack, quant)]. For PROBES data is indexed as 
+        self.data[(name, quant)][(stack, step)]. This format mimics the multiIndex DataFrame created in self.slice_into_df.
         """
+
+        self.probe_type = probe_type
+
         my_dict = {}  # this will be a tuple indexed 1-level dictionary.
         # create a generator to iterate over probe paths
-        path_generator = glob.iglob(f'{directory}/*.pcd')
+        path_generator = glob.iglob(f'{directory}/*.*')
         probe_names = []
-        probe_steps = []
+        probe_tbd1s = []
 
         for path in path_generator:
 
-            file_name = path.split('/')[-1]  # get the local file name
-            probe_info = file_name.split('.')
-            probe_name, probe_step, _ = probe_info[:]
-            probe_step = int(probe_step)
+            if self.probe_type == "POINTCLOUD_PROBES":
+                if ".pcb" not in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1, _ = probe_info[:]
+                probe_tbd1 = int(probe_tbd1)
+                # store the pcd path and pcd reader function
+            elif self.probe_type == "PROBES":
+                if "README" in path:
+                    continue
+                file_name = path.split('/')[-1]  # get the local file name
+                probe_info = file_name.split('.')
+                probe_name, probe_tbd1 = probe_info[:]
+                # store the pcd path and pcd reader function
+                my_dict[(probe_name, probe_tbd1)] = read_probes(path)
 
             probe_names.append(probe_name)
-            probe_steps.append(probe_step)
+            probe_tbd1s.append(probe_tbd1)
 
-            # store the pcd path and pcd reader function
-            my_dict[(probe_name, probe_step)] = (read_probes, path)
+        self.data = my_dict
 
-        # iterate through the upper data dict
-        my_dict = utils.MyLazyDict(my_dict)  # modify the getter lazily read in data
-
-        self.probe_names = [*set(probe_names)]  # remove duplicates
+        self.probe_names = utils.sort_and_remove_duplicates(probe_names)  # remove duplicates
         # remove duplicates and sort
-        self.probe_steps = [*set(probe_steps)]
+        probe_tbd1s = utils.sort_and_remove_duplicates(probe_tbd1s)
 
         # get the all quants and (max) stack across all probes
-        quants = ()
-        stack = ()
+        probe_tbd2s = np.array([])
+        probe_stack = np.array([])
         for name in self.probe_names:
-            representative_dict = my_dict[(
-                name, self.probe_steps[0])]
-            representative_dict_keys = list(
-                zip(*representative_dict.keys()))  # unzip list of tuples
-            # sort and remove duplicates
-            quants += representative_dict_keys[1]
-            # sort and remove duplicates
-            stack += representative_dict_keys[0]
+            representative_df = my_dict[(name, probe_tbd1s[0])].compute()
+            probe_tbd2s = np.append(probe_tbd2s, representative_df.index.values)
+            probe_stack = np.append(probe_stack, representative_df.columns.values)
+            if self.probe_type == "PROBES":
+                break
         # sort and remove duplicates
-        self.probe_quants = [*set(quants)]
+        probe_tbd2s = utils.sort_and_remove_duplicates(probe_tbd2s)
         # sort and remove duplicates
-        self.probe_stack = [*set(stack)]
+        self.probe_stack = utils.sort_and_remove_duplicates(probe_stack)
+        if self.probe_type == "POINTCLOUD_PROBE":
+            self.probe_steps = probe_tbd1s
+            self.probe_quants = probe_tbd2s
+        elif self.probe_type == "PROBES":
+            self.probe_steps = probe_tbd2s
+            self.probe_quants = probe_tbd1s
+
+
         self.data = my_dict
+        
+        
+        self.data = my_dict
+        
 
     def get_locations(self, dir_locations):
         locations = {}
@@ -138,63 +179,37 @@ class Probes(utils.Helper):
         # creating lazy dict for locations
         self.locations = utils.MyLazyDict(locations)
 
-    def slice_into_df(
-        self,
+    def process_data(
+        self, 
         names = "self.probe_names",
         steps = "self.probe_steps",
-        parallel = False
-    ):
+        quants = "self.probe_quants",
+        stack = "np.s_[::]",
+        processing = None):
 
+        quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
+        st = utils.start_timer()
+
+        processed_data  = {}
+        for name in names:
+            for quant in quants:
+                ddf = self.data[(name, quant)]
+                processed_data[(name, quant)] = ddf[stack].loc[steps]
+
+        if processing is not None:
+            for process_step in processing:
+                processed_data = process_step(processed_data)
         
-        # default to all probes, setps
-        names, steps = [self.get_input(input) for input in [names, steps]]
+        utils.end_timer(st, 'processing data')
+        return processed_data
 
-        # turn outer dict into series for vectorzed opperations
-        mi_series = pd.Series(self.data)
-        # sort for improved speed
-        mi_series.sort_index(inplace=True)
-        # get desired values, temporarily converting from multiindex to dataframe for .loc speed increase
-        st = utils.start_timer()
-        df_from_mi_series = mi_series.unstack()
-        df_sliced = df_from_mi_series.loc[names, steps]
-        df_sliced = pd.DataFrame(df_sliced) #in case the slice becomes a series
-        mi_series_sliced = df_sliced.stack()
-        utils.end_timer(st, "slicing")
-
-        st = utils.start_timer()
-
-        # dont use parrall for debugging, else significant speed up
-        if parallel:
-            # initialize(36) or initialize(os.cpu_count()-1)
-            pandarallel.initialize(progress_bar=True)
-            # read in data directly (not indecing self.data)
-            mi_df = mi_series_sliced.parallel_apply(parallel_functions)
-        else:
-            mi_df = mi_series_sliced.apply(parallel_functions)
-
-        mi_df = mi_df.T
-
-        mi_df.index.rename(['stack', 'var'], inplace=True)
-        if isinstance(mi_df, pd.DataFrame):
-            mi_df.columns.rename(['name', 'step'], inplace=True)
-
-        utils.end_timer(st, "reading data")
-
-        st = utils.start_timer()
-
-        # memorize data that was accesed outside of self.data
-        self.data.update(mi_df)  # update data dictionary
-
-        utils.end_timer(st, "memorizing data")
-
-        return mi_df  # return numpy array with all requested data
 
     def contour_plots(
         self,
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
@@ -202,26 +217,19 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
         n_names = len(names)
         n_quants = len(quants)
 
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(n_names, n_quants, constrained_layout =True)
 
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            if 'plot_levels' in plot_params and var in plot_params['plot_levels']:
-                plot_levels = plot_params['plot_levels'][var]
+        for j, quant in enumerate(quants):
+            if 'plot_levels' in plot_params and quant in plot_params['plot_levels']:
+                plot_levels = plot_params['plot_levels'][quant]
             else:
                 plot_levels = 256
 
@@ -229,9 +237,9 @@ class Probes(utils.Helper):
             im_list = []
             vmins = [] # for colorbar
             vmaxs = []
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('var', axis='index')
-                plot_df = plot_df.droplevel('name', axis='columns')
+            for i, name in enumerate(names):
+                plot_df = ddf_to_pdf(processed_data[(name, quant)])
+                plot_df = plot_df.transpose()
                 plot_df = plot_df.dropna()
                 sub_ax = utils.ax_index(ax, i, j)
                 
@@ -248,10 +256,11 @@ class Probes(utils.Helper):
                    yPlot*=plot_params['veritcal scaling']
 
                 if 'plot_every' in plot_params:  # usefull to plot subset of timesteps but run calcs across all timesteps
-                    name_df = plot_df.iloc[:,::plot_params['plot_every']]
+                    plot_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
 
-                im = sub_ax.contourf(xPlot, yPlot, plot_df, levels=plot_levels)
+                x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
+                im = sub_ax.contourf(x_mesh, y_mesh, plot_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
 
@@ -262,7 +271,7 @@ class Probes(utils.Helper):
                 if i < n_names-1:
                     sub_ax.xaxis.set_visible(False)
                 else:
-                    sub_ax.set_xlabel(var)
+                    sub_ax.set_xlabel(quant)
 
                 vmin, vmax = im.get_clim()
                 vmins.append(vmin)
@@ -300,27 +309,20 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         processing = None,
         parrallel = False,
         plot_params = {}
         ):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
 
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('var', axis='index')
+        for j, quant in enumerate(quants):
+            for i, name in enumerate(names):
+                plot_df = ddf_to_pdf(processed_data[(name, quant)])
                 plot_df = plot_df.dropna()
                 # if isinstance(plot_df, pd.DataFrame):
                 #     plot_df = plot_df.droplevel('name', axis='columns')
@@ -334,7 +336,7 @@ class Probes(utils.Helper):
                 if 'veritcal scaling' in plot_params:
                    yPlot*=plot_params['veritcal scaling']
 
-                ax.plot(plot_df.values, yPlot, label=f'{name}: {var}')
+                ax.plot(plot_df.values, yPlot, label=f'{name}: {quant}')
                 if 'xlabel' in plot_params:
                     fig.supxlabel(plot_params['xlabel'])
                 if 'ylabel' in plot_params:
@@ -348,7 +350,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
@@ -356,29 +358,18 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
-        n_names = len(names)
-        n_quants = len(quants)
-
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
+        processed_data = self.process_data(names, steps, quants, stack, processing)
 
         st = utils.start_timer()
 
         # plt.rcParams['text.usetex'] = True
         fig, ax = plt.subplots(1, 1, constrained_layout =True)
 
-        for j, (var, var_df) in enumerate(processed_data.groupby(axis='index', level='var')):
-            for i, (name, name_df) in enumerate(var_df.groupby(axis='columns', level='name')):
-                plot_df = name_df.droplevel('name', axis='columns')
-                plot_df = plot_df.dropna()
+        for j, quant in enumerate(quants):
+            for i, name in enumerate(names):
+                plot_df = ddf_to_pdf(processed_data[(name, quant)])
                 
-                xPlot = plot_df.columns
+                xPlot = plot_df.index
                 if 'horizontal spacing' in plot_params:
                     xPlot *= plot_params['horizontal spacing']
 
@@ -390,7 +381,7 @@ class Probes(utils.Helper):
                 if 'veritcal scaling' in plot_params:
                    yPlot*=plot_params['veritcal scaling']
 
-                ax.plot(xPlot, yPlot, label=f'{name}: {var}')
+                ax.plot(xPlot, yPlot, label=f'{name}: {quant}')
                 if 'xlabel' in plot_params:
                     fig.supxlabel(plot_params['xlabel'])
                 if 'ylabel' in plot_params:
@@ -405,7 +396,7 @@ class Probes(utils.Helper):
         names = "self.probe_names",
         steps = "self.probe_steps",
         quants = "self.probe_quants",
-        stack = "self.probe_stack",
+        stack = "np.s_[::]",
         parrallel = False,
         processing = None,
         plot_params={}
@@ -413,20 +404,9 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
 
-        data = self.slice_into_df(names, steps, parrallel)
-        data = data.loc[(stack,quants),:]
-        n_names = len(names)
-        n_quants = len(quants)
-
-        processed_data = data
-        if processing is not None:
-            st = utils.start_timer()
-            for process_step in processing:
-                processed_data = process_step(processed_data)
-            utils.end_timer(st, 'processing data')
-
-        st = utils.start_timer()
-
-        return processed_data
+        processed_data = self.process_data(names, steps, quants, stack, processing)
+        processed_data = utils.dict_apply(ddf_to_pdf)(processed_data)
+        df_data = pd.Series(processed_data).unstack()
+        return df_data
 
 
