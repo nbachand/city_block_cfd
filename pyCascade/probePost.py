@@ -15,7 +15,7 @@ def read_probes(filename):
     ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
     new_index = ddf.iloc[:, 1] #grab the second column for the index
     ddf = ddf.iloc[:, 3:] #take the data less the index rows
-    ddf = ddf.set_index(new_index) #set the index column as the df index
+    ddf.index = new_index #set the index column as the df index
 
     _, n_cols = ddf.shape
     ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
