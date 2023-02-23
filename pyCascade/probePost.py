@@ -236,7 +236,7 @@ class Probes(utils.Helper):
             if 'plot_levels' in plot_params and quant in plot_params['plot_levels']:
                 plot_levels = plot_params['plot_levels'][quant]
             else:
-                plot_levels = 256
+                plot_levels = 1000
 
             ax_list = []
             im_list = []
@@ -250,7 +250,10 @@ class Probes(utils.Helper):
                 
                 xPlot = plot_df.columns
                 if 'horizontal spacing' in plot_params:
-                    xPlot *= plot_params['horizontal spacing']
+                    if hasattr(plot_params['horizontal spacing'], "__len__"):
+                        xPlot = plot_params['horizontal spacing'][xPlot]
+                    else:
+                        xPlot *= plot_params['horizontal spacing']
                 yPlot = plot_df.index
                 if hasattr(self, 'locations') and 'stack span' in plot_params:
                     location = self.locations[name]
