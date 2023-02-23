@@ -13,8 +13,8 @@ def read_pointcloud_probes(filename):
 
 def read_probes(filename):
     ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
-    step_index = ddf.iloc[:, 0].compute().values #grab the second column for the times
-    time_index = ddf.iloc[:, 1].compute().values #grab the second column for the times
+    step_index = ddf.iloc[:, 0] #grab the second column for the times
+    time_index = ddf.iloc[:, 1] #grab the second column for the times
     ddf = ddf.iloc[:, 3:] #take the data less the index rows
 
     _, n_cols = ddf.shape
@@ -113,9 +113,7 @@ class Probes(utils.Helper):
         path_generator = glob.iglob(f'{directory}/*.*')
         probe_names = []
         probe_tbd1s = []
-        probe_tbd2s = np.array([])
         probe_stack = np.array([])
-        probe_times = np.array([])
 
         for path in path_generator:
 
@@ -135,11 +133,13 @@ class Probes(utils.Helper):
                 probe_name, probe_tbd1 = probe_info[:]
                 # store the pcd path and pcd reader function
                 my_dict[(probe_name, probe_tbd1)], probe_tb2, probe_time = read_probes(path)
-                probe_tbd2s = np.append(probe_tbd2s, probe_tb2)
-                probe_times = np.append(probe_times, probe_time)
+
 
             probe_names.append(probe_name)
             probe_tbd1s.append(probe_tbd1)
+        
+        probe_tbd2s = probe_tb2.compute().values
+        probe_times = probe_time.compute().values
 
         self.data = my_dict
 
