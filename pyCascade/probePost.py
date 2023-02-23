@@ -13,15 +13,14 @@ def read_pointcloud_probes(filename):
 
 def read_probes(filename):
     ddf = dd.read_csv(filename, delimiter = ' ', comment = "#",header = None)
-    new_index = ddf.iloc[:, 1] #grab the second column for the index
+    step_index = ddf.iloc[:, 0].compute().values #grab the second column for the times
+    time_index = ddf.iloc[:, 1].compute().values #grab the second column for the times
     ddf = ddf.iloc[:, 3:] #take the data less the index rows
-    ddf.index = new_index #set the index column as the df index
 
     _, n_cols = ddf.shape
     ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
-    ddf.index.name = 'Time'
     ddf.columns.name = 'Stack'
-    return ddf 
+    return ddf, step_index, time_index
 
 def read_locations(filename):
     return pd.read_csv(filename, delim_whitespace=True, skiprows=1, names=['x', 'y', 'z'])
@@ -114,6 +113,9 @@ class Probes(utils.Helper):
         path_generator = glob.iglob(f'{directory}/*.*')
         probe_names = []
         probe_tbd1s = []
+        probe_tbd2s = np.array([])
+        probe_stack = np.array([])
+        probe_times = np.array([])
 
         for path in path_generator:
 
@@ -132,7 +134,9 @@ class Probes(utils.Helper):
                 probe_info = file_name.split('.')
                 probe_name, probe_tbd1 = probe_info[:]
                 # store the pcd path and pcd reader function
-                my_dict[(probe_name, probe_tbd1)] = read_probes(path)
+                my_dict[(probe_name, probe_tbd1)], probe_tb2, probe_time = read_probes(path)
+                probe_tbd2s = np.append(probe_tbd2s, probe_tb2)
+                probe_times = np.append(probe_times, probe_time)
 
             probe_names.append(probe_name)
             probe_tbd1s.append(probe_tbd1)
@@ -144,14 +148,12 @@ class Probes(utils.Helper):
         probe_tbd1s = utils.sort_and_remove_duplicates(probe_tbd1s)
 
         # get the all quants and (max) stack across all probes
-        probe_tbd2s = np.array([])
-        probe_stack = np.array([])
-        for name in self.probe_names:
-            representative_df = my_dict[(name, probe_tbd1s[0])].compute()
-            probe_tbd2s = np.append(probe_tbd2s, representative_df.index.values)
-            probe_stack = np.append(probe_stack, representative_df.columns.values)
-            if self.probe_type == "PROBES":
-                break
+        if self.probe_type == "POINTCLOUD_PROBES":
+            for name in self.probe_names:
+                representative_df = my_dict[(name, probe_tbd1s[0])].compute()
+                probe_stack = np.append(probe_stack, representative_df.columns.values)
+                probe_tbd2s = np.append(probe_tbd2s, representative_df.index.values)
+
         # sort and remove duplicates
         probe_tbd2s = utils.sort_and_remove_duplicates(probe_tbd2s)
         # sort and remove duplicates
@@ -161,7 +163,9 @@ class Probes(utils.Helper):
             self.probe_quants = probe_tbd2s
         elif self.probe_type == "PROBES":
             self.probe_steps = probe_tbd2s
+            self.probe_steps = [int(step) for step in self.probe_steps]
             self.probe_quants = probe_tbd1s
+            self.probe_times = probe_times
 
 
         self.data = my_dict
@@ -189,12 +193,11 @@ class Probes(utils.Helper):
 
         quants, stack, names, steps = [self.get_input(input) for input in [quants, stack, names, steps]]
         st = utils.start_timer()
-
         processed_data  = {}
         for name in names:
             for quant in quants:
                 ddf = self.data[(name, quant)]
-                processed_data[(name, quant)] = ddf[stack].loc[steps]
+                processed_data[(name, quant)] = ddf[stack].loc[steps[0]:steps[-1]]
 
         if processing is not None:
             for process_step in processing:
