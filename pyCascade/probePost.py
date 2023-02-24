@@ -43,7 +43,7 @@ def mean_convergence(data_dict):
     def df_func(data_df):
         time_sum = data_df.cumsum(axis='index')
         cum_avg = time_sum.div(time_sum.index, axis='index')  # cumumlative averge
-        last_time = cum_avg.index.compute()[-1]
+        last_time = cum_avg.index[-1]
         last_avg = cum_avg.loc[last_time]
         data_diff = cum_avg - last_avg.values
         data_diff_norm = np.abs(data_diff/last_avg.values)
