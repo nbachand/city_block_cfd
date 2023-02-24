@@ -36,9 +36,7 @@ def ddf_to_MIseries(ddf):
 
 def ddf_to_pdf(df):
     if isinstance(df, (dd.core.DataFrame, dd.core.Series, dd.core.Scalar)):
-        st = utils.start_timer()
         df = df.compute()
-        utils.end_timer(st, 'executing Dask graph')
     return df
 
 def mean_convergence(data_dict):
