@@ -20,6 +20,7 @@ def read_probes(filename):
     _, n_cols = ddf.shape
     ddf = ddf.rename(columns=dict(zip(ddf.columns, np.arange(0, n_cols)))) #reset columns to integer 0 indexed
     ddf.columns.name = 'Stack'
+    ddf.index = step_index
     return ddf, step_index, time_index
 
 def read_locations(filename):
@@ -140,8 +141,11 @@ class Probes(utils.Helper):
             probe_names.append(probe_name)
             probe_tbd1s.append(probe_tbd1)
         
-        probe_tbd2s = probe_tb2.compute().values
-        probe_times = probe_time.compute().values
+        probe_tb2 = probe_tb2.compute().values
+        n_indexes = len(probe_tb2)
+        probe_tbd2s, unique_steps_indexes = np.unique(np.flip(probe_tb2), return_index = True)
+        unique_steps_indexes = n_indexes-1-unique_steps_indexes
+        probe_times = np.unique(probe_time.compute().values)
 
         self.data = my_dict
 
@@ -168,6 +172,7 @@ class Probes(utils.Helper):
             self.probe_steps = [int(step) for step in self.probe_steps]
             self.probe_quants = probe_tbd1s
             self.probe_times = probe_times
+            self.unique_steps_indexes = unique_steps_indexes
 
 
         self.data = my_dict
@@ -199,7 +204,16 @@ class Probes(utils.Helper):
         for name in names:
             for quant in quants:
                 ddf = self.data[(name, quant)]
-                processed_data[(name, quant)] = ddf[stack].loc[steps[0]:steps[-1]]
+                processed_data[(name, quant)] = ddf[stack]#.loc[steps[0]:steps[-1]]
+
+        processed_data = utils.dict_apply(ddf_to_pdf)(processed_data)
+
+        def index_unique_steps(df):
+            if isinstance(df, (pd.core.frame.DataFrame, pd.core.series.Series)):
+                df = df.iloc[self.unique_steps_indexes].loc[steps]
+            return df
+    
+        processed_data = utils.dict_apply(index_unique_steps)(processed_data)
 
         if processing is not None:
             for process_step in processing:
@@ -243,7 +257,8 @@ class Probes(utils.Helper):
             vmins = [] # for colorbar
             vmaxs = []
             for i, name in enumerate(names):
-                plot_df = ddf_to_pdf(processed_data[(name, quant)])
+                plot_df = processed_data[(name, quant)]
+                # plot_df = self.data[(name, quant)].compute().iloc[steps]
                 plot_df = plot_df.transpose()
                 plot_df = plot_df.dropna()
                 sub_ax = utils.ax_index(ax, i, j)
@@ -267,8 +282,8 @@ class Probes(utils.Helper):
                     plot_df = plot_df.iloc[:,::plot_params['plot_every']]
                     xPlot =xPlot[::plot_params['plot_every']]
 
-                x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
-                im = sub_ax.contourf(x_mesh, y_mesh, plot_df, levels=plot_levels)
+                # x_mesh, y_mesh = np.meshgrid(xPlot, yPlot)
+                im = sub_ax.contourf(xPlot, yPlot, plot_df, levels=plot_levels)
                 ax_list.append(sub_ax)
                 im_list.append(im)
 
