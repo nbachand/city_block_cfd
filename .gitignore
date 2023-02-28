@@ -5,6 +5,7 @@
 !*.py
 !*.in
 !*.scad
+!*.stl
 !*.ipynb
 !*.cpp
 !*.hpp
