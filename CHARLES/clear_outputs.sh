@@ -1,8 +1,11 @@
 #!/bin/bash
-PARENT_DIR="Cascade/city_block_cfd/CHARLES/single_family"
+PARENT_DIR="Cascade/city_block_cfd/CHARLES/"
+CATEGORY=$(basename "`pwd`")
 LOCAL_FOLDER=$1
 
-cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
+echo $SCRATCH/$PARENT_DIR/$CATEGORY/$LOCAL_FOLDER
+
+cd $SCRATCH/$PARENT_DIR/$CATEGORY/$LOCAL_FOLDER
 
 echo "Clearing results in folder in $(pwd)"
 
