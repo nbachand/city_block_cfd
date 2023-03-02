@@ -204,6 +204,7 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
     return sumProbedGeom(windows_list)
 
 def openWalls(rooms_params, w, h, nprobes_w, nprobes_h):
+    print('Amos was here')
     x = rooms_params['x']
     y = rooms_params['y']
     z = rooms_params['z']
