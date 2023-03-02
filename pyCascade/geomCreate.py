@@ -205,6 +205,7 @@ def makeWindows(rooms_params, w, h, nprobes_w, nprobes_h):
 
 def openWalls(rooms_params, w, h, nprobes_w, nprobes_h):
     print('Amos was here')
+    print('Themis is watching')
     x = rooms_params['x']
     y = rooms_params['y']
     z = rooms_params['z']
