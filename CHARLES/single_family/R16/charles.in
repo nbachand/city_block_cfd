@@ -11,7 +11,7 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 100000000
-TIMESTEP DT = .008 #.001
+TIMESTEP DT = .005 #.001
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -26,6 +26,12 @@ buildings = WM_ALG_WALL
 interior  = WM_ALG_WALL 
 ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
 top       = SLIP
+
+#Temp Boundaries
+top WALL T = -10
+ground WALL T = 10
+interior WALL T = 10
+buildings WALL T = 10
 
 #################################
 ######### SOLVER SETUP ##########

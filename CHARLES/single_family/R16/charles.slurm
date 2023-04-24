@@ -22,5 +22,5 @@ echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
 # mpiexec charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
-mpiexec $HOME/$PARENT_DIR/0_deg_0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+mpiexec $HOME/$PARENT_DIR/0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
