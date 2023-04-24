@@ -1,9 +1,9 @@
 clear
 
 % Options ----------------------------------------------------------------
-casePath = '/scratch/users/nbachand/Cascade/city_block_cfd/CHARLES/single_family/R9';
+casePath = './CHARLES/single_family/R15';
 probePath = '/probes/probesOut';
-savePath = '../CHARLES/single_family/R9/plots/';
+savePath = '../CHARLES/single_family/R15/plots/';
 probeNames = {'col_3-2', 'col_3-6', 'col_9-2', 'col_9-6'};%, "col_3-6", "col_9-2", "col_9-6"};
 probeNamesPlots = {'col 3-2', 'col 3-6', 'col 9-2', 'col 9-6'};
 t0 = 21300-10000; % first step
