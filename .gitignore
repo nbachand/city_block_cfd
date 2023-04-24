@@ -5,6 +5,7 @@
 !*.py
 !*.in
 !*.scad
+!*.stl
 !*.ipynb
 !*.cpp
 !*.hpp
@@ -15,6 +16,7 @@
 !Makefile
 !*_template-run-folder_*/
 !runs.txt
+!*.m
 
 # ...even if they are in subdirectories
 !*/
