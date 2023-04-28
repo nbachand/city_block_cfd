@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=csf_R12_test
+#SBATCH --job-name=csf_R17
 #SBATCH -n 128
 #SBATCH --time=12:00:00
 #SBATCH -N 4
@@ -22,5 +22,5 @@ echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
 # mpiexec charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
-mpiexec $HOME/$PARENT_DIR/0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+mpiexec $HOME/$PARENT_DIR/0_deg_restart2/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in

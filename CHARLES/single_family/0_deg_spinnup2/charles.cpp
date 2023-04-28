@@ -213,8 +213,8 @@ public:
 
         u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
         // u[icv][0] = 0.01;
-        u[icv][1] = 0;
-        u[icv][2] = 0;
+        u[icv][1] = 0.001;
+        u[icv][2] = 0.001;
 
         // // add perturbations
         // const double perturbation_scaling = 0.1;
