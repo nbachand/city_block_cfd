@@ -1,8 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=csf_R12_test
-#SBATCH -n 128
-#SBATCH --time=12:00:00
-#SBATCH -N 4
+#SBATCH --job-name=csf_R17
+#SBATCH -N 8
+#SBATCH -n 256
+#SBATCH --mem=200G
+#SBATCH --time=20:00:00
+#SBATCH --partition=serc
+#SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
@@ -22,5 +25,5 @@ echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
 # mpiexec charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
-mpiexec $HOME/$PARENT_DIR/0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $HOME/$PARENT_DIR/0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
