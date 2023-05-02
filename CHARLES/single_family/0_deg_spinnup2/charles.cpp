@@ -254,6 +254,22 @@ public:
     FOR_ICV {
       rhs[icv][0] += factor*vol_cv[icv]*pow(uStar,2)/domain_height;
     }
+
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
+
+      const double T_ref = 0.0;
+      const double beta = 0.0034; 
+      const double g = 10;
+      const double T_factor = 1.0;
+    
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
+
+//      transport_scalar_vec[0][icv]=50.0;
+      FOR_ICV{
+        rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+      }
   }
   void massSourceHook(double * rhs) {}
 
