@@ -204,8 +204,6 @@ public:
 
         rho[icv] = 1.0;
 
-        transport_scalar_vec[0][icv]=0.0;
-
         const double y = x_cv[icv][1];
         const double absy = abs(y);
 
@@ -214,10 +212,12 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
-        // u[icv][0] = 0.01;
+        // u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        u[icv][0] = 0.001;
         u[icv][1] = 0.001;
         u[icv][2] = 0.001;
+          
+        transport_scalar_vec[0][icv]=-0.1*absy;
 
         // // add perturbations
         // const double perturbation_scaling = 0.1;
