@@ -189,7 +189,7 @@ public:
   void initialHook() {
     if (step == 0) {
       if ( mpi_rank == 0 ) 
-        cout << ">>>>> specifying initial velocity field" << endl;
+        cout << ">>>>> specifying initial velocity field and Temp" << endl;
 
       const double uStar = 0.4958;
       const double z0 = 0.366;
@@ -201,7 +201,10 @@ public:
       const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
       FOR_ICV {
-        //rho[icv] = rho_ref;
+
+        rho[icv] = 1.0;
+
+        transport_scalar_vec[0][icv]=0.0;
 
         const double y = x_cv[icv][1];
         const double absy = abs(y);
