@@ -16,7 +16,7 @@ CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
 RESET_STATS TIME = 2000
-STATS u p rho
+STATS u p rho T
 
 # subgrid model
 SGS_MODEL VREMAN
@@ -28,10 +28,14 @@ ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
 top       = SLIP
 
 #Temp Boundaries
-top WALL T = -10
-ground WALL T = 10
-interior WALL T = 10
-buildings WALL T = 10
+REGISTER_SCALAR T
+T.SC_LAM = 0.71
+T.SC_T = 0.71
+
+top WALL T = -2
+ground WALL T = 2
+interior WALL T = 2
+buildings WALL T = 2
 
 #################################
 ######### SOLVER SETUP ##########
