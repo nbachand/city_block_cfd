@@ -11,7 +11,7 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setups
 NSTEPS = 100000000
-TIMESTEP DT = .01 #.001
+TIMESTEP DT = .001 #.001
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -32,10 +32,10 @@ REGISTER_SCALAR T
 T.SC_LAM = 0.71
 T.SC_T = 0.71
 
-top WALL T = -10
-ground WALL T = 10
-interior WALL T = 10
-buildings WALL T = 10
+top WALL T = -2
+ground WALL T = 2
+interior WALL T = 2
+buildings WALL T = 2
 
 #################################
 ######### SOLVER SETUP ##########
