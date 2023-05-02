@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=csf_R18
+#SBATCH --job-name=csf_R17
 #SBATCH -N 8
 #SBATCH -n 256
 #SBATCH --mem=200G
@@ -25,5 +25,5 @@ echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
 # mpiexec charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
-srun $HOME/$PARENT_DIR/0_deg_boussinesq/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $HOME/$PARENT_DIR/0_deg_spinnup2/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # $HOME/$PARENT_DIR/charles.exe -i $HOME/$PARENT_DIR/charles.in
