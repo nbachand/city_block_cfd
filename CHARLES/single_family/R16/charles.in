@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/single_family/4M-mesh.mles ./data/result.00366000.sles
+RESTART = ../../../STITCH/single_family/4M-mesh.mles ./data/result.00667000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
@@ -11,12 +11,12 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setups
 NSTEPS = 100000000
-TIMESTEP DT = .001 #.001
+TIMESTEP DT = .01 #.001
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
 RESET_STATS TIME = 2000
-STATS u p rho
+STATS u p rho T
 
 # subgrid model
 SGS_MODEL VREMAN
@@ -28,6 +28,10 @@ ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
 top       = SLIP
 
 #Temp Boundaries
+REGISTER_SCALAR T
+T.SC_LAM = 0.71
+T.SC_T = 0.71
+
 top WALL T = -10
 ground WALL T = 10
 interior WALL T = 10

@@ -24,40 +24,40 @@ public:
   ~HelmholtzBoussinesqSolver() {
   }
 
-  void initialHook() {
+//   void initialHook() {
    
-    if (step == 0) {
+//     if (step == 0) {
 
-    if ( mpi_rank == 0 ) 
-        cout << " >>>>> Calling initial hook" <<endl;
+//     if ( mpi_rank == 0 ) 
+//         cout << " >>>>> Calling initial hook" <<endl;
 
-    // recall channel is -1 <= y <= 1...
-    FOR_ICV {
+//     // recall channel is -1 <= y <= 1...
+//     FOR_ICV {
       
-    //  approximate turbulent mean profile...
+//     //  approximate turbulent mean profile...
  
-     rho[icv] = 1.0;
-//      rho[icv] = rho_const;
-//    rho_uncorrelated[icv] = rho_const;
-//    difference between rho and rho uncorrelated ?
-    transport_scalar_vec[0][icv]=0.0;
+//      rho[icv] = 1.0;
+// //      rho[icv] = rho_const;
+// //    rho_uncorrelated[icv] = rho_const;
+// //    difference between rho and rho uncorrelated ?
+//     transport_scalar_vec[0][icv]=0.0;
 
-    const double x  = x_cv[icv][0];
-    const double absx = abs(x);
+//     const double x  = x_cv[icv][0];
+//     const double absx = abs(x);
 
-    const double ux = 10; 
-    u[icv][0] = 0.0;
-    u[icv][1] = 0.0;
-    u[icv][2] = 0.0;
+//     const double ux = 10; 
+//     u[icv][0] = 0.0;
+//     u[icv][1] = 0.0;
+//     u[icv][2] = 0.0;
 
-    u[icv][0] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
-    u[icv][1] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
-    u[icv][2] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
+//     u[icv][0] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
+//     u[icv][1] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
+//     u[icv][2] += ux*0.1*(double(rand())/double(RAND_MAX)-0.5);
 
-// and rhoE...
-//    rhoE[icv]  = p_ref/(gamma-1.0) + 0.5*rho[icv]*DOT_PRODUCT(u[icv],u[icv]);
-    }
-  }
+// // and rhoE...
+// //    rhoE[icv]  = p_ref/(gamma-1.0) + 0.5*rho[icv]*DOT_PRODUCT(u[icv],u[icv]);
+//     }
+//   }
 
   }
 
