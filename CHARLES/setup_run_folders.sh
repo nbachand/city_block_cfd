@@ -20,5 +20,14 @@ mkdir $LOCAL_FOLDER
 mkdir $LOCAL_FOLDER/"data"
 mkdir $LOCAL_FOLDER/"Images"
 mkdir $LOCAL_FOLDER/"probes"
-mkdir $LOCAL_FOLDER/"probes/locations"
 mkdir $LOCAL_FOLDER/"probes/probesOut"
+
+read -p "Optional: Enter run to copy probe locations from [None]: " R_locations
+R_locations=${R_locations:"none"}
+echo $R_locations # (optional) move to a new line
+if [${R_locations} != "none"];
+then
+    cp -r "../$R_locations/probes/locations ./probes"
+else
+    mkdir $LOCAL_FOLDER/"probes/locations"
+fi
