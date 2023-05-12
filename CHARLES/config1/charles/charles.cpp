@@ -185,25 +185,52 @@ public:
   }
 
   ~MyHelmholtzSolver() {}
+  
+  void initialHook() {
+    if (step == 0) {
+      if ( mpi_rank == 0 ) 
+        cout << ">>>>> specifying initial velocity field and Temp" << endl;
 
-  //   void initialHook() {
-  //   if (step == 0) {
-  //     if ( mpi_rank == 0 ) 
-  //       cout << ">>>>> specifying initial velocity field" << endl;
-      
-  //     const double u_bulk = 5.686382916184899;
-  //     const double domain_height = 144;
-      
-  //     FOR_ICV {        
-  //       const double y = x_cv[icv][1];
+      const double uStar = 0.4958;
+      const double z0 = 0.366;
+      const double disp = 6.66;
+      const double domain_height = 144;
+      const double vK_const = 0.41;
 
-  //       u[icv][0] = u_bulk*2*(1-y/domain_height);
-  //       u[icv][1] = .000001;
-  //       u[icv][2] = .000001;
-  //     }
-  //   }
-  // }
+      const double H_scaled = domain_height - disp;
+      const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
+      FOR_ICV {
+
+        rho[icv] = 1.0;
+
+        const double y = x_cv[icv][1];
+        const double absy = abs(y);
+
+        // approximate log law mean profile
+        double y_scaled = (absy-disp)/z0;
+        y_scaled = max(1.0, y_scaled);
+        const double u_loglaw = (uStar/vK_const)*log(y_scaled);
+
+        // u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        u[icv][0] = 0.001;
+        u[icv][1] = 0.001;
+        u[icv][2] = 0.001;
+          
+        transport_scalar_vec[0][icv]=-0.1*absy;
+
+        // // add perturbations
+        // const double perturbation_scaling = 0.1;
+        // double uy_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+        // double uz_pert = ux*perturbation_scaling*double(rand())/double(RAND_MAX)-0.5;
+
+        // u[icv][0] -= uy_pert+uz_pert;
+        // u[icv][1] += uy_pert;
+        // u[icv][2] += uz_pert;
+
+      }
+    }
+  }
 
   void temporalHook() {}
 
@@ -223,16 +250,29 @@ public:
     if ( mpi_rank == 0 ) 
     cout << ">>>>> adding momentum source" << endl;
 
-    const double mu = 1.7894e-5;
-    const double Re_tau = 43300; //433;
-    const double Lz =  480;
-    const double hm = 20;
+    const double uStar = 0.4958;
+    const double domain_height = 144;
     const double factor = 1;
 
     FOR_ICV {
-      double fric_vel = Re_tau*mu/(hm*rho[icv]);
-      rhs[icv][0] += factor*vol_cv[icv]*pow(fric_vel,2)/Lz;
+      rhs[icv][0] += factor*vol_cv[icv]*pow(uStar,2)/domain_height;
     }
+
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
+
+      const double T_ref = 0.0;
+      const double beta = 0.0034; 
+      const double g = 10;
+      const double T_factor = 1.0;
+    
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
+
+//      transport_scalar_vec[0][icv]=50.0;
+      FOR_ICV{
+        rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+      }
   }
   void massSourceHook(double * rhs) {}
 
