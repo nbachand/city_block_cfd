@@ -3,7 +3,7 @@ PARENT_DIR="Cascade/city_block_cfd/CHARLES"
 CATEGORY=$(basename "`pwd`")
 LOCAL_FOLDER=$1
 
-cd $SCRATCH/$PARENT_DIR/$CATEGORY/
+# cd $SCRATCH/$PARENT_DIR/$CATEGORY/
 
 echo "Creating folder in $(pwd)"
 
