@@ -217,7 +217,7 @@ public:
         u[icv][1] = 0.001;
         u[icv][2] = 0.001;
           
-        transport_scalar_vec[0][icv]=-0.1*absy;
+        // transport_scalar_vec[0][icv]=-0.1*absy;
 
         // // add perturbations
         // const double perturbation_scaling = 0.1;
