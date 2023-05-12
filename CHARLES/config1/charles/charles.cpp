@@ -173,6 +173,12 @@ public:
 // HelmholtzSolver
 //===============================
 
+const double uStar = 0.4958;
+const double z0 = 0.366;
+const double disp = 6.66;
+const double domain_height = 144;
+const double vK_const = 0.41;
+
 class MyHelmholtzSolver : public HelmholtzSolver {
 public:
 
@@ -191,12 +197,6 @@ public:
       if ( mpi_rank == 0 ) 
         cout << ">>>>> specifying initial velocity field and Temp" << endl;
 
-      const double uStar = 0.4958;
-      const double z0 = 0.366;
-      const double disp = 6.66;
-      const double domain_height = 144;
-      const double vK_const = 0.41;
-
       const double H_scaled = domain_height - disp;
       const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
@@ -212,8 +212,8 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        // u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
-        u[icv][0] = 0.001;
+        u[icv][0] = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        // u[icv][0] = 0.001;
         u[icv][1] = 0.001;
         u[icv][2] = 0.001;
           
@@ -250,29 +250,27 @@ public:
     if ( mpi_rank == 0 ) 
     cout << ">>>>> adding momentum source" << endl;
 
-    const double uStar = 0.4958;
-    const double domain_height = 144;
     const double factor = 1;
 
     FOR_ICV {
       rhs[icv][0] += factor*vol_cv[icv]*pow(uStar,2)/domain_height;
     }
 
-    if ( mpi_rank == 0 ) 
-      cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
+//     if ( mpi_rank == 0 ) 
+//       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
 
-      const double T_ref = 0.0;
-      const double beta = 0.0034; 
-      const double g = 10;
-      const double T_factor = 1.0;
+//       const double T_ref = 0.0;
+//       const double beta = 0.0034; 
+//       const double g = 10;
+//       const double T_factor = 1.0;
     
-    if ( mpi_rank == 0 ) 
-      cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
+//     if ( mpi_rank == 0 ) 
+//       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
 
-//      transport_scalar_vec[0][icv]=50.0;
-      FOR_ICV{
-        rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
-      }
+// //      transport_scalar_vec[0][icv]=50.0;
+//       FOR_ICV{
+//         rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+//       }
   }
   void massSourceHook(double * rhs) {}
 
