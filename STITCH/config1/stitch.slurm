@@ -7,6 +7,8 @@
 #SBATCH --partition=serc
 #SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 
+source ~/.bash_profile
+
 module purge
 
 module load system
@@ -26,5 +28,6 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-# mpiexec stitch.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/stitch-fine.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
