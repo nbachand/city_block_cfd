@@ -67,6 +67,113 @@ const double vK_const = 0.41;
 //
 //==================================================================================
 
+//===============================
+// IdealGasSolver
+//===============================
+
+class MyIdealGasSolver : public IdealGasSolver {
+public:
+
+  /*
+  double (* vort)[3];         // = curl(u);
+  double * vort_mag;          // = |curl(u)|
+  */
+
+  MyIdealGasSolver() {
+
+    /*
+    vort     = NULL;  registerCvData( vort, "vort", READWRITE_DATA);
+    vort_mag = NULL;  registerCvData( vort_mag, "vort_mag", NO_READWRITE_DATA);
+    */
+  }
+
+  void initData() {
+
+    IdealGasSolver::initData();
+
+    /*
+    assert( vort == NULL);     vort     = new double[ncv_g2][3];  // include vort calculation in ghosts...
+    assert( vort_mag == NULL); vort_mag = new double[ncv];        // no ghosts ...
+    */
+
+  }
+
+  ~MyIdealGasSolver() {
+
+    /*
+    DELETE(vort);
+    DELETE(vort_mag);
+    */
+
+  }
+
+  void initialHook() {}
+
+  void temporalHook() {
+
+    /*
+    if ( step % check_interval == 0) {
+
+      if ( mpi_rank == 0 )
+        cout << " > computing vorticity ... " << endl;
+
+      for (int icv = 0; icv < ncv; ++icv) {
+
+        vort[icv][0]  = dudx[icv][2][1] - dudx[icv][1][2];
+        vort[icv][1]  = dudx[icv][0][2] - dudx[icv][2][0];
+        vort[icv][2]  = dudx[icv][1][0] - dudx[icv][0][1];
+
+        vort_mag[icv] = MAG(vort[icv]);
+
+      }
+
+      updateCv2Data(vort, REPLACE_ROTATE_DATA);
+
+    }
+    */
+
+  }
+
+  void finalHook() {}
+
+  IdealGasBc* initHookBc(BfZone* p) {
+    CERR(" > user must supply a hook boundary condition for zone: " << p->getName());
+  }
+
+  void addSourceHook(IdealGasRhs* rhs, const double time, const int rk_stage) {}
+
+};
+
+//===============================
+// PremixedSolver
+//===============================
+
+class MyPremixedSolver : public PremixedSolver {
+public:
+
+  MyPremixedSolver() {}
+
+  void initData() {
+
+    PremixedSolver::initData();
+
+  }
+
+  ~MyPremixedSolver() {}
+
+  void initialHook() {}
+
+  void temporalHook() {}
+
+  void finalHook() {}
+
+  PremixedBc* initHookBc(BfZone* p) {
+    CERR(" > user must supply a hook boundary condition for zone: " << p->getName());
+  }
+
+  void addSourceHook(PremixedRhs* rhs, const double time, const int rk_stage) {}
+
+};
 
 //===============================
 // HelmholtzSolver
@@ -217,3 +324,165 @@ public:
   void addSourceHook(IdealGasRhs* rhs, const double time, const int rk_stage) {}
 
 };
+
+//===============================
+// postpro
+//===============================
+
+class MyBasicPostpro : public BasicPostpro {
+public:
+
+  MyBasicPostpro() {}
+
+  void initData() {
+
+    BasicPostpro::initData();
+
+  }
+
+  ~MyBasicPostpro() {}
+
+  void initialHook() {}
+
+  void temporalHook() {}
+
+  void finalHook() {}
+
+};
+
+
+int main(int argc, char* argv[]) {
+
+  try {
+
+    CTI_Init(argc,argv,"charles.in");
+
+    {
+
+      const bool b_post = checkParam("POST");
+
+      if (Param * param = getParam("EOS")) {
+        const string eos = param->getString();
+        if ( eos == "IDEAL_GAS") {
+
+          MyIdealGasSolver solver;
+
+          if (b_post) {
+
+            solver.initMin();
+            solver.runPost();
+
+          } else {
+
+            solver.init();
+            solver.run();
+          }
+        }
+        else if (eos == "IDEAL_GAS_LSP") {
+
+          MyIdealGasSolverWithLsp solver;
+
+          if (b_post) {
+
+            solver.initMin();
+            solver.runPost();
+
+          } else {
+
+            solver.init();
+            solver.run();
+          }
+        }
+        else if ((eos == "PREMIXED_FPV") || (eos == "PREMIXED")) {
+
+          MyPremixedSolver solver;
+
+          if ( b_post) {
+
+            solver.initMin();
+            solver.runPost();
+
+          } else {
+
+            solver.init();
+            solver.run();
+          }
+        }
+        else if ((eos == "NONPREMIXED_FPV") || (eos == "NONPREMIXED") || (eos == "NON-PREMIXED") || (eos == "NON-PREMIXED_FPV")) {
+
+          MyNonpremixedSolver solver;
+
+          if ( b_post) {
+
+            solver.initMin();
+            solver.runPost();
+
+          } else {
+
+            solver.init();
+            solver.run();
+
+          }
+        }
+        else if ( eos == "HELMHOLTZ") {
+
+          MyHelmholtzSolver solver;
+
+          if ( b_post) {
+
+            solver.initMin();
+            solver.runPost();
+
+          } else {
+
+            solver.init();
+            solver.run();
+          }
+        }
+        else {
+          CERR("unrecognized EOS: " << eos << ", possible choices are \n" <<
+               "EOS IDEAL_GAS\n" <<
+               "EOS PREMIXED_FPV\n" <<
+               "EOS NONPREMIXED_FPV\n" <<
+               "EOS IDEAL_GAS_LSP");
+        }
+      }
+      else {
+
+        if ( b_post) {
+
+          // if there is no eos object provided but we are in a post
+          // mode then we need to just start a stripped down staticsolver
+
+          MyBasicPostpro solver;
+          solver.initMin();
+          solver.runPost();
+
+        } else {
+
+          CERR("must specify EOS or POST. Possible choices for EOS are \n" <<
+               "EOS IDEAL_GAS\n" <<
+               "EOS PREMIXED_FPV\n" <<
+               "EOS NONPREMIXED_FPV\n" <<
+               "EOS IDEAL_GAS_LSP");
+        }
+      }
+    }
+
+    CTI_Finalize();
+  }
+  catch (int e) {
+    if (e >= 0) {
+      CTI_Finalize();
+    }
+    else {
+      CTI_Abort();
+    }
+  }
+  catch(...) {
+    CTI_Abort();
+  }
+
+  return 0;
+
+}
