@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config1/10M-mesh.mles .#/data/result.00105000.sles
+RESTART = ../../../STITCH/config1/10M-mesh.mles #./data/result.00105000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
 INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
@@ -11,7 +11,7 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 100000000
-TIMESTEP DT = .005 #.001
+TIMESTEP DT = .01 #.001
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -103,7 +103,7 @@ WRITE_IMAGE NAME=./Images/prms_x315_h1 INTERVAL=1000 TARGET 126 1.5 108 CAMERA 1
 ###########  PROBING  ###########
 #################################
 
-FLUSH_PROBES 100
+FLUSH_PROBES 1000
 
 PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
 PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
