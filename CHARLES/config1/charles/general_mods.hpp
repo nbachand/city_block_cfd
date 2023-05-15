@@ -216,8 +216,8 @@ public:
         const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
 
         u[icv][0] = u_parr*cos(theta_wind);
-        u[icv][1] = u_parr*sin(theta_wind);
-        u[icv][2] = 0.001;
+        u[icv][2] = u_parr*sin(theta_wind);
+        u[icv][1] = 0.001;
           
         // transport_scalar_vec[0][icv]=-0.1*absy;
 
@@ -256,8 +256,8 @@ public:
 
     FOR_ICV {
       const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-      rhs[icv][0] += sin(theta_wind)*mom_source;
-      rhs[icv][1] += cos(theta_wind)*mom_source;
+      rhs[icv][0] += cos(theta_wind)*mom_source;
+      rhs[icv][2] += sin(theta_wind)*mom_source;
     }
 
 //     if ( mpi_rank == 0 ) 
