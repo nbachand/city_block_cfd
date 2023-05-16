@@ -2,18 +2,18 @@
 #SBATCH --job-name=stitch
 #SBATCH -c 1
 #SBATCH -N 1
-#SBATCH -n 16
-#SBATCH -p bigmem
-#SBATCH --time=00:10:00
-#SBATCH --mem=512G
+#SBATCH -n 32
+#SBATCH --time=01:00:00
+#SBATCH --partition=serc
+#SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
+
+source ~/.bash_profile
 
 module purge
 
 module load system
 module load libpng/1.2.57
 module load openmpi/2.1.1
-
-source ~/.bash_profile
 
 STITCH_DIR="Cascade/city_block_cfd/STITCH"
 LOCAL_FOLDER=$(basename "`pwd`")
@@ -28,5 +28,6 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-# mpiexec stitch.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/stitch-fine.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
