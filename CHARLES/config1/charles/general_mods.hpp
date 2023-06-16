@@ -257,7 +257,7 @@ public:
 
     FOR_ICV {
       const double y = x_cv[icv][1];
-      if ( y > building_height){
+      if ( y > 1.5*building_height){
         const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
         rhs[icv][0] += cos(theta_wind)*mom_source;
         rhs[icv][2] += sin(theta_wind)*mom_source;
