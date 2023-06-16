@@ -12,6 +12,7 @@ const double z0 = 0.366;
 const double disp = 6.66;
 const double domain_height = 192;
 const double vK_const = 0.41;
+const double building_height = 6;
 
 //==================================================================================
 // following solver types are defined below
@@ -255,9 +256,12 @@ public:
     const double factor = 1;
 
     FOR_ICV {
-      const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-      rhs[icv][0] += cos(theta_wind)*mom_source;
-      rhs[icv][2] += sin(theta_wind)*mom_source;
+      const double y = x_cv[icv][1];
+      if ( y > building_height){
+        const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
+        rhs[icv][0] += cos(theta_wind)*mom_source;
+        rhs[icv][2] += sin(theta_wind)*mom_source;
+      } 
     }
 
 //     if ( mpi_rank == 0 ) 
