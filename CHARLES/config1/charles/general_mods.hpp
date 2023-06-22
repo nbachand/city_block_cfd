@@ -253,7 +253,7 @@ public:
     if ( mpi_rank == 0 ) 
     cout << ">>>>> adding momentum source" << endl;
 
-    const double factor = 1;
+    const double factor = momentum_scaling_factor;
 
     FOR_ICV {
       const double y = x_cv[icv][1];
