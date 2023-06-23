@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=cc1_R8
-#SBATCH -N 8
-#SBATCH -n 256
+#SBATCH -N 16
+#SBATCH -n 502
 #SBATCH --mem=200G
-#SBATCH --time=20:00:00
+#SBATCH --time=4:00:00
 #SBATCH --partition=serc
 #SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 #SBATCH --mail-type=ALL
