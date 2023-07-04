@@ -107,7 +107,7 @@ WRITE_IMAGE NAME=./Images/u_z265   INTERVAL=100 TARGET      96 36 96    CAMERA 9
 ###########  PROBING  ###########
 #################################
 
-FLUSH_PROBES 100
+FLUSH_PROBES 1 #100
 
 PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p
 PROBE NAME=probes/probesOut/col_3-6 INTERVAL=1 GEOM=FILE probes/locations/col_3-6.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p

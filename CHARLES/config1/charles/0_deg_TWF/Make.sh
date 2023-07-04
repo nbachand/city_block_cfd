@@ -10,4 +10,5 @@ module load openmpi/4.1.0
 
 module list
 
+# rm charles.o
 srun make

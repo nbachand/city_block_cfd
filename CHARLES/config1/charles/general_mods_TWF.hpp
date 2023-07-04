@@ -6,28 +6,6 @@
 #include "HelmholtzSolver.hpp"
 #include "NonpremixedSolver.hpp"
 #include "BasicPostpro.hpp"
-
-// General Constants
-const double uStar = 0.4958;
-const double z0 = 0.366;
-const double disp = 6.66;
-const double domain_height = 192;
-const double domain_length = domain_height;
-const double vK_const = 0.41;
-const double building_height = 6;
-const double ref_window = building_height/5;
-int ref_icv = 0;
-double y_ref = 0.0;
-
-// Momentum constants
-const double factor = momentum_scaling_factor;
-const double C_L = 0.5;
-const double C_t = 0.5;
-const double u_ct = 4.0*cos(theta_wind);
-const double v_ct = 4.0*sin(theta_wind);
-const double L_0 = C_L*domain_length;
-const double u_0 = u_ct; // this is the average velocity at the reference point
-const double dt_0 = C_t*domain_length/u_0;
         
 //==================================================================================
 // following solver types are defined below
@@ -198,9 +176,21 @@ public:
 
 class MyHelmholtzSolver : public HelmholtzSolver {
 public:
-
-  MyHelmholtzSolver() {}
-
+    
+  // // General Constants
+  // const double domain_height = 192;
+  // const double domain_length = domain_height;
+  // int ref_icv = 0;
+  // double y_ref = 0.0;
+  
+  // General Constants
+  const double domain_height;
+  const double domain_length;
+  mutable int ref_icv;
+  mutable double y_ref;
+  
+  MyHelmholtzSolver() : domain_height(192), domain_length(192), ref_icv(0), y_ref(0.0) {}
+        
   void initData() {
 
     HelmholtzSolver::initData();
@@ -213,9 +203,16 @@ public:
     if (step == 0) {
       if ( mpi_rank == 0 ) 
         cout << ">>>>> specifying initial velocity field and Temp" << endl;
+        // Initializaton constants
+        const double uStar = 0.4958;
+        const double z0 = 0.366;
+        const double disp = 6.66;
+        const double vK_const = 0.41;
+        const double building_height = 6;
+        const double ref_window = building_height/5;
 
       bool found_ref_icv = false;
-      // Initialization Constants
+      // Initialization Constant
       const double H_scaled = domain_height - disp;
       const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
@@ -231,11 +228,11 @@ public:
           if (x >= domain_length/2-ref_window && x <= domain_length/2+ref_window){
             if (y >= 2*building_height-ref_window && y <= 2*building_height+ref_window){
               if (z >= domain_length/2-ref_window && z <= domain_length/2+ref_window){
-                ref_icv = icv;             
-                cout << ">>>>> found ref point for icv: " << ref_icv << endl;
-                cout << "x_ref= " << x << " y_ref= " << y << " z_ref= " << z << endl;
-                const double y_ref = y;
+                this->ref_icv = icv;             
+                this->y_ref = y;
                 found_ref_icv = true;
+                cout << ">>>>> found ref point for icv: " << this->ref_icv << endl;
+                cout << "x_ref= " << x << " y_ref= " << this->y_ref << " z_ref= " << z << endl;
               }
             }
           } 
@@ -284,13 +281,24 @@ public:
   // step setting; as a result, the hooks for add source hooks are slightly
   // different.
 
-  void momentumSourceHook(double * A,double (*rhs)[3]) {
+  void momentumSourceHook(double * A,double (*rhs)[3]) { 
+    // Momentum constants
+    const double factor = momentum_scaling_factor;
+    const double C_L = 0.5;
+    const double C_t = 0.5;
+    const double u_ct = 4.0*cos(theta_wind);
+    const double v_ct = 4.0*sin(theta_wind);
+    const double L_0 = C_L*domain_length;
+    const double u_0 = u_ct; // this is the average velocity at the reference point
+    const double dt_0 = C_t*domain_length/u_0; 
+    
     if ( step != 0){
       const double u_t = u[ref_icv][0];
       const double v_t = u[ref_icv][2];
       const double tau_t = dt_0 + (dt - dt_0)*exp(-time/dt_0);
       
       if ( mpi_rank == 0 ){
+        cout << ">>>>> ref icv: " << this->ref_icv << ", y icv: " << this->y_ref << endl;
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
@@ -301,11 +309,11 @@ public:
         const double S_u = (u_ct - u_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
         const double S_v = (v_ct - v_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
         // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-        rhs[icv][0] += cos(theta_wind)*S_u;
-        rhs[icv][0] += sin(theta_wind)*S_v;
-        
-        rhs[icv][2] += sin(theta_wind)*S_u;
-        rhs[icv][2] += cos(theta_wind)*S_v;
+        // rhs[icv][0] += cos(theta_wind)*S_u;
+        // rhs[icv][0] += sin(theta_wind)*S_v;
+        // 
+        // rhs[icv][2] += sin(theta_wind)*S_u;
+        // rhs[icv][2] += cos(theta_wind)*S_v;
         if ( icv == ref_icv && mpi_rank == 0){
           cout << ">>>>> U momentum source is " << S_u << endl;
           cout << ">>>>> V momentum source is " << S_v << endl;
