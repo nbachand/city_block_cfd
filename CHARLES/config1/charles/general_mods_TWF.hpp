@@ -61,8 +61,6 @@
 //
 //==================================================================================
 
-int ref_icv = 63274;
-
 //===============================
 // IdealGasSolver
 //===============================
@@ -199,25 +197,43 @@ public:
 
   ~MyHelmholtzSolver() {}
     
-  void findRefIcv() {
+  std::pair<double> findRefIcv(double building_height) {
+    const double ref_window = building_height/5;
+    int ref_icv;
+    bool stop = false;
     
-  
+    FOR_ICV {
+      if (stop == false) {
+        const double x = x_cv[icv][0];
+        const double y = x_cv[icv][1];
+        const double z = x_cv[icv][2];
+        if (x >= domain_length/2-ref_window && x <= domain_length/2+ref_window){
+          if (y >= 2*building_height-ref_window && y <= 2*building_height+ref_window){
+            if (z >= domain_length/2-ref_window && z <= domain_length/2+ref_window){
+              ref_icv = icv;             
+              stop = true;
+            }
+          }
+        }
+      } 
+    }
+    u_ref = u[ref_icv]
+    y_ref = y;
+    << ">>>>> outputing ref point for icv: " << ref_icv << endl;
+    cout << "x_ref= " << x << " y_ref= " << y << " z_ref= " << z << endl; 
+    return ref_icv;
+  }
+    
   void initialHook() {
     if (step == 0) {
       if ( mpi_rank == 0 ) 
         cout << ">>>>> specifying initial velocity field and Temp" << endl;
       
       // Initializaton constants
-      // int ref_icv = 10;
       const double uStar = 0.4958;
       const double z0 = 0.366;
       const double disp = 6.66;
       const double vK_const = 0.41;
-      const double building_height = 6;
-      const double ref_window = building_height/5;
-
-      bool found_ref_icv = false;
-      // Initialization Constant
       const double H_scaled = domain_height - disp;
       const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
@@ -225,23 +241,7 @@ public:
 
         rho[icv] = 1.0;
 
-        const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
-        const double z = x_cv[icv][2];
-        
-        if (found_ref_icv == false){
-          if (x >= domain_length/2-ref_window && x <= domain_length/2+ref_window){
-            if (y >= 2*building_height-ref_window && y <= 2*building_height+ref_window){
-              if (z >= domain_length/2-ref_window && z <= domain_length/2+ref_window){
-                ref_icv = icv;             
-                found_ref_icv = true;
-                cout << ">>>>> found ref point for icv: " << ref_icv << endl;
-                cout << "x_ref= " << x << " y_ref= " << y << " z_ref= " << z << endl;
-              }
-            }
-          } 
-        }
-
         const double absy = abs(y);
 
         // approximate log law mean profile
@@ -296,6 +296,9 @@ public:
     const double L_0 = C_L*domain_length;
     const double u_0 = u_ct; // this is the average velocity at the reference point
     const double dt_0 = C_t*domain_length/u_0; 
+    
+    const double building_height = 6;
+    const int ref_icv = this->findRefIcv(building_height);
     const double y_ref = x_cv[ref_icv][1];
     
     if ( step != 0){
@@ -303,8 +306,8 @@ public:
       const double v_t = u[ref_icv][2];
       const double tau_t = dt_0 + (dt - dt_0)*exp(-time/dt_0);
       
+      cout << ">>>>> ref icv: " << ref_icv << ", y icv: " << y_ref << endl;
       if ( mpi_rank == 0 ){
-        cout << ">>>>> ref icv: " << ref_icv << ", y icv: " << y_ref << endl;
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
