@@ -6,6 +6,8 @@
 #include "HelmholtzSolver.hpp"
 #include "NonpremixedSolver.hpp"
 #include "BasicPostpro.hpp"
+#include <tuple>
+#include <iostream>
         
 //==================================================================================
 // following solver types are defined below
@@ -197,10 +199,13 @@ public:
 
   ~MyHelmholtzSolver() {}
     
-  std::pair<double> findRefIcv(double building_height) {
+  std::tuple<double, double, double> findRefUVY(double building_height) {
+    tuple<double, double, double> result;
     const double ref_window = building_height/5;
-    int ref_icv;
     bool stop = false;
+    double u_t;
+    double v_t;
+    double y_ref;
     
     FOR_ICV {
       if (stop == false) {
@@ -210,18 +215,19 @@ public:
         if (x >= domain_length/2-ref_window && x <= domain_length/2+ref_window){
           if (y >= 2*building_height-ref_window && y <= 2*building_height+ref_window){
             if (z >= domain_length/2-ref_window && z <= domain_length/2+ref_window){
-              ref_icv = icv;             
+              double u_t = u[icv][0];
+              double v_t = u[icv][2];
+              double y_ref = y;
+              cout << ">>>>> found ref point with icv: " << icv << endl;
+              cout << "x_ref= " << x << " y_ref= " << y_ref << " z_ref= " << z << endl; 
               stop = true;
             }
           }
         }
       } 
     }
-    u_ref = u[ref_icv]
-    y_ref = y;
-    << ">>>>> outputing ref point for icv: " << ref_icv << endl;
-    cout << "x_ref= " << x << " y_ref= " << y << " z_ref= " << z << endl; 
-    return ref_icv;
+    result = std::make_tuple(u_t, v_t, y_ref);
+    return result;
   }
     
   void initialHook() {
@@ -298,15 +304,13 @@ public:
     const double dt_0 = C_t*domain_length/u_0; 
     
     const double building_height = 6;
-    const int ref_icv = this->findRefIcv(building_height);
-    const double y_ref = x_cv[ref_icv][1];
+    double u_t, v_t, y_ref;
+    std::tie(u_t, v_t, y_ref) = this->findRefUVY(building_height);
     
     if ( step != 0){
-      const double u_t = u[ref_icv][0];
-      const double v_t = u[ref_icv][2];
       const double tau_t = dt_0 + (dt - dt_0)*exp(-time/dt_0);
       
-      cout << ">>>>> ref icv: " << ref_icv << ", y icv: " << y_ref << endl;
+      cout << ">>>>> y_ref: " << y_ref << endl;
       if ( mpi_rank == 0 ){
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
@@ -323,10 +327,10 @@ public:
         
         rhs[icv][2] += sin(theta_wind)*S_u;
         rhs[icv][2] += cos(theta_wind)*S_v;
-        if ( icv == ref_icv && mpi_rank == 0){
-          cout << ">>>>> U momentum source is " << S_u << endl;
-          cout << ">>>>> V momentum source is " << S_v << endl;
-        }
+        // if ( icv == ref_icv && mpi_rank == 0){
+        //   cout << ">>>>> U momentum source is " << S_u << endl;
+        //   cout << ">>>>> V momentum source is " << S_v << endl;
+        // }
       }
     }
 
