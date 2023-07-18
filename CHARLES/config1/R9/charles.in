@@ -107,6 +107,11 @@ WRITE_IMAGE NAME=./Images/u_z265   INTERVAL=100 TARGET      96 36 96    CAMERA 9
 ###########  PROBING  ###########
 #################################
 
+## pointcloud probe for reference point
+POINTCLOUD_PROBE NAME=pcprobes/refProbes INTERVAL=1 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE refPoint.txt VARS comp(u,0) comp(u,1) comp(u,2) 
+
+## probes for probing
+
 FLUSH_PROBES 1 #100
 
 PROBE NAME=probes/probesOut/col_3-2 INTERVAL=1 GEOM=FILE probes/locations/col_3-2.txt   VARS=comp(u,0) comp(u,1) comp(u,2) p

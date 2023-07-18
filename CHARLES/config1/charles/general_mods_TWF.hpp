@@ -199,6 +199,8 @@ public:
 
   ~MyHelmholtzSolver() {}
     
+  
+    
   std::tuple<double, double, double> findRefUVY(double building_height) {
     tuple<double, double, double> result;
     const double ref_window = building_height/5;
@@ -206,26 +208,34 @@ public:
     double u_t;
     double v_t;
     double y_ref;
+      
+    double x;
+    double y;
+    double z;
+      
+    int ref_icv;
     
     FOR_ICV {
       if (stop == false) {
-        const double x = x_cv[icv][0];
-        const double y = x_cv[icv][1];
-        const double z = x_cv[icv][2];
+        x = x_cv[icv][0];
+        y = x_cv[icv][1];
+        z = x_cv[icv][2];
         if (x >= domain_length/2-ref_window && x <= domain_length/2+ref_window){
           if (y >= 2*building_height-ref_window && y <= 2*building_height+ref_window){
             if (z >= domain_length/2-ref_window && z <= domain_length/2+ref_window){
-              double u_t = u[icv][0];
-              double v_t = u[icv][2];
-              double y_ref = y;
-              cout << ">>>>> found ref point with icv: " << icv << endl;
-              cout << "x_ref= " << x << " y_ref= " << y_ref << " z_ref= " << z << endl; 
-              stop = true;
+              ref_icv = icv;
+              u_t = u[ref_icv][0];
+              v_t = u[ref_icv][2];
+              y_ref = x_cv[ref_icv][1];
+              // cout << ">>>>> found ref point with icv: " << icv << endl;
+              // cout << "x_ref= " << x << " y_ref= " << y_ref << " z_ref= " << z << endl; 
+              // stop = true;
             }
           }
         }
       } 
     }
+    cout << ">>>>> u_t: " << u_t << ", y_ref: " << y_ref << endl;
     result = std::make_tuple(u_t, v_t, y_ref);
     return result;
   }
@@ -255,10 +265,11 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        // const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
 
         // u[icv][0] = u_parr*cos(theta_wind);
         // u[icv][2] = u_parr*sin(theta_wind);
+        
         u[icv][0] = u_loglaw*cos(theta_wind)+.001;
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
         u[icv][1] = 0.001;
@@ -317,21 +328,21 @@ public:
         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
       }
   
-      FOR_ICV {
-        const double y = x_cv[icv][1]; 
-        const double S_u = (u_ct - u_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
-        const double S_v = (v_ct - v_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
-        // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-        rhs[icv][0] += cos(theta_wind)*S_u;
-        rhs[icv][0] += sin(theta_wind)*S_v;
+//       FOR_ICV {
+//         const double y = x_cv[icv][1]; 
+//         const double S_u = (u_ct - u_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
+//         const double S_v = (v_ct - v_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
+//         // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
+//         rhs[icv][0] += cos(theta_wind)*S_u;
+//         rhs[icv][0] += sin(theta_wind)*S_v;
         
-        rhs[icv][2] += sin(theta_wind)*S_u;
-        rhs[icv][2] += cos(theta_wind)*S_v;
-        // if ( icv == ref_icv && mpi_rank == 0){
-        //   cout << ">>>>> U momentum source is " << S_u << endl;
-        //   cout << ">>>>> V momentum source is " << S_v << endl;
-        // }
-      }
+//         rhs[icv][2] += sin(theta_wind)*S_u;
+//         rhs[icv][2] += cos(theta_wind)*S_v;
+//         // if ( icv == ref_icv && mpi_rank == 0){
+//         //   cout << ">>>>> U momentum source is " << S_u << endl;
+//         //   cout << ">>>>> V momentum source is " << S_v << endl;
+//         // }
+//       }
     }
 
 //     if ( mpi_rank == 0 ) 
