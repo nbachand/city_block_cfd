@@ -282,20 +282,30 @@ public:
     
     if ( step != 0){
       // Test this function
-      string stepNumber = std::to_string(step-1);
-      while (stepNumber.size() < 8) {
-          stepNumber = '0' + stepNumber;
+      double u_t;
+      double v_t;
+        
+      if (mpi_rank == 0) {
+        string lastStepString = std::to_string(step-1);
+        while (lastStepString.size() < 8) {
+            lastStepString = '0' + lastStepString;
+        }
+        string filename = "pcprobes/refProbes." + lastStepString + ".pcd";
+        double (*u_vec)[3];
+        std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+        MiscUtils::read3DAsciiTable(u_vec, filename);
+        std::cout.clear();
+        u_t = u_vec[1][0];
+        v_t = u_vec[1][2];
       }
-      string filename = "pcprobes/refProbes." + stepNumber + ".pcd";
-      double (*u_vec)[3];
-      MiscUtils::read3DAsciiTable(u_vec, filename);
-      double u_t = u_vec[1][0];
-      double v_t = u_vec[1][2];
+        
+      MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
+      MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
     
       const double tau_t = dt_0 + (dt - dt_0)*exp(-time/dt_0);
         
       
-      if ( mpi_rank == 0 ){
+      if ( mpi_rank == 0 && step % 10 == 0 ){
         cout << ">>>>> y_ref: " << y_ref << endl;
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
