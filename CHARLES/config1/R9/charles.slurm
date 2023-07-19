@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=cc1_R9
-#SBATCH -N 1
-#SBATCH -n 8
-#SBATCH --time=00:04:00
-#SBATCH --mem 32G
+#SBATCH -N 8
+#SBATCH -n 256
+#SBATCH --time=24:00:00
+#SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
-##SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
+#SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
 module purge

@@ -231,10 +231,9 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        // const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
-
-        // u[icv][0] = u_parr*cos(theta_wind);
-        // u[icv][2] = u_parr*sin(theta_wind);
+        //const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        //u[icv][0] = u_parr*cos(theta_wind);
+        //u[icv][2] = u_parr*sin(theta_wind);
         
         u[icv][0] = u_loglaw*cos(theta_wind)+.001;
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
@@ -280,7 +279,7 @@ public:
     const double y_ref = building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step != 0){
+    if ( step >= 100){
       // Test this function
       double u_t;
       double v_t;
