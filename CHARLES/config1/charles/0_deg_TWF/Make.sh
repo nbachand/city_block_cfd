@@ -11,4 +11,4 @@ module load openmpi/4.1.0
 module list
 
 make clean
-srun make
+make

@@ -76,6 +76,10 @@ const double vK_const = 0.41;
 const double H_scaled = domain_height - disp;
 const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
+// Momentum Source Constants (TWF)
+const double C_L = 0.5;
+const double C_t = 0.5;
+const double u_scaling = 3.24;
 //===============================
 // IdealGasSolver
 //===============================
@@ -267,11 +271,8 @@ public:
   void momentumSourceHook(double * A,double (*rhs)[3]) { 
     // Momentum constants
     // int ref_icv = 10;
-    const double factor = momentum_scaling_factor;
-    const double C_L = 0.5;
-    const double C_t = 0.5;
-    const double u_ct = 4.0*cos(theta_wind);
-    const double v_ct = 4.0*sin(theta_wind);
+    const double u_ct = u_scaling*cos(theta_wind);
+    const double v_ct = u_scaling*sin(theta_wind);
     const double L_0 = C_L*domain_length;
     const double u_0 = u_ct; // this is the average velocity at the reference point
     const double dt_0 = C_t*domain_length/u_0; 
@@ -281,7 +282,7 @@ public:
     
     if ( step != 0){
       // Test this function
-      string stepNumber = std::to_string(step);
+      string stepNumber = std::to_string(step-1);
       while (stepNumber.size() < 8) {
           stepNumber = '0' + stepNumber;
       }
