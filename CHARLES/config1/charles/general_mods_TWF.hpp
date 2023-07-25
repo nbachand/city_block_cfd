@@ -79,7 +79,7 @@ const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/
 // Momentum Source Constants (TWF)
 const double C_L = 0.5;
 const double C_t = 0.5;
-const double u_scaling = 3.24;
+const double u_scaling = 7.4;
 //===============================
 // IdealGasSolver
 //===============================
@@ -276,10 +276,10 @@ public:
     const double u_0 = u_ct; // this is the average velocity at the reference point
     const double dt_0 = C_t*domain_length/u_0; 
     
-    const double y_ref = building_height*2;
+    const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step >= 100){
+    if ( step >= 10){
       // Test this function
       double u_t;
       double v_t;
@@ -301,7 +301,7 @@ public:
       MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
       MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
     
-      const double tau_t = dt_0 + (dt - dt_0)*exp(-time/dt_0);
+      const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
         
       
       if ( mpi_rank == 0 && step % 10 == 0 ){
@@ -316,8 +316,8 @@ public:
   
       FOR_ICV {
         const double y = x_cv[icv][1]; 
-        const double S_u = (u_ct - u_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
-        const double S_v = (v_ct - v_t)/tau_t*exp(-.5*(y-y_ref)/L_0);
+        const double S_u = (u_ct - u_t)/tau_t; //*exp(-.5*(y-y_ref)/L_0);
+        const double S_v = (v_ct - v_t)/tau_t; //*exp(-.5*(y-y_ref)/L_0);
         // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
         rhs[icv][0] += cos(theta_wind)*S_u;
         rhs[icv][0] += sin(theta_wind)*S_v;
