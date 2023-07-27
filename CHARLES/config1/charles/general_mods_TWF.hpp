@@ -304,7 +304,7 @@ public:
       const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
         
       
-      if ( mpi_rank == 0 && step % 10 == 0 ){
+      if ( mpi_rank == 0 && step % 100 == 0 ){
         cout << ">>>>> y_ref: " << y_ref << endl;
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
@@ -315,15 +315,18 @@ public:
       }
   
       FOR_ICV {
-        const double y = x_cv[icv][1]; 
-        const double S_u = (u_ct - u_t)/tau_t; //*exp(-.5*(y-y_ref)/L_0);
-        const double S_v = (v_ct - v_t)/tau_t; //*exp(-.5*(y-y_ref)/L_0);
-        // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-        rhs[icv][0] += cos(theta_wind)*S_u;
-        rhs[icv][0] += sin(theta_wind)*S_v;
-        
-        rhs[icv][2] += sin(theta_wind)*S_u;
-        rhs[icv][2] += cos(theta_wind)*S_v;
+        const double y = x_cv[icv][1];
+        if ( y > 1.5*building_height){
+          const double y = x_cv[icv][1]; 
+          const double S_u = (u_ct - u_t)/tau_t*vol_cv[icv]; //*exp(-.5*(y-y_ref)/L_0);
+          const double S_v = (v_ct - v_t)/tau_t*vol_cv[icv]; //*exp(-.5*(y-y_ref)/L_0);
+          // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
+          rhs[icv][0] += cos(theta_wind) * cos(theta_wind)*S_u;
+          rhs[icv][0] += cos(theta_wind) * sin(theta_wind)*S_v;
+          
+          rhs[icv][2] += sin(theta_wind) * sin(theta_wind)*S_u;
+          rhs[icv][2] += sin(theta_wind) * cos(theta_wind)*S_v;
+        }
       }
     }
 
