@@ -237,7 +237,7 @@ public:
         
         u[icv][0] = u_loglaw*cos(theta_wind)+.001;
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
-        u[icv][1] = 0.001;
+        u[icv][1] = -0.002;
           
         // transport_scalar_vec[0][icv]=-0.1*absy;
 
@@ -302,30 +302,29 @@ public:
       MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
     
       const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
-        
+      const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
+      const double S_v = (v_ct - v_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
       
-      if ( mpi_rank == 0 && step % 100 == 0 ){
+      if ( mpi_rank == 0 && step % 10 == 0 ){
         cout << ">>>>> y_ref: " << y_ref << endl;
         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
-        cout << ">>>>> S_u at ref is " << (u_ct - u_t)/tau_t << endl;
-        cout << ">>>>> S_v at ref is " << (v_ct - v_t)/tau_t << endl;
+        cout << ">>>>> S_u at ref is " << S_u << endl;
+        cout << ">>>>> S_v at ref is " << S_v << endl;
           
       }
   
       FOR_ICV {
         const double y = x_cv[icv][1];
         if ( y > 1.5*building_height){
-          const double y = x_cv[icv][1]; 
-          const double S_u = (u_ct - u_t)/tau_t*vol_cv[icv]; //*exp(-.5*(y-y_ref)/L_0);
-          const double S_v = (v_ct - v_t)/tau_t*vol_cv[icv]; //*exp(-.5*(y-y_ref)/L_0);
           // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-          rhs[icv][0] += cos(theta_wind) * cos(theta_wind)*S_u;
-          rhs[icv][0] += cos(theta_wind) * sin(theta_wind)*S_v;
+
+          rhs[icv][0] += cos(theta_wind) * S_u * vol_cv[icv];
+          rhs[icv][0] += cos(theta_wind) * S_v * vol_cv[icv];
           
-          rhs[icv][2] += sin(theta_wind) * sin(theta_wind)*S_u;
-          rhs[icv][2] += sin(theta_wind) * cos(theta_wind)*S_v;
+          rhs[icv][2] += sin(theta_wind) * S_u * vol_cv[icv];
+          rhs[icv][2] += sin(theta_wind) * S_v * vol_cv[icv];
         }
       }
     }
