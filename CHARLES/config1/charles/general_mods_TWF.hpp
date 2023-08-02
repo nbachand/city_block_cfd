@@ -273,14 +273,13 @@ public:
     const double u_ct = u_scaling*cos(theta_wind);
     const double v_ct = u_scaling*sin(theta_wind);
     const double L_0 = C_L*domain_length;
-    const double u_0 = u_ct; // this is the average velocity at the reference point
+    const double u_0 = u_scaling; // this is the average velocity at the reference point
     const double dt_0 = C_t*domain_length/u_0; 
     
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
     if ( step >= 10){
-      // Test this function
       double u_t;
       double v_t;
         

@@ -17,6 +17,7 @@ mkdir $LOCAL_FOLDER/"Videos"
 mkdir $LOCAL_FOLDER/"tables"
 if [ "$R_copy" != "skip" ]; then
     cp ./$R_copy/charles* $LOCAL_FOLDER"/"
+    cp ./$R_copy/*.sh $LOCAL_FOLDER"/"
 fi
 
 cd $SCRATCH/$PARENT_DIR/$CATEGORY/
@@ -33,5 +34,4 @@ mkdir $LOCAL_FOLDER"/probes/locations"
 if [ "$R_copy" != "skip" ]; then
     cp -r ./$R_copy/probes/locations/* $LOCAL_FOLDER"/probes/locations"
     cp ./$R_copy/*.txt $LOCAL_FOLDER"/"
-    cp ./$R_copy/*.sh $LOCAL_FOLDER"/"
 fi
