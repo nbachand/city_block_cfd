@@ -1,8 +1,7 @@
 #Read the surface
-# PART SURF SBIN /home/users/nbachand/Cascade/city_block_cfd/city_block_geom/SURFER/config2/mesh_geom.sbin
 PART SURF SBIN ../../city_block_geom/SURFER/config2/mesh_geom.sbin
 
-HCP_DELTA 9.6
+HCP_DELTA 8
 # HCP_DELTA 4.8
 
 HCP_WINDOW FAZONE ground LEVEL=3 D=6.6 DLAYERS=13.2,26.4
@@ -24,6 +23,6 @@ SMOOTH_MODE ALL
 NSMOOTH 10
 
 # WRITE_RESTART = 700k-mesh.mles
-WRITE_RESTART = 1M-mesh.mles
+WRITE_RESTART = 2M-mesh.mles
 
 #INTERACTIVE

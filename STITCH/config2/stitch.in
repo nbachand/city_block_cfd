@@ -1,5 +1,4 @@
 #Read the surface
-# PART SURF SBIN /home/users/nbachand/Cascade/city_block_cfd/city_block_geom/SURFER/config2/mesh_geom.sbin
 PART SURF SBIN ../../city_block_geom/SURFER/config2/mesh_geom.sbin
 
 # HCP_DELTA 16
@@ -18,7 +17,7 @@ HCP_WINDOW FAZONE interior LEVEl=6 D=.525 DLAYERS=1,13,4,6
 # HCP_WINDOW HEMISPHERE 78 0 81 0 1 0 20 LEVEL=5
 COUNT_POINTS
 
-INTERACTIVE
+# INTERACTIVE
 
 SMOOTH_MODE ALL
 NSMOOTH 10
