@@ -64,7 +64,7 @@
 //==================================================================================
 
 // General Constants
-const double domain_height = 192;
+const double domain_height = 64;
 const double domain_length = 192;
 const double building_height = 6;
       
@@ -79,7 +79,7 @@ const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/
 // Momentum Source Constants (TWF)
 const double C_L = 0.5;
 const double C_t = 0.5;
-const double u_scaling = 7.4;
+const double u_scaling = 6;
 //===============================
 // IdealGasSolver
 //===============================
