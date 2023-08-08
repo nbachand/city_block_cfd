@@ -295,6 +295,7 @@ public:
         std::cout.clear();
         u_t = u_vec[1][0];
         v_t = u_vec[1][2];
+        DELETE(u_vec);
       }
         
       MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
