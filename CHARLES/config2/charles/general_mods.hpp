@@ -279,54 +279,54 @@ public:
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step >= 10){
+    if ( step == -1){
       double u_t;
       double v_t;
         
-      if (mpi_rank == 0) {
-        string lastStepString = std::to_string(step-1);
-        while (lastStepString.size() < 8) {
-            lastStepString = '0' + lastStepString;
-        }
-        string filename = "pcprobes/refProbes." + lastStepString + ".pcd";
-        double (*u_vec)[3];
-        std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
-        MiscUtils::read3DAsciiTable(u_vec, filename);
-        std::cout.clear();
-        u_t = u_vec[1][0];
-        v_t = u_vec[1][2];
-        DELETE(u_vec);
-      }
-        
-      MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
-      MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
-    
-      const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
-      const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
-      const double S_v = (v_ct - v_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
+       if (mpi_rank == 0) {
+         string lastStepString = std::to_string(step-1);
+         while (lastStepString.size() < 8) {
+             lastStepString = '0' + lastStepString;
+         }
+         string filename = "pcprobes/refProbes." + lastStepString + ".pcd";
+         double (*u_vec)[3];
+         std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+         MiscUtils::read3DAsciiTable(u_vec, filename);
+         std::cout.clear();
+         u_t = u_vec[1][0];
+         v_t = u_vec[1][2];
+         DELETE(u_vec);
+       }
       
-      if ( mpi_rank == 0 && step % 10 == 0 ){
-        cout << ">>>>> y_ref: " << y_ref << endl;
-        cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
-        cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
-        cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
-        cout << ">>>>> S_u at ref is " << S_u << endl;
-        cout << ">>>>> S_v at ref is " << S_v << endl;
-          
-      }
+       MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
+       MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
+    
+       const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
+       const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
+       const double S_v = (v_ct - v_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
+       
+       if ( mpi_rank == 0 && step % 10 == 0 ){
+         cout << ">>>>> y_ref: " << y_ref << endl;
+         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
+         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
+         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
+         cout << ">>>>> S_u at ref is " << S_u << endl;
+         cout << ">>>>> S_v at ref is " << S_v << endl;
+           
+       }
   
-      FOR_ICV {
-        const double y = x_cv[icv][1];
-        if ( y > 1.5*building_height){
-          // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
+       FOR_ICV {
+         const double y = x_cv[icv][1];
+         if ( y > 1.5*building_height){
+           // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
 
-          rhs[icv][0] += cos(theta_wind) * S_u * vol_cv[icv];
-          rhs[icv][0] += cos(theta_wind) * S_v * vol_cv[icv];
-          
-          rhs[icv][2] += sin(theta_wind) * S_u * vol_cv[icv];
-          rhs[icv][2] += sin(theta_wind) * S_v * vol_cv[icv];
-        }
-      }
+           rhs[icv][0] += cos(theta_wind) * S_u * vol_cv[icv];
+           rhs[icv][0] += cos(theta_wind) * S_v * vol_cv[icv];
+           
+           rhs[icv][2] += sin(theta_wind) * S_u * vol_cv[icv];
+           rhs[icv][2] += sin(theta_wind) * S_v * vol_cv[icv];
+         }
+       }
     }
 
 //     if ( mpi_rank == 0 ) 

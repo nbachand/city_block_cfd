@@ -1,5 +1,5 @@
 #RESTART = ../../../STITCH/config2/10M-mesh.mles #./data/result.00083000.sles
-RESTART = ../../../STITCH/config2/2M-mesh.mles ./data/result.00170000.sles
+RESTART = ../../../STITCH/config2/2M-mesh.mles ./data/result.00255000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 #RESET_ALL
@@ -14,7 +14,7 @@ HELMHOLTZ_SOS 340.65
 NSTEPS = 100000000
 TIMESTEP DT = .01 #.001
 CHECK_INTERVAL 100
-WRITE_RESULT NAME=data/result INTERVAL=1000
+WRITE_RESULT NAME=data/result INTERVAL=100000000 #1000
 
 RESET_STATS TIME = 2000
 STATS u p rho
@@ -60,7 +60,7 @@ PRESSURE_ZERO 1e-6
  ###########  Images  ###########
  #################################
 
-FLUSH_IMAGES 24
+FLUSH_IMAGES 1 #24
 
 #ABL
 WRITE_IMAGE NAME=./Images/u_y1p5_h INTERVAL=100 TARGET      104 72 108    CAMERA 104 -72 108  SIZE 276 276 WIDTH   36  GEOM PLANE 96 1.5 96  0 -1 0 VAR=mag(u)
