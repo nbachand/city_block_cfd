@@ -279,7 +279,7 @@ public:
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step == -1){
+    if ( step >= 10){
       double u_t;
       double v_t;
         
@@ -304,6 +304,7 @@ public:
        const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
        const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
        const double S_v = (v_ct - v_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
+       const double S = S_u + S_v;
        
        if ( mpi_rank == 0 && step % 10 == 0 ){
          cout << ">>>>> y_ref: " << y_ref << endl;
@@ -319,12 +320,9 @@ public:
          const double y = x_cv[icv][1];
          if ( y > 1.5*building_height){
            // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-
-           rhs[icv][0] += cos(theta_wind) * S_u * vol_cv[icv];
-           rhs[icv][0] += cos(theta_wind) * S_v * vol_cv[icv];
-           
-           rhs[icv][2] += sin(theta_wind) * S_u * vol_cv[icv];
-           rhs[icv][2] += sin(theta_wind) * S_v * vol_cv[icv];
+           double source = S * vol_cv[icv];
+           rhs[icv][0] += cos(theta_wind) * source;
+           rhs[icv][2] += sin(theta_wind) * source;
          }
        }
     }
