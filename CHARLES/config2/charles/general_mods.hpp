@@ -279,7 +279,7 @@ public:
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step >= 10){
+    if ( step >= 100){
       double u_t;
       double v_t;
         
@@ -288,14 +288,18 @@ public:
          while (lastStepString.size() < 8) {
              lastStepString = '0' + lastStepString;
          }
-         string filename = "pcprobes/refProbes." + lastStepString + ".pcd";
+         string filename = "pcprobes/refProbes." + lastStepString + ".cp";
          double (*u_vec)[3];
          std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
          MiscUtils::read3DAsciiTable(u_vec, filename);
          std::cout.clear();
          u_t = u_vec[1][0];
-         v_t = u_vec[1][2];
+         v_t = u_vec[1][1];
          DELETE(u_vec);
+         // clear file contents to keep file size small
+         std::ofstream ofs;
+         ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+         ofs.close();
        }
       
        MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
