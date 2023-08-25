@@ -79,7 +79,7 @@ const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/
 // Momentum Source Constants (TWF)
 const double C_L = 0.5;
 const double C_t = 0.5;
-const double u_scaling = 6;
+const double u_scaling = 6.3;
 //===============================
 // IdealGasSolver
 //===============================
@@ -279,16 +279,12 @@ public:
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step >= 100){
+    if ( step >= 10){
       double u_t;
       double v_t;
         
        if (mpi_rank == 0) {
-         string lastStepString = std::to_string(step-1);
-         while (lastStepString.size() < 8) {
-             lastStepString = '0' + lastStepString;
-         }
-         string filename = "pcprobes/refProbes." + lastStepString + ".cp";
+         string filename = "probes/volProbes90.svp";
          double (*u_vec)[3];
          std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
          MiscUtils::read3DAsciiTable(u_vec, filename);
