@@ -285,12 +285,13 @@ public:
         
        if (mpi_rank == 0) {
          string filename = "probes/volProbes90.svp";
-         double (*u_vec)[3];
-         std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+         double (*u_vec)[4];
+         // std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
          MiscUtils::read3DAsciiTable(u_vec, filename);
-         std::cout.clear();
-         u_t = u_vec[1][0];
-         v_t = u_vec[1][1];
+         // std::cout.clear();
+         cout << u_t << endl;
+         u_t = u_vec[1][2];
+         v_t = u_vec[1][3];
          DELETE(u_vec);
          // clear file contents to keep file size small
          std::ofstream ofs;
