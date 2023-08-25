@@ -71,7 +71,8 @@ WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 96 0    CAMERA 0 -
 #################################
 FLUSH_PROBES 100
 
-VOLUMETRIC_PROBE NAME=probes/VolProbe90   INTERVAL=10 GEOM BOX -116.000000 116.000000 69.600000 77.333333 -38.666667 38.666667   VARS=comp(u,0) comp(u,2)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=10 GEOM BOX -116.000000 116.000000 69.600000 77.333333 -38.666667 38.666667   VARS=comp(u,0)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=10 GEOM BOX -116.000000 116.000000 69.600000 77.333333 -38.666667 38.666667   VARS=comp(u,2)
 
 PROBE NAME=probes/probesOut/xdoor_1-1_sl           INTERVAL=1 GEOM=FILE probes/locations/xdoor_1-1_sl.txt           VARS=comp(u,0) comp(u,1) comp(u,2)
 PROBE NAME=probes/probesOut/xwindow_0-0_sl         INTERVAL=1 GEOM=FILE probes/locations/xwindow_0-0_sl.txt         VARS=comp(u,0) comp(u,1) comp(u,2)
