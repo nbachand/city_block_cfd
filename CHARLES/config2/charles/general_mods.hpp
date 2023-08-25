@@ -8,6 +8,7 @@
 #include "BasicPostpro.hpp"
 #include <tuple>
 #include <iostream>
+// #include <cstdio>
         
 //==================================================================================
 // following solver types are defined below
@@ -83,18 +84,19 @@ const double u_scaling = 6.3;
 
 
 // Helper Function
-double getVelocityFromFile(string filename) {
+double getVelocityFromFile(string filename, bool clearFile) {
   double (*u_vec)[3];
-  // std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+  std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
   MiscUtils::read3DAsciiTable(u_vec, filename);
-  // std::cout.clear();
-  cout << u_vec << endl;
+  std::cout.clear();
   double u = u_vec[0][2];
   DELETE(u_vec);
-  // clear file contents to keep file size small
-  std::ofstream ofs;
-  ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
-  ofs.close();
+  if (clearFile) {// clear file contents to keep file size small
+//    int result = std::remove(filename.c_str());
+    std::ofstream ofs;
+    ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+    ofs.close();
+  }
   return u;
 }
 //===============================
@@ -296,12 +298,18 @@ public:
     const double y_ref = domain_height*.9; //building_height*2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
-    if ( step >= 10){
+    int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
+    if ( step >= checkMomEvery){
       double u_t;
       double w_t; 
        if (mpi_rank == 0) {
-         u_t = getVelocityFromFile("probes/VolProbes90X.svp");
-         w_t = getVelocityFromFile("probes/VolProbes90Z.svp");
+         bool clearFile = false;
+         if (step % checkMomEvery == 0){ 
+           clearFile = true; 
+           cout << ">>>>> volume probe will be erased" << endl;
+         }
+         u_t = getVelocityFromFile("probes/VolProbe90X.svp", clearFile);
+         w_t = getVelocityFromFile("probes/VolProbe90Z.svp", clearFile);
        }
       
        MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
@@ -312,7 +320,7 @@ public:
        const double S_w = (w_ct - w_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
        const double S = S_u + S_w;
        
-       if ( mpi_rank == 0 && step % 10 == 0 ){
+       if ( mpi_rank == 0 && step % checkMomEvery == 0 ){
          cout << ">>>>> y_ref: " << y_ref << endl;
          cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
          cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
