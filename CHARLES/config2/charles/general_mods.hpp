@@ -81,6 +81,22 @@ const double C_L = 0.5;
 const double C_t = 0.5;
 const double u_scaling = 6.3;
 
+
+// Helper Function
+double getVelocityFromFile(string filename) {
+  double (*u_vec)[3];
+  // std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+  MiscUtils::read3DAsciiTable(u_vec, filename);
+  // std::cout.clear();
+  cout << u_vec << endl;
+  double u = u_vec[0][2];
+  DELETE(u_vec);
+  // clear file contents to keep file size small
+  std::ofstream ofs;
+  ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+  ofs.close();
+  return u;
+}
 //===============================
 // IdealGasSolver
 //===============================
@@ -272,7 +288,7 @@ public:
     // Momentum constants
     // int ref_icv = 10;
     const double u_ct = u_scaling*cos(theta_wind);
-    const double v_ct = u_scaling*sin(theta_wind);
+    const double w_ct = u_scaling*sin(theta_wind);
     const double L_0 = C_L*domain_length;
     const double u_0 = u_scaling; // this is the average velocity at the reference point
     const double dt_0 = C_t*domain_length/u_0; 
@@ -281,43 +297,28 @@ public:
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
     if ( step >= 10){
-      vector<double, double> U_t;
-        
+      double u_t;
+      double w_t; 
        if (mpi_rank == 0) {
-         string filenameX = "probes/VolProbes90X.svp";
-         string filenameZ = "probes/VolProbes90Z.svp";
-         for (filename: (filenameX, filenameZ) {
-           double (*u_vec)[3];
-           // std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
-           MiscUtils::read3DAsciiTable(u_vec, filename);
-           // std::cout.clear();
-           cout << u_t << endl;
-           v_t = u_vec[0][3];
-           DELETE(u_vec);
-           // clear file contents to keep file size small
-           std::ofstream ofs;
-           ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
-           ofs.close();
-         }
-       double u_t = U_t[0];
-       double v_t = U_t[1];
+         u_t = getVelocityFromFile("probes/VolProbes90X.svp");
+         w_t = getVelocityFromFile("probes/VolProbes90Z.svp");
        }
       
        MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
-       MPI_Bcast(&v_t,1,MPI_DOUBLE,0,mpi_comm); 
+       MPI_Bcast(&w_t,1,MPI_DOUBLE,0,mpi_comm); 
     
        const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
        const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
-       const double S_v = (v_ct - v_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
-       const double S = S_u + S_v;
+       const double S_w = (w_ct - w_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
+       const double S = S_u + S_w;
        
        if ( mpi_rank == 0 && step % 10 == 0 ){
          cout << ">>>>> y_ref: " << y_ref << endl;
          cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
          cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
-         cout << ">>>>> v_t is " << v_t << " (v_ct is " << v_ct << ")" << endl;
+         cout << ">>>>> w_t is " << w_t << " (w_ct is " << w_ct << ")" << endl;
          cout << ">>>>> S_u at ref is " << S_u << endl;
-         cout << ">>>>> S_v at ref is " << S_v << endl;
+         cout << ">>>>> S_w at ref is " << S_w << endl;
            
        }
   
