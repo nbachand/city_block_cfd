@@ -82,54 +82,55 @@ const double C_t = 0.5;
 const double u_scaling = 6.3;
 
 // Helper function to read 4D Asci Table
-  int read3DAsciiTable(double (* &vals)[4], const string filename,const int skip) {
-    // read file
-    ifstream ifp(filename.c_str());
-    if (ifp.fail()) {
-      CWARN("was unable to open file " << filename <<"; check path or access permisions");
-      return 0;
-    }
-    string line;
-    if (mpi_rank == 0) cout << " > reading 4D table from file \"" << filename << "\"" << endl;
-    vector<Triple<double,double,double> > table_vals;
-    uint line_count = 0;
-    uint valid_count = 0;
-    while(!ifp.eof()) {
-      ++line_count;
-      getline(ifp,line);
-      // cout << "line: " << line << endl;
-      if (line.empty()) continue;
+int read3DAsciiTable(double (* &vals)[4], const string filename,const int skip) {
+  // read file
+  ifstream ifp(filename.c_str());
+  if (ifp.fail()) {
+    CWARN("was unable to open file " << filename <<"; check path or access permisions");
+    return 0;
+  }
+  string line;
+  if (mpi_rank == 0) cout << " > reading 4D table from file \"" << filename << "\"" << endl;
+  vector<Triple<double,double,double> > table_vals;
+  uint line_count = 0;
+  uint valid_count = 0;
+  while(!ifp.eof()) {
+    ++line_count;
+    getline(ifp,line);
+    // cout << "line: " << line << endl;
+    if (line.empty()) continue;
 
-      char * token = strtok((char *)(line.c_str()),"\t ,");
-      if (token[0] == '#') {
-        continue;  // skip comment lines
+    char * token = strtok((char *)(line.c_str()),"\t ,");
+    if (token[0] == '#') {
+      continue;  // skip comment lines
+    }
+    else {
+      int ncols = 0;
+      double col1,col2,col3,col4 = 0.0;
+      while (token != NULL && ncols<3) {
+        if (ncols == 0) col1 = atof(token);
+        else if (ncols == 1) col2 = atof(token);
+        else if (ncols == 2) col3 = atof(token);
+        else if (ncols == 3) col4 = atof(token);
+        ++ncols;
+
+        token = strtok(NULL,"\t ,");
+      }
+      table_vals.push_back(Triple<double,double,double> (col1,col2,col3));
+      if ((ncols > 4) && (mpi_rank == 0)) {
+        cout << "Warning: row " << (line_count-1) << " had too many elements; only the first three were read" << endl;
+      }
+
+      if (ncols < 4) {
+        if (mpi_rank == 0) cout << "Warning: row " << (line_count-1) << " had too few elements; ignoring this line" << endl;
+        table_vals.pop_back();
       }
       else {
-        int ncols = 0;
-        double col1,col2,col3,col4 = 0.0;
-        while (token != NULL && ncols<3) {
-          if (ncols == 0) col1 = atof(token);
-          else if (ncols == 1) col2 = atof(token);
-          else if (ncols == 2) col3 = atof(token);
-          else if (ncols == 3) col4 = atof(token);
-          ++ncols;
-
-          token = strtok(NULL,"\t ,");
-        }
-        table_vals.push_back(Triple<double,double,double> (col1,col2,col3));
-        if ((ncols > 4) && (mpi_rank == 0)) {
-          cout << "Warning: row " << (line_count-1) << " had too many elements; only the first three were read" << endl;
-        }
-
-        if (ncols < 4) {
-          if (mpi_rank == 0) cout << "Warning: row " << (line_count-1) << " had too few elements; ignoring this line" << endl;
-          table_vals.pop_back();
-        }
-        else {
-          ++valid_count;
-        }
+        ++valid_count;
       }
     }
+  }
+}
 
 //===============================
 // IdealGasSolver
