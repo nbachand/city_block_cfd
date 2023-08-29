@@ -70,7 +70,6 @@ const double domain_length = 192;
 const double building_height = 6;
       
 // Initializaton constants
-const double uStar = 0.4958;
 const double z0 = 0.366;
 const double disp = 1.11*building_height;
 const double vK_const = 0.41;
@@ -80,7 +79,6 @@ const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/
 // Momentum Source Constants (TWF)
 const double C_L = 0.5;
 const double C_t = 0.5;
-const double u_scaling = 6.3;
 
 
 // Helper Function
