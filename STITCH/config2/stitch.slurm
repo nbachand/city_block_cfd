@@ -1,10 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=stitch
 #SBATCH -c 1
-#SBATCH -N 1
-#SBATCH -n 32
-#SBATCH --time=01:00:00
+#SBATCH -N 4
+#SBATCH -n 128
+#SBATCH --time=08:00:00
+#SBATCH --mem=192G
 #SBATCH --partition=serc
+#SBATCH --mail-type=ALL
 #SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 
 source ~/.bash_profile
