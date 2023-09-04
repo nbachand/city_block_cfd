@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=cc2_R9
-#SBATCH -N 8
-#SBATCH -n 256
-#SBATCH --time=24:00:00
+#SBATCH -N 16
+#SBATCH -n 512
+#SBATCH --time=36:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
