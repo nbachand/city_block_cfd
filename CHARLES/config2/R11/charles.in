@@ -76,7 +76,7 @@ VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=10 GEOM BOX -116.000000 116.
 VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=10 GEOM BOX -116.000000 116.000000 69.600000 77.333333 -38.666667 38.666667   VARS=comp(u,2)
 
 # For other volumetric probes
-VOLUMETRIC_PROBE NAME=robes/probesOut/xdoor_1-1_sl                 INTERVAL=1 GEOM BOX 41.996700 42.003300       0.375000 2.625000       61.625000 62.375000       VARS=comp(u,0) comp(u,1) comp(u,2) p
+VOLUMETRIC_PROBE NAME=robes/probesOut/xdoor_1-1_sl                 INTERVAL=1 GEOM BOX 41.496700 42.003300       0.375000 2.625000       61.625000 62.375000       VARS=comp(u,0) comp(u,1) comp(u,2) p
 VOLUMETRIC_PROBE NAME=robes/probesOut/xwindow_0-0_sl               INTERVAL=1 GEOM BOX 37.999850 38.003150       1.125000 1.875000       57.625000 58.375000       VARS=comp(u,0) comp(u,1) comp(u,2) p
 VOLUMETRIC_PROBE NAME=robes/probesOut/zwindow_0-0_sl               INTERVAL=1 GEOM BOX 39.625000 40.375000       1.125000 1.875000       55.999850 56.003150       VARS=comp(u,0) comp(u,1) comp(u,2) p
 VOLUMETRIC_PROBE NAME=robes/probesOut/xwindow_0-1_sl               INTERVAL=1 GEOM BOX 37.999850 38.003150       1.125000 1.875000       61.625000 62.375000       VARS=comp(u,0) comp(u,1) comp(u,2) p
