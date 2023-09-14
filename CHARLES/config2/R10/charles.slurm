@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cc2_R9
+#SBATCH --job-name=cc2_R10
 #SBATCH -N 16
 #SBATCH -n 512
 #SBATCH --time=36:00:00
@@ -24,5 +24,5 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun $HOME/$PARENT_DIR/charles/0_deg_4mps/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $HOME/$PARENT_DIR/charles/45_deg_4mps/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # srun $HOME/$PARENT_DIR/../single_family/0_deg_spinnup2/charles.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
