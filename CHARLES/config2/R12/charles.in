@@ -1,4 +1,5 @@
-RESTART = ../../../STITCH/config2/6M-mesh.mles ./data/result.00054000.sles
+RESTART = ../../../STITCH/config1/1M-mesh.mles
+# RESTART = ../../../STITCH/config2/6M-mesh.mles ./data/result.00054000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 #RESET_ALL
@@ -69,17 +70,19 @@ WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 96 0    CAMERA 0 -
 #################################
 ###########  PROBING  ###########
 #################################
-FLUSH_PROBES 100
 
 #Define variables for probes
+DEFINE flush_probes=100
 DEFINE probe_int=1
 DEFINE probe_path=probes/probesOut
 DEFINE location_path=probes/locations
-DEFINE vars=comp(u,0) comp(u,1) comp(u,2) p
+DEFINE vars=comp(u,0),comp(u,1),comp(u,2),p
+
+FLUSH_PROBES $(flush_probes)
 
 # For momentum source
-VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=$(FLUSH_PROBES) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,0)
-VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=$(FLUSH_PROBES) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,2)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,0)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,2)
 
 # For other volumetric probes
 
