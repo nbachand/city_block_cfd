@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=stitch
 #SBATCH -c 1
-#SBATCH -N 2
-#SBATCH -n 64
+#SBATCH -N 1
+#SBATCH -n 32
 #SBATCH --time=08:00:00
 #SBATCH --mem=192G
 #SBATCH --partition=serc
@@ -30,6 +30,6 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
 # mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
