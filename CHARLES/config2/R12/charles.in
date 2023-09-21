@@ -76,8 +76,7 @@ DEFINE probe_int=1
 DEFINE probe_path=probes/probesOut
 DEFINE location_path=probes/locations
 DEFINE vars=comp(u,0),comp(u,1),comp(u,2),p
-DEFINE flux_vars=mass_flux()
-
+DEFINE flux_vars=sn_prod(p,1,0,0)
 FLUSH_PROBES $(flush_probes)
 
 # For momentum source
