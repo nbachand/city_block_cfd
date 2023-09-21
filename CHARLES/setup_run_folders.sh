@@ -16,8 +16,8 @@ mkdir $LOCAL_FOLDER/"plots"
 mkdir $LOCAL_FOLDER/"Videos"
 mkdir $LOCAL_FOLDER/"tables"
 if [ "$R_copy" != "skip" ]; then
-    cp ./$R_copy/charles* $LOCAL_FOLDER"/"
-    cp ./$R_copy/*.sh $LOCAL_FOLDER"/"
+    rsync -a -v --ignore-existing ./$R_copy/charles* $LOCAL_FOLDER"/"
+    rsync -a -v --ignore-existing ./$R_copy/*.sh $LOCAL_FOLDER"/"
 fi
 
 cd $SCRATCH/$PARENT_DIR/$CATEGORY/
