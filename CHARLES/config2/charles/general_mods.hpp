@@ -6,14 +6,10 @@
 #include "HelmholtzSolver.hpp"
 #include "NonpremixedSolver.hpp"
 #include "BasicPostpro.hpp"
-
-const double uStar = 0.4958;
-const double z0 = 0.366;
-const double disp = 6.66;
-const double domain_height = 192;
-const double vK_const = 0.41;
-const double building_height = 6;
-
+#include <tuple>
+#include <iostream>
+// #include <cstdio>
+        
 //==================================================================================
 // following solver types are defined below
 //      -- IdealGasSolver : non-reacting, compressible solver
@@ -68,6 +64,39 @@ const double building_height = 6;
 //
 //==================================================================================
 
+// General Constants
+const double domain_height = 64;
+const double domain_length = 192;
+const double building_height = 6;
+      
+// Initializaton constants
+const double z0 = 0.366;
+const double disp = 1.11*building_height;
+const double vK_const = 0.41;
+const double H_scaled = domain_height - disp;
+const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
+
+// Momentum Source Constants (TWF)
+const double C_L = 0.5;
+const double C_t = 0.5;
+
+
+// Helper Function
+double getVelocityFromFile(string filename, bool clearFile) {
+  double (*u_vec)[3];
+  std::cout.setstate(std::ios_base::failbit); // supressing cout from read3DAsciiTable
+  MiscUtils::read3DAsciiTable(u_vec, filename);
+  std::cout.clear();
+  double u = u_vec[0][2];
+  DELETE(u_vec);
+  if (clearFile) {// clear file contents to keep file size small
+//    int result = std::remove(filename.c_str());
+    std::ofstream ofs;
+    ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+    ofs.close();
+  }
+  return u;
+}
 //===============================
 // IdealGasSolver
 //===============================
@@ -183,9 +212,16 @@ public:
 
 class MyHelmholtzSolver : public HelmholtzSolver {
 public:
-
+    
+  // // General Constants
+  // const double domain_height = 192;
+  // const double domain_length = domain_height;
+  // int ref_icv = 0;
+  // double y_ref = 0.0;
+  
+  
   MyHelmholtzSolver() {}
-
+        
   void initData() {
 
     HelmholtzSolver::initData();
@@ -193,14 +229,12 @@ public:
   }
 
   ~MyHelmholtzSolver() {}
-  
+    
   void initialHook() {
-    if (step == 0) {
+    if (step == 0 && getParam("INTERP_FROM_RESTART") == NULL) {
       if ( mpi_rank == 0 ) 
         cout << ">>>>> specifying initial velocity field and Temp" << endl;
-
-      const double H_scaled = domain_height - disp;
-      const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
+      
 
       FOR_ICV {
 
@@ -214,11 +248,13 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
-
-        u[icv][0] = u_parr*cos(theta_wind);
-        u[icv][2] = u_parr*sin(theta_wind);
-        u[icv][1] = 0.001;
+        //const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        //u[icv][0] = u_parr*cos(theta_wind);
+        //u[icv][2] = u_parr*sin(theta_wind);
+        
+        u[icv][0] = u_loglaw*cos(theta_wind)+.001;
+        u[icv][2] = u_loglaw*sin(theta_wind)+.001;
+        u[icv][1] = -0.002;
           
         // transport_scalar_vec[0][icv]=-0.1*absy;
 
@@ -248,20 +284,59 @@ public:
   // step setting; as a result, the hooks for add source hooks are slightly
   // different.
 
-  void momentumSourceHook(double * A,double (*rhs)[3]) {
-
-    if ( mpi_rank == 0 ) 
-    cout << ">>>>> adding momentum source" << endl;
-
-    const double factor = momentum_scaling_factor;
-
-    FOR_ICV {
-      const double y = x_cv[icv][1];
-      if ( y > 1.5*building_height){
-        const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-        rhs[icv][0] += cos(theta_wind)*mom_source;
-        rhs[icv][2] += sin(theta_wind)*mom_source;
-      } 
+  void momentumSourceHook(double * A,double (*rhs)[3]) { 
+    // Momentum constants
+    // int ref_icv = 10;
+    const double u_ct = u_scaling*cos(theta_wind);
+    const double w_ct = u_scaling*sin(theta_wind);
+    const double L_0 = C_L*domain_length;
+    const double u_0 = u_scaling; // this is the average velocity at the reference point
+    const double dt_0 = C_t*domain_length/u_0; 
+    
+    const double y_ref = domain_height*.9; //building_height*2;
+    // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
+    
+    int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
+    if ( step >= checkMomEvery){
+      double u_t;
+      double w_t; 
+       if (mpi_rank == 0) {
+         bool clearFile = false;
+         if (step % checkMomEvery == 0){ 
+           clearFile = true; 
+           cout << ">>>>> volume probe will be erased" << endl;
+         }
+         u_t = getVelocityFromFile("probes/VolProbe90X.svp", clearFile);
+         w_t = getVelocityFromFile("probes/VolProbe90Z.svp", clearFile);
+       }
+      
+       MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
+       MPI_Bcast(&w_t,1,MPI_DOUBLE,0,mpi_comm); 
+    
+       const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
+       const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
+       const double S_w = (w_ct - w_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
+       const double S = S_u + S_w;
+       
+       if ( mpi_rank == 0 && step % checkMomEvery == 0 ){
+         cout << ">>>>> y_ref: " << y_ref << endl;
+         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
+         cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
+         cout << ">>>>> w_t is " << w_t << " (w_ct is " << w_ct << ")" << endl;
+         cout << ">>>>> S_u at ref is " << S_u << endl;
+         cout << ">>>>> S_w at ref is " << S_w << endl;
+           
+       }
+  
+       FOR_ICV {
+         const double y = x_cv[icv][1];
+         if ( y > 1.5*building_height){
+           // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
+           double source = S * vol_cv[icv];
+           rhs[icv][0] += cos(theta_wind) * source;
+           rhs[icv][2] += sin(theta_wind) * source;
+         }
+       }
     }
 
 //     if ( mpi_rank == 0 ) 
