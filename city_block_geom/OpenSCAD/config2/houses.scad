@@ -748,7 +748,7 @@ union() {
 			}
 		}
 	}
-	rotate(a = [0, 90, 0]) {
+	rotate(a = [0, -90, 0]) {
 		translate(v = [4, 0, 0]) {
 			union() {
 				translate(v = [2.0000000000, 0, 8.0000000000]) {
@@ -1466,7 +1466,7 @@ union() {
 			}
 		}
 	}
-	rotate(a = [0, -90, 0]) {
+	rotate(a = [0, 90, 0]) {
 		translate(v = [4, 0, 0]) {
 			union() {
 				translate(v = [2.0000000000, 0, 8.0000000000]) {
