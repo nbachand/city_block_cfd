@@ -2,7 +2,7 @@
 #SBATCH --job-name=cc2_R14
 #SBATCH -N 8
 #SBATCH -n 256
-#SBATCH --time=01:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
