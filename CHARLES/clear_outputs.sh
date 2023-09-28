@@ -18,6 +18,6 @@ then
     rm ./data/*
     rm ./Images/*
     rm ./probes/probesOut/*
-    rm ./probes/probesOut_parquet/*
+    rm -r ./probes/probesOut_parquet/*
     rm ./pcprobes/*
 fi
