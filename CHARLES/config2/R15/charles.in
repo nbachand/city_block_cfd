@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config2/1p5M-mesh.mles #./data/result.00021000.sles
+RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00021000.sles
 # INTERP_FROM_RESTART ../R8/data/result.00080000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 #RESET_ALL
@@ -71,7 +71,7 @@ WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 96 0    CAMERA 0 -
 #################################
 
 #Define variables for probes
-DEFINE flush_probes=1
+DEFINE flush_probes=100
 DEFINE probe_int=1
 DEFINE probe_path=probes/probesOut
 DEFINE location_path=probes/locations
