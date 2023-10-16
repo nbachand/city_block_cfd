@@ -1,2 +1,2 @@
-. cd_scratch.sh
+. cd_scratch
 ls -l ./data | tail
