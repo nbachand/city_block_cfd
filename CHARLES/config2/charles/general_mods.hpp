@@ -299,34 +299,28 @@ public:
     
     int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
     if ( step >= checkMomEvery){
-      double u_t;
-      double w_t; 
-       if (mpi_rank == 0) {
-         bool clearFile = false;
-         if (step % checkMomEvery == 0){ 
-           clearFile = true; 
-           cout << ">>>>> volume probe will be erased" << endl;
-         }
-         u_t = getVelocityFromFile("probes/VolProbe90X.svp", clearFile);
-         w_t = getVelocityFromFile("probes/VolProbe90Z.svp", clearFile);
-       }
-      
-       MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
-       MPI_Bcast(&w_t,1,MPI_DOUBLE,0,mpi_comm); 
-    
-       const double uMag_t = u_t*cos(theta_wind) + w_t*sin(theta_wind);
-       runningControlInt += dt * checkMomEvery * (u_scaling - uMag_t);
-
-       S = KF * u_scaling + KI * runningControlInt - KP * uMag_t;
-       
        if ( mpi_rank == 0 && step % checkMomEvery == 0 ){
+         double u_t;
+         double w_t; 
+         cout << ">>>>> volume probe will be erased" << endl;
+         u_t = getVelocityFromFile("probes/VolProbe90X.svp", true);
+         w_t = getVelocityFromFile("probes/VolProbe90Z.svp", true);
+      
+         const double uMag_t = u_t*cos(theta_wind) + w_t*sin(theta_wind);
+         runningControlInt += dt * checkMomEvery * (u_scaling - uMag_t);
+
+         S = (KF * u_scaling + KI * runningControlInt - KP * uMag_t) / checkMomEvery; // dividing because applied everty timestep
+       
          cout << ">>>>> y_ref: " << y_ref << endl;
          cout << ">>>>> time = " << time << endl;
          cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
          cout << ">>>>> w_t is " << w_t << " (w_ct is " << w_ct << ")" << endl;
          cout << ">>>>> uMag_t is " << uMag_t << " (u_scaling is " << u_scaling << ")" << endl;
-         cout << ">>>>> S is " << S << endl; 
          cout << ">>>>> runningControlInt is " << runningControlInt << endl;
+         cout << ">>>>> S is " << S << endl; 
+       }
+       if ( step % checkMomEvery == 0){
+         MPI_Bcast(&S,1,MPI_DOUBLE,0,mpi_comm); 
        }
   
        FOR_ICV {
