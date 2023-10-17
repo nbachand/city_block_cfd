@@ -78,7 +78,7 @@ const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/
 
 // Momentum Source Constants (PI Control)
 const double xi = 0.707;
-const double w_n = 10;
+const double w_n = 1;
 
 
 // Helper Function
