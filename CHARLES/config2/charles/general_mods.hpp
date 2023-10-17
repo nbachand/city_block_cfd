@@ -76,9 +76,9 @@ const double vK_const = 0.41;
 const double H_scaled = domain_height - disp;
 const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
-// Momentum Source Constants (TWF)
-const double C_L = 0.5;
-const double C_t = 0.5;
+// Momentum Source Constants (PI Control)
+const double xi = 0.707;
+const double w_n = 10;
 
 
 // Helper Function
@@ -213,11 +213,9 @@ public:
 class MyHelmholtzSolver : public HelmholtzSolver {
 public:
     
-  // // General Constants
-  // const double domain_height = 192;
-  // const double domain_length = domain_height;
-  // int ref_icv = 0;
-  // double y_ref = 0.0;
+  // Class Attributes
+  double runningControlInt = 0;
+  double S = 0;
   
   
   MyHelmholtzSolver() {}
@@ -289,11 +287,14 @@ public:
     // int ref_icv = 10;
     const double u_ct = u_scaling*cos(theta_wind);
     const double w_ct = u_scaling*sin(theta_wind);
-    const double L_0 = C_L*domain_length;
-    const double u_0 = u_scaling; // this is the average velocity at the reference point
-    const double dt_0 = C_t*domain_length/u_0; 
     
     const double y_ref = domain_height*.9; //building_height*2;
+    const double plantA = -(2 * pow(vK_const,2) * u_scaling)/(domain_height * pow(log(y_ref/z0),2));
+    const double f1 = 2*xi*w_n;
+    const double f2 = pow(w_n,2);
+    const double KP = f1 + plantA;
+    const double KF = KP;
+    const double KI = f2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
     
     int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
@@ -313,19 +314,19 @@ public:
        MPI_Bcast(&u_t,1,MPI_DOUBLE,0,mpi_comm); 
        MPI_Bcast(&w_t,1,MPI_DOUBLE,0,mpi_comm); 
     
-       const double tau_t = dt_0; //dt_0 + (dt - dt_0)*exp(-time/dt_0);
-       const double S_u = (u_ct - u_t)/tau_t*cos(theta_wind); //*exp(-.5*(y-y_ref)/L_0);
-       const double S_w = (w_ct - w_t)/tau_t*sin(theta_wind); //*exp(-.5*(y-y_ref)/L_0);  
-       const double S = S_u + S_w;
+       const double uMag_t = u_t*cos(theta_wind) + w_t*sin(theta_wind);
+       runningControlInt += dt * checkMomEvery * (u_scaling - uMag_t);
+
+       S = KF * u_scaling + KI * runningControlInt - KP * uMag_t;
        
        if ( mpi_rank == 0 && step % checkMomEvery == 0 ){
          cout << ">>>>> y_ref: " << y_ref << endl;
-         cout << ">>>>> adding momentum source with tau " << tau_t << ", time = " << time << endl;
+         cout << ">>>>> time = " << time << endl;
          cout << ">>>>> u_t is " << u_t << " (u_ct is " << u_ct << ")" << endl;
          cout << ">>>>> w_t is " << w_t << " (w_ct is " << w_ct << ")" << endl;
-         cout << ">>>>> S_u at ref is " << S_u << endl;
-         cout << ">>>>> S_w at ref is " << S_w << endl;
-           
+         cout << ">>>>> uMag_t is " << uMag_t << " (u_scaling is " << u_scaling << ")" << endl;
+         cout << ">>>>> S is " << S << endl; 
+         cout << ">>>>> runningControlInt is " << runningControlInt << endl;
        }
   
        FOR_ICV {
