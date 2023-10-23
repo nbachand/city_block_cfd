@@ -77,8 +77,8 @@ const double H_scaled = domain_height - disp;
 const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
 // Momentum Source Constants (PI Control)
-const double xi = 0.707;
-const double w_n = 1;
+const double xi = 0.4;
+const double w_n = 0.4;
 
 
 // Helper Function
@@ -296,6 +296,11 @@ public:
     const double KF = KP;
     const double KI = f2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
+    if ( mpi_rank == 0 && step == 0) {
+      cout << ">>>>> KP is " << KP << endl;
+      cout << ">>>>> KF is " << KF << endl;
+      cout << ">>>>> KI is " << KI << endl;
+    }
     
     int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
     if ( step >= checkMomEvery){
@@ -309,7 +314,7 @@ public:
          const double uMag_t = u_t*cos(theta_wind) + w_t*sin(theta_wind);
          runningControlInt += dt * checkMomEvery * (u_scaling - uMag_t);
 
-         S = (KF * u_scaling + KI * runningControlInt - KP * uMag_t) / checkMomEvery; // dividing because applied everty timestep
+         S = (KF * u_scaling + KI * runningControlInt - KP * uMag_t) * dt; // applied every timestep
        
          cout << ">>>>> y_ref: " << y_ref << endl;
          cout << ">>>>> time = " << time << endl;
