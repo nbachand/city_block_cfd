@@ -77,8 +77,8 @@ const double H_scaled = domain_height - disp;
 const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
 // Momentum Source Constants (PI Control)
-const double xi = 0.4;
-const double w_n = 0.4;
+const double xi = 0.707;
+const double w_n = 0.1;
 
 
 // Helper Function
@@ -296,14 +296,15 @@ public:
     const double KF = KP;
     const double KI = f2;
     // std::tie(u_t,Vk v_t, y_ref) = this->findRefUVY(building_height);
-    if ( mpi_rank == 0 && step == 0) {
+    int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
+
+    if ( mpi_rank == 0 && step == checkMomEvery) {
       cout << ">>>>> KP is " << KP << endl;
       cout << ">>>>> KF is " << KF << endl;
       cout << ">>>>> KI is " << KI << endl;
     }
     
-    int checkMomEvery = Params::getIntParam("FLUSH_PROBES",1000);
-    if ( step >= checkMomEvery){
+    if ( step >= 2 * checkMomEvery){
        if ( mpi_rank == 0 && step % checkMomEvery == 0 ){
          double u_t;
          double w_t; 
@@ -314,7 +315,7 @@ public:
          const double uMag_t = u_t*cos(theta_wind) + w_t*sin(theta_wind);
          runningControlInt += dt * checkMomEvery * (u_scaling - uMag_t);
 
-         S = (KF * u_scaling + KI * runningControlInt - KP * uMag_t) * dt; // applied every timestep
+         S = (KF * u_scaling + KI * runningControlInt - KP * uMag_t);// * dt; // applied every timestep
        
          cout << ">>>>> y_ref: " << y_ref << endl;
          cout << ">>>>> time = " << time << endl;
@@ -324,15 +325,15 @@ public:
          cout << ">>>>> runningControlInt is " << runningControlInt << endl;
          cout << ">>>>> S is " << S << endl; 
        }
-       if ( step % checkMomEvery == 0){
-         MPI_Bcast(&S,1,MPI_DOUBLE,0,mpi_comm); 
-       }
+       //if ( step % checkMomEvery == 0){
+       MPI_Bcast(&S,1,MPI_DOUBLE,0,mpi_comm); 
+       //}
   
        FOR_ICV {
          const double y = x_cv[icv][1];
          if ( y > 1.5*building_height){
            // const double mom_source = factor*vol_cv[icv]*pow(uStar,2)/domain_height;
-           double source = S * vol_cv[icv];
+           double source = S * vol_cv[icv] * rho[icv];
            rhs[icv][0] += cos(theta_wind) * source;
            rhs[icv][2] += sin(theta_wind) * source;
          }
