@@ -1,6 +1,6 @@
 // General Constants
-const double domain_height = 64;
-const double domain_length = 192;
+const double domain_height = 77.333;
+const double domain_length = 232;
 const double building_height = 6;
       
 // Initializaton constants
