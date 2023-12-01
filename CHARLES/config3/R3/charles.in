@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config3/14M-mesh.mles ./data/result.00106000.sles
+RESTART = ../../../STITCH/config3/14M-mesh.mles #./data/result.00106000.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 RESET_ALL
@@ -12,7 +12,7 @@ HELMHOLTZ_SOS 340.65
 # Time + output setup
 NSTEPS = 100000000
 # TIMESTEP DT = .005
-TIMESTEP DT = .01
+TIMESTEP DT = .02
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
