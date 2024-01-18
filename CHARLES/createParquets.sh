@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 # call from run folder
 module load system
 module load openmpi/4.1.0
