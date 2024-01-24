@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00021000.sles
-# INTERP_FROM_RESTART ../R8/data/result.00080000.sles
+RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00001000.sles
+# INTERP_FROM_RESTART ./data/result.00085000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-#RESET_ALL
+RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -11,7 +11,8 @@ HELMHOLTZ_SOS 340.65
 
 # Time + output setup
 NSTEPS = 100000000
-TIMESTEP DT = .02 #.005 #.001
+# TIMESTEP DT = .005
+TIMESTEP DT = .02
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -21,17 +22,23 @@ STATS u p rho
 # subgrid model
 SGS_MODEL VREMAN
 
-#Boundary Conditions
-buildings = WM_ALG_WALL 
-interior  = WM_ALG_WALL 
-ground    = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
-top       = SLIP
-
 #Temp Boundaries
-#top WALL T = -10
-#ground WALL T = 10
-#interior WALL T = 10
-#buildings WALL T = 10
+REGISTER_SCALAR T
+T.SC_LAM = 0.71
+T.SC_T = 0.71
+
+#Boundary Conditions
+buildings     = WM_ALG_WALL
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top           = SLIP
+exterior      =  WM_ALG_WALL T 0
+ceiling       =  WM_ALG_WALL T 0
+floor         =  WM_ALG_WALL T 0
+interiorWalls =  WM_ALG_WALL T 0
+exteriorWalls =  WM_ALG_WALL T 0
+windows       =  WM_ALG_WALL T 0
+doors         =  WM_ALG_WALL T 0
+skylights     =  WM_ALG_WALL T 0
 
 #################################
 ######### SOLVER SETUP ##########
@@ -62,12 +69,10 @@ PRESSURE_ZERO 1e-6
 FLUSH_IMAGES 100
 
 #ABL
-WRITE_IMAGE NAME=./Images/u_y1p5   INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-WRITE_IMAGE NAME=./Images/u_y3     INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
+WRITE_IMAGE NAME=./Images/u_y1p5   INTERVAL=100 TARGET      0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 1.5 96  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y3     INTERVAL=100 TARGET      0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 3   96    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 12  96    0 -1 0 VAR=mag(u)
               
-WRITE_IMAGE NAME=./Images/u_z58     INTERVAL=100 TARGET    116 38 58    CAMERA 116 38 -58  SIZE 160 480 WIDTH   232  GEOM PLANE 116 38 58    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-
 #################################
 ###########  PROBING  ###########
 #################################
@@ -328,7 +333,7 @@ FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-4_Bxz  INTERVAL $(probe_int) XP -6
 FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-4_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
 
 # For output Probe files
-PROBE NAME=$(probe_path)/col_3-2                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2.txt               VARS comp(u,0) comp(u,1) comp(u,2) p
-PROBE NAME=$(probe_path)/col_3-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p
-PROBE NAME=$(probe_path)/col_3-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p
-PROBE NAME=$(probe_path)/col_3-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p
+PROBE NAME=$(probe_path)/col_3-2                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T
