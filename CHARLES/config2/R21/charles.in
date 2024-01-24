@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00001000.sles
+RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00083000.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-RESET_ALL
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -69,9 +69,11 @@ PRESSURE_ZERO 1e-6
 FLUSH_IMAGES 100
 
 #ABL
-WRITE_IMAGE NAME=./Images/u_y1p5   INTERVAL=100 TARGET      0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 1.5 96  0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y3     INTERVAL=100 TARGET      0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 3   96    0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 96 0    CAMERA 0 -96 0  SIZE 480 480 WIDTH   232  GEOM PLANE 96 12  96    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y1p5   INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
+WRITE_IMAGE NAME=./Images/u_y3     INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
+WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
+              
+WRITE_IMAGE NAME=./Images/u_z58     INTERVAL=100 TARGET    116 38 58    CAMERA 116 38 -58  SIZE 160 480 WIDTH   232  GEOM PLANE 116 38 58    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
               
 #################################
 ###########  PROBING  ###########
