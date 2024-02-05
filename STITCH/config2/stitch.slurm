@@ -3,7 +3,7 @@
 #SBATCH -c 1
 #SBATCH -N 4
 #SBATCH -n 128
-#SBATCH --time=08:00:00
+#SBATCH --time=04:00:00
 #SBATCH --mem=192G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
@@ -30,6 +30,7 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-noHouseRefine.in
 # mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-OSX.in
