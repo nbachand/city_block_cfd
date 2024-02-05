@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cc2_R24
+#SBATCH --job-name=cc2_R25
 #SBATCH -N 8
 #SBATCH -n 256
 #SBATCH --time=24:00:00
