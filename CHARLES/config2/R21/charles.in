@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00083000.sles
+RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00156000.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
@@ -66,15 +66,30 @@ PRESSURE_ZERO 1e-6
  ###########  Images  ###########
  #################################
 
-FLUSH_IMAGES 100
+FLUSH_IMAGES 1#00
 
 #ABL
-WRITE_IMAGE NAME=./Images/u_y1p5   INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-WRITE_IMAGE NAME=./Images/u_y3     INTERVAL=100 TARGET      0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-WRITE_IMAGE NAME=./Images/u_y12     INTERVAL=100 TARGET     0 116 0    CAMERA 0 -116 0  SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
+WRITE_IMAGE NAME=./Images/u_y1p5           INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y3             INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y12            INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_z58            INTERVAL=100 TARGET    0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
               
-WRITE_IMAGE NAME=./Images/u_z58     INTERVAL=100 TARGET    116 38 58    CAMERA 116 38 -58  SIZE 160 480 WIDTH   232  GEOM PLANE 116 38 58    0 -1 0 VAR=mag(u) mag(u)_avg mag(u)_rms tke_avg
-              
+WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_z58       INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_avg)
+
+WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_z58        INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_rms)
+
+WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+
+
 #################################
 ###########  PROBING  ###########
 #################################
