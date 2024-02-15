@@ -1,0 +1,86 @@
+RESTART = /scratch/users/jhochsch/Charles/SN_smooth_RL4_5.mles /scratch/users/jhochsch/Charles/SN_smooth_RL4_5/data/SN_smooth_RL4_5.00150000.sles
+INIT time = 3.75
+INIT step = 150000
+#INTERP_FROM_RESTART /scratch/users/jhochsch/Charles/SN_RL4_5_x4stresses/data/SN_RL4_5_x4stresses.00500500.sles
+#INIT U = 15 0 0 
+#INIT p = 0
+#RESET_ALL
+
+# Time + output setup
+NSTEPS = 300000
+TIMESTEP DT = 0.000025
+CHECK_INTERVAL = 100
+WRITE_RESULT NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/data/SN_smooth_RL4_5 INTERVAL=5000
+
+#RESET_STATS TIME = 0.025
+STATS u p rho #*:y_plus()
+
+# ==========================================
+# Modeling and Boundary Conditions  
+# ==========================================
+
+# subgrid model
+SGS_MODEL VREMAN
+
+#Equation of state:
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340
+#HELMHOLTZ_CORRECTION
+
+SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile_30m_x4.dat GEOM BOX -50 10 -1 6 -10 10 FLIP
+A_SGS_SPONGE COEFF 100.0 GEOM PLANE -12.0 0.0 0.0 1.0 0.0 0.0
+
+#Boundary Conditions:
+x0_turb = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 25 NK 50 LAGT_I 0.087 LAGT_J 0.040 LAGT_K 0.0175 L_J 0.603 L_K 0.262 REFD 1.0 \
+   CONTINUITY_CORRECTION NONE \ #HELMHOLTZ
+   PROFILE ASCII_UREY turbInflowProfile_30m_x4.dat
+x0  = INLET_PROFILE FILE inflowProfile_30m_x4.dat FORMAT FLUENT_PROFILE
+outlet = OUTLET 1.0 0.1 0.0 0.0 LOCAL_U # first param was 10.0
+ground = WM_ALG ROUGHNESS_HEIGHT 0.005   # 1 m in fullscale 
+water    = WM_ALG ROUGHNESS_HEIGHT 0.000005   # 1 mm in fullscale
+top = SLIP
+lside = SLIP
+rside = SLIP
+buildings = WALL
+SN_top = WALL
+SN_bottom = WALL
+SN_ring = WALL
+SN_spire = WALL
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# Momentum equation
+MOMENTUM_SOLVER PATR
+MOMENTUM_RELAX 1.0
+MOMENTUM_MAXITER 1000 
+MOMENTUM_ZERO 1e-6
+
+# Pressure equation
+PRESSURE_SOLVER MG
+PRESSURE_AGGLOMERATION_FACTOR 64
+PRESSURE_SPLIT_ORPHANED_COLORS
+PRESSURE_NCG 2
+PRESSURE_SMOOTHER CG
+PRESSURE_NSMOOTH 10
+PRESSURE_RELAX 1.0
+PRESSURE_MAXITER 1000
+PRESSURE_ZERO 1e-6
+
+#################################
+###########  PROBING  ###########
+#################################
+
+# F/S fs = 12.5 Hz, corresponds to 2500 Hz M/S., so need to sample every 16 timesteps
+POINTCLOUD_PROBE NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/probes_profile/profile-water INTERVAL=16 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probe_coords/profile-water_3m.txt VARS comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/probes_profile/profile-upstream INTERVAL=16 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probe_coords/profile-upstream_3m.txt VARS comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/probes_sensor/anemometers INTERVAL=16 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probe_coords/anemometers.txt VARS comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/probes_sensor/flat-roof INTERVAL=16 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probe_coords/flat-roof.txt VARS comp(u,0) comp(u,1) comp(u,2) p
+POINTCLOUD_PROBE NAME=/scratch/users/jhochsch/Charles/SN_smooth_RL4_5/probes_sensor/sloped-roof INTERVAL=16 PRECISION=FLOAT FORMAT=FLOAT GEOM=FILE probe_coords/sloped-roof.txt VARS comp(u,0) comp(u,1) comp(u,2) p
+
+#WRITE_IMAGE NAME /scratch/users/jhochsch/Charles/SN_smooth_RL4_5/images/SN_shearlayer_p INTERVAL 1 TARGET 0.036082 1.00423 0.028263 CAMERA -14.488 20.963 31.792 UP 0.264 0.866 -0.424 SIZE 1376 782 WIDTH 0.1142 VAR_ON_SURFACE p RANGE_ON_SURFACE -300 0 HIDE_ZONES 7,6,5,4,3,2
+
+#WRITE_IMAGE NAME /scratch/users/jhochsch/Charles/SN_smooth_RL4_5/images/SN_shearlayer_Q_vort INTERVAL 1 TARGET 0.036082 1.00423 0.028263 CAMERA -14.488 20.963 31.792 UP 0.264 0.866 -0.424 SIZE 1376 782 WIDTH 0.1142 GEOM ISO q_criterion() 40000000 VAR_ON_ISO comp(vorticity(),0) COLORMAP_ON_ISO HOT_METAL HIDE_ZONES 7,6,5,4,3,2
