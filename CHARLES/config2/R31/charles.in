@@ -1,0 +1,113 @@
+RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
+# INTERP_FROM_RESTART ./data/result.00085000.sles
+INIT time = 0.0 step = 0 p=0 U = 15 0 0
+RESET_ALL
+ 
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+#geom box: Starting X is -50, ending X is 10, starting Y is -1, ending Y is 6, starting Z is -10, ending Z is 10
+#FLIP is used to invert the geometry, i.e. the sponge is applied everywhere except in the box
+#No sponge at the beggining, so the sponge is applied at the end of the domain
+#Jack's domain is -13 to 49, 0 to 29, -6.9 to 6.9. So the sponge ends up at the top and the outlet. For me, make the sponge like quarter of quarter of the domain height at the top. Start with only at the outled to match periodic simulation.
+SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile_30m_x4.dat GEOM BOX -1000 500 -1 70 -1000 1000 FLIP
+#This sponge is applied only 1 meter downstream of the inlet, with length 1 meter (like 100m in my full simulation, or like 20 elements)
+A_SGS_SPONGE COEFF 100.0 GEOM PLANE -828.0 0.0 0.0 100.0 0.0 0.0
+
+# Time + output setup
+NSTEPS = 100000000
+# TIMESTEP DT = .005
+TIMESTEP DT = .01
+CHECK_INTERVAL 100
+WRITE_RESULT NAME=data/result INTERVAL=1000
+
+RESET_STATS TIME = 2000
+STATS u p rho
+
+# subgrid model
+SGS_MODEL VREMAN
+
+#Boundary Conditions
+buildings     = WM_ALG_WALL
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top           = SLIP
+exterior      =  WM_ALG_WALL T 0
+ceiling       =  WM_ALG_WALL T 0
+floor         =  WM_ALG_WALL T 0
+outlet        =  OUTLET 1.0 0.1 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
+inlet_split   = INLET_PROFILE FILE inflowProfile_30m_x4.dat FORMAT FLUENT_PROFILE
+# NJ and NK specify number of elemetns in the up and sideways directions of the turbulence genrator. Should be similar to grid size.
+# LAGT_I is integral time in the streamwise direction in seconds, LAGT_J is integral time in the spanwise direction in seconds, LAGT_K is integral time in the vertical direction in seconds
+# L_J and L_K are the length scales in the vertical and spanwise directions in meters. (These correspond to timescales via Taylor's hypothesis)
+# RefD is the reference height (e.g., building height)
+inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 25 NK 50 LAGT_I 0.087 LAGT_J 0.040 LAGT_K 0.0175 L_J 0.603 L_K 0.262 REFD 1.0 \
+
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# # advanced multigrid solver options
+# MG_AGGLOMERATION_FACTOR 64
+# MG_SPLIT_ORPHANED_COLORS true
+# # Momentum equation
+# # MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+# MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+# MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+# MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+# MOMENTUM_MAXITER 100 
+# MOMENTUM_ZERO 1e-6
+# # Pressure equation
+# PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+# PRESSURE_MG_NSMOOTH 20,20 # first is fine grid  #if smoother=1, half this 5,5
+# PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+# PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+# PRESSURE_MAXITER 100 
+# PRESSURE_ZERO 1e-6
+
+ #################################
+ ###########  Images  ###########
+ #################################
+
+FLUSH_IMAGES 100
+
+#ABL
+WRITE_IMAGE NAME=./Images/u_y1p5           INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y3             INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y12            INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_z58            INTERVAL=100 TARGET    0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
+              
+WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_z58       INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_avg)
+                                                        
+WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_rms)
+                                                        
+WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+
+              
+################################# ###########  PROBING  ###########
+#################################
+
+#Define variables for probes
+DEFINE flush_probes=100
+DEFINE probe_int=1
+DEFINE probe_path=probes/probesOut
+DEFINE location_path=probes/locations
+FLUSH_PROBES $(flush_probes)
+
+# For output Probe files
+PROBE NAME=$(probe_path)/col_3-2                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T

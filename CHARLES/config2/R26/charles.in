@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00075000.sles
+RESTART = ../../../STITCH/config2/2p2M-mesh.mles #./data/result.00075000.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 RESET_ALL
@@ -23,22 +23,22 @@ STATS u p rho
 SGS_MODEL VREMAN
 
 #Temp Boundaries
-REGISTER_SCALAR T
-T.SC_LAM = 0.71
-T.SC_T = 0.71
+# REGISTER_SCALAR T
+# T.SC_LAM = 0.71
+# T.SC_T = 0.71
 
 #Boundary Conditions
 buildings     = WM_ALG_WALL
 ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
 top           = SLIP
-exterior      =  WM_ALG_WALL T 0
-ceiling       =  WM_ALG_WALL T 4
-floor         =  WM_ALG_WALL T 0
-interiorWalls =  WM_ALG_WALL T 2
-exteriorWalls =  WM_ALG_WALL T 1
-windows       =  WM_ALG_WALL T 0
-doors         =  WM_ALG_WALL T 0
-skylights     =  WM_ALG_WALL T 0
+exterior      =  WM_ALG_WALL
+ceiling       =  WM_ALG_WALL
+floor         =  WM_ALG_WALL
+interiorWalls =  WM_ALG_WALL
+exteriorWalls =  WM_ALG_WALL
+windows       =  WM_ALG_WALL
+doors         =  WM_ALG_WALL
+skylights     =  WM_ALG_WALL
 
 #################################
 ######### SOLVER SETUP ##########
