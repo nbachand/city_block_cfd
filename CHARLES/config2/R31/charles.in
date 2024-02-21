@@ -37,13 +37,13 @@ top           = SLIP
 exterior      =  WM_ALG_WALL T 0
 ceiling       =  WM_ALG_WALL T 0
 floor         =  WM_ALG_WALL T 0
-outlet        =  OUTLET 1.0 0.1 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
+outlet        =  OUTLET 1.0 6 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
 inlet_split   = INLET_PROFILE FILE inflowProfile_30m_x4.dat FORMAT FLUENT_PROFILE
 # NJ and NK specify number of elemetns in the up and sideways directions of the turbulence genrator. Should be similar to grid size.
 # LAGT_I is integral time in the streamwise direction in seconds, LAGT_J is integral time in the spanwise direction in seconds, LAGT_K is integral time in the vertical direction in seconds
 # L_J and L_K are the length scales in the vertical and spanwise directions in meters. (These correspond to timescales via Taylor's hypothesis)
 # RefD is the reference height (e.g., building height)
-inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 25 NK 50 LAGT_I 0.087 LAGT_J 0.040 LAGT_K 0.0175 L_J 0.603 L_K 0.262 REFD 1.0 \
+inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 10 NK 100 LAGT_I 5 LAGT_J 2 LAGT_K 2 L_J 8 L_K 8 REFD 1.0 \
 
 
 #################################
