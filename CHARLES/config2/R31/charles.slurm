@@ -18,9 +18,11 @@ module load openmpi/4.1.2
 PARENT_DIR="Cascade/city_block_cfd/CHARLES/config2"
 LOCAL_FOLDER=$(basename "`pwd`")
 
+cp ./*.dat $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER/
+
 cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun /home/groups/gorle/codes/cascade-master-openmpi4/src/charles/charles_helm.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun /home/groups/gorle/codes/cascade-master-openmpi4/src/charles/charles_helm.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in

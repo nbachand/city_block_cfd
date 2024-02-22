@@ -1,7 +1,10 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
+RESTART = ../../../STITCH/config2/15M-mesh_gen.mles ./data/result.00033516.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
-INIT time = 0.0 step = 0 p=0 U = 15 0 0
-RESET_ALL
+# INIT time = 0
+# INIT step = 0
+# INIT U = 4 0 0 
+# INIT p = 0
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -13,9 +16,9 @@ HELMHOLTZ_SOS 340.65
 #FLIP is used to invert the geometry, i.e. the sponge is applied everywhere except in the box
 #No sponge at the beggining, so the sponge is applied at the end of the domain
 #Jack's domain is -13 to 49, 0 to 29, -6.9 to 6.9. So the sponge ends up at the top and the outlet. For me, make the sponge like quarter of quarter of the domain height at the top. Start with only at the outled to match periodic simulation.
-SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile_30m_x4.dat GEOM BOX -50 10 -1 6 -10 10 FLIP
+SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile.dat GEOM BOX -1000 500 -1 70 -1000 1000 FLIP
 #This sponge is applied only 1 meter downstream of the inlet, with length 1 meter (like 100m in my full simulation, or like 20 elements)
-A_SGS_SPONGE COEFF 100.0 GEOM PLANE -12.0 0.0 0.0 1.0 0.0 0.0
+A_SGS_SPONGE COEFF 100.0 GEOM PLANE -828.0 0.0 0.0 100.0 0.0 0.0
 
 # Time + output setup
 NSTEPS = 100000000
@@ -24,26 +27,31 @@ TIMESTEP DT = .01
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
-RESET_STATS TIME = 2000
+# RESET_STATS TIME = 2000
 STATS u p rho
 
 # subgrid model
 SGS_MODEL VREMAN
 
 #Boundary Conditions
-buildings     = WM_ALG_WALL
-ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+buildings     = WM_ALG
+ground        = WM_ALG ROUGHNESS_HEIGHT 0.0032
+ground_split  = WM_ALG ROUGHNESS_HEIGHT 0.366
+ground_upstream  = WM_ALG ROUGHNESS_HEIGHT 0.366
 top           = SLIP
-exterior      =  WM_ALG_WALL T 0
-ceiling       =  WM_ALG_WALL T 0
-floor         =  WM_ALG_WALL T 0
-outlet        =  OUTLET 1.0 0.1 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
-inlet_split   = INLET_PROFILE FILE inflowProfile_30m_x4.dat FORMAT FLUENT_PROFILE
+exterior      =  WM_ALG
+ceiling       =  WM_ALG
+floor         =  WM_ALG
+outlet        =  OUTLET 1.0 6 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
+inlet_split   = INLET_PROFILE FILE inflowProfile.dat FORMAT FLUENT_PROFILE
 # NJ and NK specify number of elemetns in the up and sideways directions of the turbulence genrator. Should be similar to grid size.
 # LAGT_I is integral time in the streamwise direction in seconds, LAGT_J is integral time in the spanwise direction in seconds, LAGT_K is integral time in the vertical direction in seconds
 # L_J and L_K are the length scales in the vertical and spanwise directions in meters. (These correspond to timescales via Taylor's hypothesis)
 # RefD is the reference height (e.g., building height)
-inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 25 NK 50 LAGT_I 0.087 LAGT_J 0.040 LAGT_K 0.0175 L_J 0.603 L_K 0.262 REFD 1.0 \
+inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 10 NK 100 LAGT_I 5 LAGT_J 2 LAGT_K 2 L_J 8 L_K 8 REFD 1.0 \
+   CONTINUITY_CORRECTION NONE \ #HELMHOLTZ
+   PROFILE ASCII_UREY turbInflowProfile.dat
+
 
 
 #################################
@@ -72,28 +80,28 @@ inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 25 NK 50 LAGT_I 0.087 LAGT_J 0.
  ###########  Images  ###########
  #################################
 
-FLUSH_IMAGES 100
+# FLUSH_IMAGES 100
 
 #ABL
-WRITE_IMAGE NAME=./Images/u_y1p5           INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y3             INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y12            INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_z58            INTERVAL=100 TARGET    0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
+WRITE_IMAGE NAME=Images/u_y1p5           INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=Images/u_y3             INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=Images/u_y12            INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=Images/u_z58            INTERVAL=100 TARGET    0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   700  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
               
-WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_z58       INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_avg)
-                                                        
-WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_rms)
-                                                        
-WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
-WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
-WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
-WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=Images/mean_u_y1p5      INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(avg(u))
+WRITE_IMAGE NAME=Images/mean_u_y3        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(avg(u))
+WRITE_IMAGE NAME=Images/mean_u_y12       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(avg(u))
+WRITE_IMAGE NAME=Images/mean_u_z58       INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   700  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(avg(u))
+                                                      
+WRITE_IMAGE NAME=Images/rms_u_y1p5       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(rms(u))
+WRITE_IMAGE NAME=Images/rms_u_y3         INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(rms(u))
+WRITE_IMAGE NAME=Images/rms_u_y12        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(rms(u))
+WRITE_IMAGE NAME=Images/rms_u_z58        INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   700  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(rms(u))
+                                                      
+WRITE_IMAGE NAME=Images/tke_u_y1p5       INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(rms(u),0)*comp(rms(u),0)+comp(rms(u),1)*comp(rms(u),1)+comp(rms(u),2)*comp(rms(u),2))
+WRITE_IMAGE NAME=Images/tke_u_y3         INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(rms(u),0)*comp(rms(u),0)+comp(rms(u),1)*comp(rms(u),1)+comp(rms(u),2)*comp(rms(u),2))
+WRITE_IMAGE NAME=Images/tke_u_y12        INTERVAL=1000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   700  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(rms(u),0)*comp(rms(u),0)+comp(rms(u),1)*comp(rms(u),1)+comp(rms(u),2)*comp(rms(u),2))
+WRITE_IMAGE NAME=Images/tke_u_z58        INTERVAL=1000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   700  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(rms(u),0)*comp(rms(u),0)+comp(rms(u),1)*comp(rms(u),1)+comp(rms(u),2)*comp(rms(u),2))
 
               
 ################################# ###########  PROBING  ###########

@@ -17,6 +17,7 @@
 !*_template-run-folder_*/
 !runs.txt
 !*.m
+!*.dat
 
 # ...even if they are in subdirectories
 !*/
