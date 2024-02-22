@@ -13,7 +13,7 @@ HELMHOLTZ_SOS 340.65
 #FLIP is used to invert the geometry, i.e. the sponge is applied everywhere except in the box
 #No sponge at the beggining, so the sponge is applied at the end of the domain
 #Jack's domain is -13 to 49, 0 to 29, -6.9 to 6.9. So the sponge ends up at the top and the outlet. For me, make the sponge like quarter of quarter of the domain height at the top. Start with only at the outled to match periodic simulation.
-SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile_30m_x4.dat GEOM BOX -1000 500 -1 70 -1000 1000 FLIP
+SPONGE STRENGTH 50 VELOCITY PROFILE turbInflowProfile.dat GEOM BOX -1000 500 -1 70 -1000 1000 FLIP
 #This sponge is applied only 1 meter downstream of the inlet, with length 1 meter (like 100m in my full simulation, or like 20 elements)
 A_SGS_SPONGE COEFF 100.0 GEOM PLANE -828.0 0.0 0.0 100.0 0.0 0.0
 
