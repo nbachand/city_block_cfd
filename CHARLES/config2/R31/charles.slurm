@@ -23,4 +23,4 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun /home/groups/gorle/codes/cascade-master-openmpi4/src/charles/charles_helm.exe -i $HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun /home/groups/gorle/codes/cascade-master-openmpi4/src/charles/charles_helm.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in

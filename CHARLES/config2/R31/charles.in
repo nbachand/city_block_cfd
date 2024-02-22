@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
+RESTART = ../../../STITCH/config2/15M-mesh_gen.mles #./data/result.00075000.sles
 # INTERP_FROM_RESTART ./data/result.00085000.sles
 INIT time = 0.0 step = 0 p=0 U = 15 0 0
 RESET_ALL
@@ -33,17 +33,21 @@ SGS_MODEL VREMAN
 #Boundary Conditions
 buildings     = WM_ALG_WALL
 ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+ground_split  = WM_ALG_WALL ROUGHNESS_HEIGHT 0.366
 top           = SLIP
-exterior      =  WM_ALG_WALL T 0
-ceiling       =  WM_ALG_WALL T 0
-floor         =  WM_ALG_WALL T 0
+exterior      =  WM_ALG_WALL
+ceiling       =  WM_ALG_WALL
+floor         =  WM_ALG_WALL
 outlet        =  OUTLET 1.0 6 0.0 0.0 LOCAL_U #0.1 should be characteristic length of the domain, so change this.
-inlet_split   = INLET_PROFILE FILE inflowProfile_30m_x4.dat FORMAT FLUENT_PROFILE
+inlet_split   = INLET_PROFILE FILE inflowProfile.dat FORMAT FLUENT_PROFILE
 # NJ and NK specify number of elemetns in the up and sideways directions of the turbulence genrator. Should be similar to grid size.
 # LAGT_I is integral time in the streamwise direction in seconds, LAGT_J is integral time in the spanwise direction in seconds, LAGT_K is integral time in the vertical direction in seconds
 # L_J and L_K are the length scales in the vertical and spanwise directions in meters. (These correspond to timescales via Taylor's hypothesis)
 # RefD is the reference height (e.g., building height)
 inlet         = INFLOW_TURB_ABL JDIR 1 KDIR 2 NJ 10 NK 100 LAGT_I 5 LAGT_J 2 LAGT_K 2 L_J 8 L_K 8 REFD 1.0 \
+   CONTINUITY_CORRECTION NONE \ #HELMHOLTZ
+   PROFILE ASCII_UREY turbInflowProfile.dat
+
 
 
 #################################
