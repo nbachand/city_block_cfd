@@ -254,7 +254,7 @@ public:
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
         u[icv][1] = -0.002;
           
-        // transport_scalar_vec[0][icv]=-0.1*absy;
+        transport_scalar_vec[0][icv]=0.0;
 
         // // add perturbations
         // const double perturbation_scaling = 0.1;
@@ -340,21 +340,21 @@ public:
        }
     }
 
-//     if ( mpi_rank == 0 ) 
-//       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
 
-//       const double T_ref = 0.0;
-//       const double beta = 0.0034; 
-//       const double g = 10;
-//       const double T_factor = 1.0;
+      const double T_ref = 0.0;
+      const double beta = 0.0034; 
+      const double g = 10;
+      const double T_factor = 1.0;
     
-//     if ( mpi_rank == 0 ) 
-//       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
+    if ( mpi_rank == 0 ) 
+      cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
 
-// //      transport_scalar_vec[0][icv]=50.0;
-//       FOR_ICV{
-//         rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
-//       }
+//      transport_scalar_vec[0][icv]=50.0;
+      FOR_ICV{
+        rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+      }
   }
   void massSourceHook(double * rhs) {}
 
