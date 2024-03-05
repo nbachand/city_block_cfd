@@ -7,4 +7,6 @@ sherlockOakSync plots
 sherlockOakSync tables
 sherlockOakSync Videos
 
-sherlockScratchSync Images/images_recolored
+mkdir Images
+cd Images
+sherlockScratchSync images_recolored
