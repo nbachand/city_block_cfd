@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #../R25/data/result.00145000.sles
-INTERP_FROM_RESTART ../R25/data/result.00145000.sles
-INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-RESET_ALL
+RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00073000.sles
+# INTERP_FROM_RESTART ../R25/data/result.00145000.sles
+# INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -10,7 +10,7 @@ MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
 # Time + output setup
-NSTEPS = 100000000
+NSTEPS = 73200
 # TIMESTEP DT = .005
 TIMESTEP DT = .01
 CHECK_INTERVAL 100
@@ -95,7 +95,7 @@ WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CA
 #################################
 
 #Define variables for probes
-DEFINE flush_probes=100
+DEFINE flush_probes=10
 DEFINE probe_int=1
 DEFINE probe_path=probes/probesOut
 DEFINE location_path=probes/locations
