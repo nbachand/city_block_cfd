@@ -24,5 +24,5 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun $OAK_OAK_HOME/$PARENT_DIR/charles/45_deg_6mps/charles.exe -i $OAK_OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
-# srun $OAK_OAK_HOME/$PARENT_DIR/../single_family/0_deg_spinnup2/charles.exe -i $OAK_OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $OAK_HOME/$PARENT_DIR/charles/45_deg_6mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+# srun $OAK_HOME/$PARENT_DIR/../single_family/0_deg_spinnup2/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in

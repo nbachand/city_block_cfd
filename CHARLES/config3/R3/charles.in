@@ -363,3 +363,4 @@ PROBE NAME=$(probe_path)/col_0-0_Bz             INTERVAL $(probe_int) GEOM FILE 
 PROBE NAME=$(probe_path)/col_0-n2_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p
 PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p
 PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p
+PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS comp(u_avg,0) comp(u_avg,1) comp(u_avg,2)
