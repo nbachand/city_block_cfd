@@ -1,5 +1,5 @@
 RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
-# INTERP_FROM_RESTART ./data/result.00085000.sles
+INTERP_FROM_RESTART ./data/result.00106000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 RESET_ALL
  
@@ -10,7 +10,7 @@ MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
 # Time + output setup
-NSTEPS = 100000000
+NSTEPS = 106200
 # TIMESTEP DT = .005
 TIMESTEP DT = .01
 CHECK_INTERVAL 100
@@ -354,3 +354,4 @@ PROBE NAME=$(probe_path)/col_3-2                INTERVAL $(probe_int) GEOM FILE 
 PROBE NAME=$(probe_path)/col_3-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
 PROBE NAME=$(probe_path)/col_3-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
 PROBE NAME=$(probe_path)/col_3-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS comp(u_avg,0) comp(u_avg,1) comp(u_avg,2)
