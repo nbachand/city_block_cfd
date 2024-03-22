@@ -1,0 +1,4 @@
+#Read the surface
+PART MLES ./2p4M-mesh.mles
+
+INTERACTIVE

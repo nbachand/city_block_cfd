@@ -30,6 +30,7 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-OSX.in
+# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
 # mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
 # mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
