@@ -1,4 +1,5 @@
 #Read the surface
-PART MLES ./2p4M-mesh.mles
+PART ./2p4M-mesh.mles
+# PART ./2p4M-mesh_cluster.mles
 
 INTERACTIVE
