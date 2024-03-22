@@ -1,5 +1,5 @@
 RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
-INTERP_FROM_RESTART ../R23/data/result.0077000.sles
+INTERP_FROM_RESTART ../R23/data/result.00077000.sles
 # INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 # RESET_ALL
  
