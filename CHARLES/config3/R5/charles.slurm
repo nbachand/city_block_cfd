@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=cc3_R5
-#SBATCH -N 1
-#SBATCH -n 32
-#SBATCH --time=00:30:00
+#SBATCH -N 4
+#SBATCH -n 128
+#SBATCH --time=48:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
