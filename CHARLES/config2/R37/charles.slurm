@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cc2_R36
+#SBATCH --job-name=cc2_R37
 #SBATCH -N 8
 #SBATCH -n 256
 #SBATCH --time=24:00:00
@@ -22,9 +22,6 @@ LOCAL_FOLDER=$(basename "`pwd`")
 cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
-
-echo "0 0 0" > ./probes/VolProbe90X.svp
-echo "0 0 0" > ./probes/VolProbe90Z.svp
 
 source ~/.bash_profile
 srun $OAK_HOME/$PARENT_DIR/charles/0_deg_2mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in

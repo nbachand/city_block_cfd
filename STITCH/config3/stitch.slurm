@@ -24,12 +24,13 @@ SURFER_DIR="Cascade/city_block_cfd/city_block_geom/SURFER"
 mkdir $SCRATCH/$SURFER_DIR/$LOCAL_FOLDER
 mkdir $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
-cp $HOME/$SURFER_DIR/$LOCAL_FOLDER/* $SCRATCH/$SURFER_DIR/$LOCAL_FOLDER/ 
+cp $OAK_HOME/$SURFER_DIR/$LOCAL_FOLDER/* $SCRATCH/$SURFER_DIR/$LOCAL_FOLDER/ 
 
 cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
-# mpiexec stitch.exe -i $HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
+# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-OSX.in
+mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-fine.in
