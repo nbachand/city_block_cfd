@@ -1,3 +1,5 @@
+##### For run with generated turbulence #####
+
 #Read the surface
 PART SURF SBIN ../../city_block_geom/SURFER/config2/mesh_geom_gen.sbin
 
