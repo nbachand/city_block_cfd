@@ -1,4 +1,4 @@
-RESTART = ../../../STITCH/config3/14M-mesh.mles #./data/result.00540000.sles
+RESTART = ../../../STITCH/config3/11M-mesh.mles #./data/result.00540000.sles
 # INTERP_FROM_RESTART ./data/result.00171000.sles
 INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 RESET_ALL
