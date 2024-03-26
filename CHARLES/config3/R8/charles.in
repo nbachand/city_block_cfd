@@ -1,5 +1,5 @@
 RESTART = ../../../STITCH/config3/14M-mesh.mles #./data/result.00540000.sles
-INTERP_FROM_RESTART ../R1/data/result.00540000.sles
+INTERP_FROM_RESTART ../R4/data/result.00586000.sles
 INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
 RESET_ALL
  
@@ -10,13 +10,13 @@ MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
 # Time + output setup
-NSTEPS = 90000
+NSTEPS = 100000
 # TIMESTEP DT = .005
-TIMESTEP DT = .01
+TIMESTEP DT = .02
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
-RESET_STATS TIME = 100
+RESET_STATS TIME = 200
 STATS u p rho
 
 # subgrid model
