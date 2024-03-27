@@ -2,7 +2,7 @@
 #SBATCH --job-name=cc3_R7
 #SBATCH -N 4
 #SBATCH -n 128
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
