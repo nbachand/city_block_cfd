@@ -1,5 +1,6 @@
 import pandas as pd
 from fnmatch import fnmatch
+from pyCascade import physics
 
 def getWindowOrientations(flowStats):
     flowStats["orientation"] = pd.Series(dtype=float)
@@ -62,6 +63,11 @@ def getRoomOrientations(roomVentilation):
     return roomVentilation
 
 def fillInParams(df, runs, velTenMeters):
+
+
+    for run in runs:
+        runs[run]["Ri"] = physics.getVentRi(runs[run]["delT"] * runs[run]['B'], runs[run]["WS"])
+
     A = pd.Series(index = df.index, dtype = float)
     AofA = pd.Series(index = df.index, dtype = float)
     WS = pd.Series(index = df.index, dtype = float)
