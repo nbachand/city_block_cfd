@@ -1,6 +1,7 @@
 import pandas as pd
 from fnmatch import fnmatch
 from pyCascade import physics
+import itertools
 
 def getWindowOrientations(flowStats):
     flowStats["orientation"] = pd.Series(dtype=float)
@@ -110,3 +111,45 @@ def fillInParams(df, runs, velTenMeters):
     # display(df)
     df.sort_values(["C", "WS", "B"])
     return df
+
+
+def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'delT', 'delTPart', 'roomType', 'houseType', 'blockType']):
+    values = [df[col].unique() for col in split_cols]
+    sort_cols = list(set(sort_cols) - set(split_cols))
+    plotdfMulti = df.set_index([*split_cols, df.index]).sort_index(level = 0)
+    dfs = []
+    all_combinations = itertools.product(*values) # Use itertools.product to generate all combinations of values
+    list_of_tuples = [comb for comb in all_combinations] # Create a list of sets from the combinations
+    columnHeaders = []
+    for vTuple in list_of_tuples:
+        df_v = plotdfMulti.copy()
+        validTuple = True
+        for v in vTuple:
+            try:
+                df_v = df_v.xs(v, level=0) # cutting off levels each time so remains 0
+            except KeyError as e:
+                print(f"KeyError occurred: {e}; Likely a non-issue due to not having all possible split combinations in data")
+                validTuple = False
+                break
+        if validTuple == True:
+            columnHeaders.append(vTuple)
+            df_v = df_v.set_index(sort_cols).sort_index()
+            if df_v.index.is_unique == False:
+                raise Exception(f"DataFrame for values {vTuple} in the provided list has a non-unique index.")
+            dfs.append(df_v)
+    print(f"split {split_cols} along values: ", columnHeaders)
+    dfComp = pd.concat(dfs, axis = "columns", keys = columnHeaders)
+    split_levels = [i for i in range(len(dfComp.columns.names) - 1)]
+    dfComp = dfComp.reorder_levels([-1, *split_levels], axis = "columns")
+    dfComp.sort_values(sort_cols, inplace=True)
+    return dfComp, columnHeaders
+
+def indMulti(ind: pd.core.indexes.multi.MultiIndex, cols: list):
+    data = []
+    for col in cols:
+        colData = ind.get_level_values(col).astype(str)
+        colData = colData.to_series()
+        data.append(colData)
+    if len(data) == 1:
+        return data[0]
+    return data
