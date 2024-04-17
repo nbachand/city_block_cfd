@@ -103,6 +103,8 @@ def fillInParams(df, runs, velTenMeters):
     df["Ri"] = Ri
     df["delT"] = delT
     df["delTPart"] = delTPart
+    df["delTPartRatio"] = delTPart/delT
+    df["delTPartRatio"].fillna(0, inplace = True)
     df["Params"] = Params
     for param in ["mean", "net"]:
         df[f"{param}Norm"] = df[param] / df["WS"] * velTenMeters
@@ -113,7 +115,7 @@ def fillInParams(df, runs, velTenMeters):
     return df
 
 
-def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'delT', 'delTPart', 'roomType', 'houseType', 'blockType']):
+def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'Ri', 'delTPartRatio', 'roomType', 'houseType', 'blockType']):
     values = [df[col].unique() for col in split_cols]
     sort_cols = list(set(sort_cols) - set(split_cols))
     plotdfMulti = df.set_index([*split_cols, df.index]).sort_index(level = 0)
