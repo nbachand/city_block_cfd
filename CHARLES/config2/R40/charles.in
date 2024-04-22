@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00075000.sles
+RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
 # INTERP_FROM_RESTART ../R21/data/result.0015800.sles
-# INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-# RESET_ALL
+INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
+RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -16,7 +16,7 @@ TIMESTEP DT = .01
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
-RESET_STATS TIME = 2000
+RESET_STATS TIME = 40000
 STATS u p rho
 
 # subgrid model
