@@ -1,0 +1,3 @@
+python ~/codes/pyCascade/pyCascade/inflowProfile.py --n 400 --x -928 --z 0 --y0 0 --y1 72.333 --rough 0.3 --UatZ 4 10 --Iu 0.3 --method 'ASCE' --multiply 4 --multiplyuu False --filefmt 'rows' --filename 'inflowProfile.dat'
+
+python ~/codes/pyCascade/pyCascade/inflowProfile.py --n 400 --x -928 --z 0 --y0 0 --y1 72.333 --rough 0.3 --UatZ 4 10 --Iu 0.3 --method 'ASCE' --multiply 4 --multiplyuu False --filefmt 'table' --filename 'turbInflowProfile.dat'

@@ -7,11 +7,8 @@ LOCAL_FOLDER=$(basename "`pwd`")
 
 IMAGE_DIR=$SCRATCH/$PARENT_DIR/$LOCAL_FOLDER/Images
 echo "Getting images from $IMAGE_DIR"
-
-cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 mkdir "./Videos"
 cd "./Videos"
 echo "Saving videos in $(pwd)"
 
 conda activate pycascade
-

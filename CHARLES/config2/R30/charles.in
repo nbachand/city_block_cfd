@@ -1,0 +1,357 @@
+RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00075000.sles
+INTERP_FROM_RESTART ./data/result.00106000.sles
+# INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
+RESET_ALL
+ 
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+# Time + output setup
+NSTEPS = 106200
+# TIMESTEP DT = .005
+TIMESTEP DT = .01
+CHECK_INTERVAL 100
+WRITE_RESULT NAME=data/result INTERVAL=1000
+
+RESET_STATS TIME = 2000
+STATS u p rho
+
+# subgrid model
+SGS_MODEL VREMAN
+
+#Temp Boundaries
+REGISTER_SCALAR T
+T.SC_LAM = 0.71
+T.SC_T = 0.71
+
+#Boundary Conditions
+buildings     = WM_ALG_WALL
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
+top           = SLIP
+exterior      =  WM_ALG_WALL T 0
+ceiling       =  WM_ALG_WALL T 0
+floor         =  WM_ALG_WALL T 0
+interiorWalls =  WM_ALG_WALL T 0
+exteriorWalls =  WM_ALG_WALL T 0
+windows       =  WM_ALG_WALL T 0
+doors         =  WM_ALG_WALL T 0
+skylights     =  WM_ALG_WALL T 0
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# advanced multigrid solver options
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+# Momentum equation
+# MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+MOMENTUM_MAXITER 100 
+MOMENTUM_ZERO 1e-6
+# Pressure equation
+PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+PRESSURE_MG_NSMOOTH 20,20 # first is fine grid  #if smoother=1, half this 5,5
+PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+PRESSURE_MAXITER 100 
+PRESSURE_ZERO 1e-6
+
+ #################################
+ ###########  Images  ###########
+ #################################
+
+FLUSH_IMAGES 100
+
+#ABL
+WRITE_IMAGE NAME=./Images/u_y1p5           INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y3             INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y12            INTERVAL=100 TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_z58            INTERVAL=100 TARGET    0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
+              
+WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_z58       INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_avg)
+                                                        
+WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u_rms)
+                                                        
+WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=10000 TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=10000 TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+
+              
+#################################
+###########  PROBING  ###########
+#################################
+
+#Define variables for probes
+DEFINE flush_probes=100
+DEFINE probe_int=1
+DEFINE probe_path=probes/probesOut
+DEFINE location_path=probes/locations
+FLUSH_PROBES $(flush_probes)
+
+# For momentum source
+VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,0)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 69.600000 77.333333 -116.000000 116.000000   VARS=comp(u,2)
+
+# For other volumetric probes
+
+# For flux probes
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_sl           INTERVAL $(probe_int) XP 42.000000 1.500000 62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_sl         INTERVAL $(probe_int) XP 38.050000 1.500000 58.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_sl         INTERVAL $(probe_int) XP 40.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_sl         INTERVAL $(probe_int) XP 38.050000 1.500000 62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_sl         INTERVAL $(probe_int) XP 40.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_sl         INTERVAL $(probe_int) XP 44.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_sl         INTERVAL $(probe_int) XP 44.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_sl         INTERVAL $(probe_int) XP 48.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_sl         INTERVAL $(probe_int) XP 48.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-0_sl        INTERVAL $(probe_int) XP 40.000000 2.950000 58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-1_sl        INTERVAL $(probe_int) XP 40.000000 2.950000 62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-0_sl        INTERVAL $(probe_int) XP 44.000000 2.950000 58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-1_sl        INTERVAL $(probe_int) XP 44.000000 2.950000 62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-0_sl        INTERVAL $(probe_int) XP 48.000000 2.950000 58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-1_sl        INTERVAL $(probe_int) XP 48.000000 2.950000 62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-0        INTERVAL $(probe_int) XP 58.000000 1.500000 14.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-0      INTERVAL $(probe_int) XP 54.050000 1.500000 10.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-0      INTERVAL $(probe_int) XP 56.000000 1.500000 8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-0      INTERVAL $(probe_int) XP 54.050000 1.500000 14.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-0      INTERVAL $(probe_int) XP 56.000000 1.500000 15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-0      INTERVAL $(probe_int) XP 60.000000 1.500000 8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-0      INTERVAL $(probe_int) XP 60.000000 1.500000 15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-0      INTERVAL $(probe_int) XP 64.000000 1.500000 8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-0      INTERVAL $(probe_int) XP 64.000000 1.500000 15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-1        INTERVAL $(probe_int) XP 50.000000 1.500000 38.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-1      INTERVAL $(probe_int) XP 46.050000 1.500000 34.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-1      INTERVAL $(probe_int) XP 48.000000 1.500000 32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-1      INTERVAL $(probe_int) XP 46.050000 1.500000 38.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-1      INTERVAL $(probe_int) XP 48.000000 1.500000 39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-1      INTERVAL $(probe_int) XP 52.000000 1.500000 32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-1      INTERVAL $(probe_int) XP 52.000000 1.500000 39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-1      INTERVAL $(probe_int) XP 56.000000 1.500000 32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-1      INTERVAL $(probe_int) XP 56.000000 1.500000 39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-2        INTERVAL $(probe_int) XP 58.000000 1.500000 62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-2      INTERVAL $(probe_int) XP 54.050000 1.500000 58.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-2      INTERVAL $(probe_int) XP 56.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-2      INTERVAL $(probe_int) XP 54.050000 1.500000 62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-2      INTERVAL $(probe_int) XP 56.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-2      INTERVAL $(probe_int) XP 60.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-2      INTERVAL $(probe_int) XP 60.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-2      INTERVAL $(probe_int) XP 64.000000 1.500000 56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-2      INTERVAL $(probe_int) XP 64.000000 1.500000 63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-3        INTERVAL $(probe_int) XP 50.000000 1.500000 86.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-3      INTERVAL $(probe_int) XP 46.050000 1.500000 82.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-3      INTERVAL $(probe_int) XP 48.000000 1.500000 80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-3      INTERVAL $(probe_int) XP 46.050000 1.500000 86.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-3      INTERVAL $(probe_int) XP 48.000000 1.500000 87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-3      INTERVAL $(probe_int) XP 52.000000 1.500000 80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-3      INTERVAL $(probe_int) XP 52.000000 1.500000 87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-3      INTERVAL $(probe_int) XP 56.000000 1.500000 80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-3      INTERVAL $(probe_int) XP 56.000000 1.500000 87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-4        INTERVAL $(probe_int) XP 58.000000 1.500000 110.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-4      INTERVAL $(probe_int) XP 54.050000 1.500000 106.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-4      INTERVAL $(probe_int) XP 56.000000 1.500000 104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-4      INTERVAL $(probe_int) XP 54.050000 1.500000 110.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-4      INTERVAL $(probe_int) XP 56.000000 1.500000 111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-4      INTERVAL $(probe_int) XP 60.000000 1.500000 104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-4      INTERVAL $(probe_int) XP 60.000000 1.500000 111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-4      INTERVAL $(probe_int) XP 64.000000 1.500000 104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-4      INTERVAL $(probe_int) XP 64.000000 1.500000 111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_sl_Bx        INTERVAL $(probe_int) XP -62.000000 1.500000 42.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_sl_Bx      INTERVAL $(probe_int) XP -58.000000 1.500000 38.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_sl_Bx      INTERVAL $(probe_int) XP -56.050000 1.500000 40.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_sl_Bx      INTERVAL $(probe_int) XP -62.000000 1.500000 38.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_sl_Bx      INTERVAL $(probe_int) XP -63.950000 1.500000 40.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_sl_Bx      INTERVAL $(probe_int) XP -56.050000 1.500000 44.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_sl_Bx      INTERVAL $(probe_int) XP -63.950000 1.500000 44.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_sl_Bx      INTERVAL $(probe_int) XP -56.050000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_sl_Bx      INTERVAL $(probe_int) XP -63.950000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-0_sl_Bx     INTERVAL $(probe_int) XP -58.000000 2.950000 40.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-1_sl_Bx     INTERVAL $(probe_int) XP -62.000000 2.950000 40.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-0_sl_Bx     INTERVAL $(probe_int) XP -58.000000 2.950000 44.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-1_sl_Bx     INTERVAL $(probe_int) XP -62.000000 2.950000 44.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-0_sl_Bx     INTERVAL $(probe_int) XP -58.000000 2.950000 48.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-1_sl_Bx     INTERVAL $(probe_int) XP -62.000000 2.950000 48.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-0_Bx     INTERVAL $(probe_int) XP -14.000000 1.500000 58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-0_Bx   INTERVAL $(probe_int) XP -10.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-0_Bx   INTERVAL $(probe_int) XP -8.050000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-0_Bx   INTERVAL $(probe_int) XP -14.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-0_Bx   INTERVAL $(probe_int) XP -15.950000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-0_Bx   INTERVAL $(probe_int) XP -8.050000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-0_Bx   INTERVAL $(probe_int) XP -15.950000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-0_Bx   INTERVAL $(probe_int) XP -8.050000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-0_Bx   INTERVAL $(probe_int) XP -15.950000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-1_Bx     INTERVAL $(probe_int) XP -38.000000 1.500000 50.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-1_Bx   INTERVAL $(probe_int) XP -34.000000 1.500000 46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-1_Bx   INTERVAL $(probe_int) XP -32.050000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-1_Bx   INTERVAL $(probe_int) XP -38.000000 1.500000 46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-1_Bx   INTERVAL $(probe_int) XP -39.950000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-1_Bx   INTERVAL $(probe_int) XP -32.050000 1.500000 52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-1_Bx   INTERVAL $(probe_int) XP -39.950000 1.500000 52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-1_Bx   INTERVAL $(probe_int) XP -32.050000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-1_Bx   INTERVAL $(probe_int) XP -39.950000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-2_Bx     INTERVAL $(probe_int) XP -62.000000 1.500000 58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-2_Bx   INTERVAL $(probe_int) XP -58.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-2_Bx   INTERVAL $(probe_int) XP -56.050000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-2_Bx   INTERVAL $(probe_int) XP -62.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-2_Bx   INTERVAL $(probe_int) XP -63.950000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-2_Bx   INTERVAL $(probe_int) XP -56.050000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-2_Bx   INTERVAL $(probe_int) XP -63.950000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-2_Bx   INTERVAL $(probe_int) XP -56.050000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-2_Bx   INTERVAL $(probe_int) XP -63.950000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-3_Bx     INTERVAL $(probe_int) XP -86.000000 1.500000 50.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-3_Bx   INTERVAL $(probe_int) XP -82.000000 1.500000 46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-3_Bx   INTERVAL $(probe_int) XP -80.050000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-3_Bx   INTERVAL $(probe_int) XP -86.000000 1.500000 46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-3_Bx   INTERVAL $(probe_int) XP -87.950000 1.500000 48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-3_Bx   INTERVAL $(probe_int) XP -80.050000 1.500000 52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-3_Bx   INTERVAL $(probe_int) XP -87.950000 1.500000 52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-3_Bx   INTERVAL $(probe_int) XP -80.050000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-3_Bx   INTERVAL $(probe_int) XP -87.950000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-4_Bx     INTERVAL $(probe_int) XP -110.000000 1.500000 58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-4_Bx   INTERVAL $(probe_int) XP -106.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-4_Bx   INTERVAL $(probe_int) XP -104.050000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-4_Bx   INTERVAL $(probe_int) XP -110.000000 1.500000 54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-4_Bx   INTERVAL $(probe_int) XP -111.950000 1.500000 56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-4_Bx   INTERVAL $(probe_int) XP -104.050000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-4_Bx   INTERVAL $(probe_int) XP -111.950000 1.500000 60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-4_Bx   INTERVAL $(probe_int) XP -104.050000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-4_Bx   INTERVAL $(probe_int) XP -111.950000 1.500000 64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_sl_Bz        INTERVAL $(probe_int) XP 62.000000 1.500000 -42.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_sl_Bz      INTERVAL $(probe_int) XP 58.000000 1.500000 -38.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_sl_Bz      INTERVAL $(probe_int) XP 56.050000 1.500000 -40.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_sl_Bz      INTERVAL $(probe_int) XP 62.000000 1.500000 -38.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_sl_Bz      INTERVAL $(probe_int) XP 63.950000 1.500000 -40.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_sl_Bz      INTERVAL $(probe_int) XP 56.050000 1.500000 -44.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_sl_Bz      INTERVAL $(probe_int) XP 63.950000 1.500000 -44.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_sl_Bz      INTERVAL $(probe_int) XP 56.050000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_sl_Bz      INTERVAL $(probe_int) XP 63.950000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-0_sl_Bz     INTERVAL $(probe_int) XP 58.000000 2.950000 -40.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-1_sl_Bz     INTERVAL $(probe_int) XP 62.000000 2.950000 -40.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-0_sl_Bz     INTERVAL $(probe_int) XP 58.000000 2.950000 -44.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-1_sl_Bz     INTERVAL $(probe_int) XP 62.000000 2.950000 -44.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-0_sl_Bz     INTERVAL $(probe_int) XP 58.000000 2.950000 -48.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-1_sl_Bz     INTERVAL $(probe_int) XP 62.000000 2.950000 -48.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-0_Bz     INTERVAL $(probe_int) XP 14.000000 1.500000 -58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-0_Bz   INTERVAL $(probe_int) XP 10.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-0_Bz   INTERVAL $(probe_int) XP 8.050000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-0_Bz   INTERVAL $(probe_int) XP 14.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-0_Bz   INTERVAL $(probe_int) XP 15.950000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-0_Bz   INTERVAL $(probe_int) XP 8.050000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-0_Bz   INTERVAL $(probe_int) XP 15.950000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-0_Bz   INTERVAL $(probe_int) XP 8.050000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-0_Bz   INTERVAL $(probe_int) XP 15.950000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-1_Bz     INTERVAL $(probe_int) XP 38.000000 1.500000 -50.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-1_Bz   INTERVAL $(probe_int) XP 34.000000 1.500000 -46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-1_Bz   INTERVAL $(probe_int) XP 32.050000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-1_Bz   INTERVAL $(probe_int) XP 38.000000 1.500000 -46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-1_Bz   INTERVAL $(probe_int) XP 39.950000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-1_Bz   INTERVAL $(probe_int) XP 32.050000 1.500000 -52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-1_Bz   INTERVAL $(probe_int) XP 39.950000 1.500000 -52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-1_Bz   INTERVAL $(probe_int) XP 32.050000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-1_Bz   INTERVAL $(probe_int) XP 39.950000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-2_Bz     INTERVAL $(probe_int) XP 62.000000 1.500000 -58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-2_Bz   INTERVAL $(probe_int) XP 58.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-2_Bz   INTERVAL $(probe_int) XP 56.050000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-2_Bz   INTERVAL $(probe_int) XP 62.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-2_Bz   INTERVAL $(probe_int) XP 63.950000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-2_Bz   INTERVAL $(probe_int) XP 56.050000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-2_Bz   INTERVAL $(probe_int) XP 63.950000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-2_Bz   INTERVAL $(probe_int) XP 56.050000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-2_Bz   INTERVAL $(probe_int) XP 63.950000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-3_Bz     INTERVAL $(probe_int) XP 86.000000 1.500000 -50.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-3_Bz   INTERVAL $(probe_int) XP 82.000000 1.500000 -46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-3_Bz   INTERVAL $(probe_int) XP 80.050000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-3_Bz   INTERVAL $(probe_int) XP 86.000000 1.500000 -46.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-3_Bz   INTERVAL $(probe_int) XP 87.950000 1.500000 -48.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-3_Bz   INTERVAL $(probe_int) XP 80.050000 1.500000 -52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-3_Bz   INTERVAL $(probe_int) XP 87.950000 1.500000 -52.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-3_Bz   INTERVAL $(probe_int) XP 80.050000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-3_Bz   INTERVAL $(probe_int) XP 87.950000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-4_Bz     INTERVAL $(probe_int) XP 110.000000 1.500000 -58.000000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-4_Bz   INTERVAL $(probe_int) XP 106.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-4_Bz   INTERVAL $(probe_int) XP 104.050000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-4_Bz   INTERVAL $(probe_int) XP 110.000000 1.500000 -54.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-4_Bz   INTERVAL $(probe_int) XP 111.950000 1.500000 -56.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-4_Bz   INTERVAL $(probe_int) XP 104.050000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-4_Bz   INTERVAL $(probe_int) XP 111.950000 1.500000 -60.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-4_Bz   INTERVAL $(probe_int) XP 104.050000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-4_Bz   INTERVAL $(probe_int) XP 111.950000 1.500000 -64.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_sl_Bxz       INTERVAL $(probe_int) XP -42.000000 1.500000 -62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_sl_Bxz     INTERVAL $(probe_int) XP -38.050000 1.500000 -58.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_sl_Bxz     INTERVAL $(probe_int) XP -40.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_sl_Bxz     INTERVAL $(probe_int) XP -38.050000 1.500000 -62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_sl_Bxz     INTERVAL $(probe_int) XP -40.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_sl_Bxz     INTERVAL $(probe_int) XP -44.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_sl_Bxz     INTERVAL $(probe_int) XP -44.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_sl_Bxz     INTERVAL $(probe_int) XP -48.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_sl_Bxz     INTERVAL $(probe_int) XP -48.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-0_sl_Bxz    INTERVAL $(probe_int) XP -40.000000 2.950000 -58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_0-1_sl_Bxz    INTERVAL $(probe_int) XP -40.000000 2.950000 -62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-0_sl_Bxz    INTERVAL $(probe_int) XP -44.000000 2.950000 -58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_1-1_sl_Bxz    INTERVAL $(probe_int) XP -44.000000 2.950000 -62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-0_sl_Bxz    INTERVAL $(probe_int) XP -48.000000 2.950000 -58.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/skylight_2-1_sl_Bxz    INTERVAL $(probe_int) XP -48.000000 2.950000 -62.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() sn_prod(comp(u,1),0.000000,2.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-0_Bxz    INTERVAL $(probe_int) XP -58.000000 1.500000 -14.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-0_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -10.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-0_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-0_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -14.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-0_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-0_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-0_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-0_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -8.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-0_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -15.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-1_Bxz    INTERVAL $(probe_int) XP -50.000000 1.500000 -38.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-1_Bxz  INTERVAL $(probe_int) XP -46.050000 1.500000 -34.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-1_Bxz  INTERVAL $(probe_int) XP -48.000000 1.500000 -32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-1_Bxz  INTERVAL $(probe_int) XP -46.050000 1.500000 -38.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-1_Bxz  INTERVAL $(probe_int) XP -48.000000 1.500000 -39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-1_Bxz  INTERVAL $(probe_int) XP -52.000000 1.500000 -32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-1_Bxz  INTERVAL $(probe_int) XP -52.000000 1.500000 -39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-1_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -32.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-1_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -39.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-2_Bxz    INTERVAL $(probe_int) XP -58.000000 1.500000 -62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-2_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -58.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-2_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-2_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -62.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-2_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-2_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-2_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-2_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -56.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-2_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -63.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-3_Bxz    INTERVAL $(probe_int) XP -50.000000 1.500000 -86.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-3_Bxz  INTERVAL $(probe_int) XP -46.050000 1.500000 -82.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-3_Bxz  INTERVAL $(probe_int) XP -48.000000 1.500000 -80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-3_Bxz  INTERVAL $(probe_int) XP -46.050000 1.500000 -86.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-3_Bxz  INTERVAL $(probe_int) XP -48.000000 1.500000 -87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-3_Bxz  INTERVAL $(probe_int) XP -52.000000 1.500000 -80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-3_Bxz  INTERVAL $(probe_int) XP -52.000000 1.500000 -87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-3_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -80.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-3_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -87.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xdoor_1-1_h_3-4_Bxz    INTERVAL $(probe_int) XP -58.000000 1.500000 -110.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-0_h_3-4_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -106.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-0_h_3-4_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/xwindow_0-1_h_3-4_Bxz  INTERVAL $(probe_int) XP -54.050000 1.500000 -110.000000 NP 2.000000 0.000000 0.000000 VARS mass_flux() sn_prod(comp(u,0),2.000000,0.000000,0.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_0-1_h_3-4_Bxz  INTERVAL $(probe_int) XP -56.000000 1.500000 -111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-0_h_3-4_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_1-1_h_3-4_Bxz  INTERVAL $(probe_int) XP -60.000000 1.500000 -111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-0_h_3-4_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -104.050000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+FLUX_PROBE NAME=$(probe_path)/zwindow_2-1_h_3-4_Bxz  INTERVAL $(probe_int) XP -64.000000 1.500000 -111.950000 NP 0.000000 0.000000 2.000000 VARS mass_flux() sn_prod(comp(u,2),0.000000,0.000000,2.000000) 
+
+# For output Probe files
+PROBE NAME=$(probe_path)/col_3-2                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/col_3-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_3-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T
+PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS comp(u_avg,0) comp(u_avg,1) comp(u_avg,2)
