@@ -14,5 +14,5 @@ def resultsToParquet(run, category, probe_type, qoisOutputed = None):
     probes.to_parquet(overwrite = True)
     return
 
-qoisOutputed = ["mass_flux", "comp(u,0)"]
+qoisOutputed = ["mass_flux", "comp(u,0)", "T"]
 resultsToParquet(sys.argv[1], sys.argv[2], sys.argv[3], qoisOutputed)

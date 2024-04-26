@@ -236,7 +236,7 @@ y_flowStats.columns = ["mean", "rms", "net"]
 locations = probes.get_avg_locations()
 areas = probes.areas
 flowStats = pd.concat([x_flowStats, y_flowStats, z_flowStats], axis = "index")
-if category == "config2":
+if category == "config2" and int(R) < 40:
     flowStats = flowStats.rename(index=lambda x: matchNewNamingConvention(x))
     locations = locations.rename(index=lambda x: matchNewNamingConvention(x))
     areas = pd.Series(areas).rename(index=lambda x: matchNewNamingConvention(x))
