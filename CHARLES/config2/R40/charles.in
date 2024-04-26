@@ -44,14 +44,14 @@ Sc.SC_T = 0.71
 buildings     = WM_ALG_WALL
 ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032
 top           = SLIP
-exterior      =  WM_ALG_WALL T 0    Swi 0 Swe 0 Sf 0 Sc 0
-ceiling       =  WM_ALG_WALL T 1    Swi 0 Swe 0 Sf 0 Sc 1
-floor         =  WM_ALG_WALL T 0    Swi 0 Swe 0 Sf 1 Sc 0
-interiorWalls =  WM_ALG_WALL T 0.5  Swi 1 Swe 0 Sf 0 Sc 0
-exteriorWalls =  WM_ALG_WALL T 0.25 Swi 0 Swe 1 Sf 0 Sc 0
-windows       =  WM_ALG_WALL T 0    Swi 0 Swe 0 Sf 0 Sc 0
-doors         =  WM_ALG_WALL T 0    Swi 0 Swe 0 Sf 0 Sc 0
-skylights     =  WM_ALG_WALL T 0    Swi 0 Swe 0 Sf 0 Sc 0
+exterior      =  WM_ALG_WALL T 0    Swi 0  Swe 0  Sf 0  Sc 0
+ceiling       =  WM_ALG_WALL T 1    Swi 0  Swe 0  Sf 0  Sc 1
+floor         =  WM_ALG_WALL T 0    Swi 0  Swe 0  Sf 1  Sc 0
+interiorWalls =  WM_ALG_WALL T 0.5  Swi 1  Swe 0  Sf 0  Sc 0
+exteriorWalls =  WM_ALG_WALL T 0.25 Swi 0  Swe 1  Sf 0  Sc 0
+windows       =  WM_ALG_WALL T 0    Swi 0  Swe 0  Sf 0  Sc 0
+doors         =  WM_ALG_WALL T 0    Swi 0  Swe 0  Sf 0  Sc 0
+skylights     =  WM_ALG_WALL T 0    Swi 0  Swe 0  Sf 0  Sc 0
 
 #################################
 ######### SOLVER SETUP ##########
