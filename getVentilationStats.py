@@ -286,3 +286,28 @@ roomVentilation["EP_normal_ratio"] = roomVentilation["EP_normal_mag"] / (roomVen
 flowStats.to_csv(flowStatsPath)
 roomVentilation.to_csv(roomVentilationPath)
 # %%
+###### Volume Probes
+qoisOutputed = ["comp(u,0)","comp(u,1)","comp(u,2)","p","T"]
+probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
+
+@utils.no_kwargs
+@utils.dict_apply
+def seriesToFloat(s):
+    return s.values[0]
+
+## mean statistics
+mean = probes.statistics(
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_average, seriesToFloat],
+    parrallel=False
+    )
+    
+## rms statistics
+rms = probes.statistics( 
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_rms, seriesToFloat],
+    parrallel=False
+    )
+
+mean.to_csv(f"{probes_dir}/../roomMean.csv")
+rms.to_csv(f"{probes_dir}/../roomRms.csv")
