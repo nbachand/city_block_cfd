@@ -2,7 +2,7 @@
 #SBATCH --job-name=stitch
 #SBATCH -c 1
 #SBATCH -N 1
-#SBATCH -n 128
+#SBATCH -n 32
 #SBATCH --time=04:00:00
 #SBATCH --mem=192G
 #SBATCH --partition=serc
@@ -30,8 +30,8 @@ cd $SCRATCH/$STITCH_DIR/$LOCAL_FOLDER
 
 echo "Executing stitch from $(pwd)"
 
-mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-gen.in
+# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-gen.in
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-noHouseRefine.in
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-OSX.in
