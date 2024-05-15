@@ -74,7 +74,7 @@ def flip_data(df):
 
 
 # %%
-qoisOutputed = ["mass_flux", "comp(u,0)"]
+qoisOutputed = ["mass_flux", "p_flux", "comp(u,0)"]
 qois= ["mass_flux"]
 
 
