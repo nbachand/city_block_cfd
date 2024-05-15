@@ -74,7 +74,7 @@ def flip_data(df):
 
 
 # %%
-qoisOutputed = ["mass_flux", "comp(u,0)"]
+qoisOutputed = ["mass_flux", "p_flux", "comp(u,0)"]
 qois= ["mass_flux"]
 
 
@@ -236,7 +236,7 @@ y_flowStats.columns = ["mean", "rms", "net"]
 locations = probes.get_avg_locations()
 areas = probes.areas
 flowStats = pd.concat([x_flowStats, y_flowStats, z_flowStats], axis = "index")
-if category == "config2":
+if category == "config2" and int(R) < 40:
     flowStats = flowStats.rename(index=lambda x: matchNewNamingConvention(x))
     locations = locations.rename(index=lambda x: matchNewNamingConvention(x))
     areas = pd.Series(areas).rename(index=lambda x: matchNewNamingConvention(x))
@@ -244,22 +244,22 @@ if category == "config2":
 # %%
 #### Extra Probes ####
 
-probes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet")
+EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet")
 
 nameKey = read_probes_file_switch(f"{locations_dir}/nameKey_extraProbe.txt")
 nameKey = nameKey.compute()
 
 extraProbe = nameKey.copy()
-extraProbe = pd.concat([extraProbe, probes.locations["extraProbe"]], axis = "columns")
+extraProbe = pd.concat([extraProbe, EPprobes.locations["extraProbe"]], axis = "columns")
 for qoi in ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)"]:
-    df = probePost.ddf_to_pdf(probes.data[("extraProbe", qoi)]).iloc[-1]
+    df = probePost.ddf_to_pdf(EPprobes.data[("extraProbe", qoi)]).iloc[-1]
     df.name = qoi
     extraProbe = pd.concat([extraProbe, df], axis = "columns")
 extraProbe.set_index(0, inplace=True)
 extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
 extraProbe = extraProbe.rename(index=lambda x: x.replace("extraProbe_", ''))
 
-#### Window Stats ####
+#### EP Window Stats ####
 roomQois = ["mean", "net", "EP_normal", "EP_shear", "EPR_mag"]
 flowStats = probePost.addWindowDetails(flowStats, locations, areas, extraProbe)
 
@@ -272,7 +272,7 @@ flowStats["blockType"].fillna("B", inplace = True)
 
 
 
-#### Rooms ####
+#### EP Rooms ####
 roomVentilation["nWindows"] = roomVentilation["mean"].apply(lambda l: len(l))
 roomVentilation["contResid"] = roomVentilation["mean"].apply(lambda l: sum(l))
 for qoi in ["mean", "net"]:
@@ -286,3 +286,56 @@ roomVentilation["EP_normal_ratio"] = roomVentilation["EP_normal_mag"] / (roomVen
 flowStats.to_csv(flowStatsPath)
 roomVentilation.to_csv(roomVentilationPath)
 # %%
+##### Room Interior Probing ##3
+# %%
+
+
+@utils.no_kwargs
+@utils.dict_apply
+def seriesToFloat(s):
+    return s.values[0]
+
+    
+##### Flux Probes ####
+## mean statistics
+mean = probes.statistics(
+    names = [name for name in  probes.probe_names if "Floor" in name or "Ceil" in name],
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_average, seriesToFloat],
+    parrallel=False
+    )
+    
+## rms statistics
+rms = probes.statistics(
+    names = [name for name in  probes.probe_names if "Floor" in name or "Ceil" in name], 
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_rms, seriesToFloat],
+    parrallel=False
+    )
+
+mean.to_csv(f"{probes_dir}/../roomFluxMean.csv")
+rms.to_csv(f"{probes_dir}/../roomFluxRms.csv")
+
+
+# %%
+###### Volume Probes ######
+qoisOutputed = ["comp(u,0)","comp(u,1)","comp(u,2)","p","T"]
+probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
+
+
+## mean statistics
+mean = probes.statistics(
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_average, seriesToFloat],
+    parrallel=False
+    )
+    
+## rms statistics
+rms = probes.statistics( 
+    steps = probes.probe_steps[start:stop:by],
+    processing = [probePost.time_rms, seriesToFloat],
+    parrallel=False
+    )
+
+mean.to_csv(f"{probes_dir}/../roomVolMean.csv")
+rms.to_csv(f"{probes_dir}/../roomVolRms.csv")
