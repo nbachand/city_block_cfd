@@ -352,15 +352,6 @@ public:
     FOR_ICV{
       rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
     }
-
-    if ( step == scalarSeedStep) {
-      if ( mpi_rank == 0 ) 
-        cout << ">>>>> seeding scalar field" << endl;
-      FOR_ICV {
-        
-      }
-    }
-
   }
   void massSourceHook(double * rhs) {}
 
