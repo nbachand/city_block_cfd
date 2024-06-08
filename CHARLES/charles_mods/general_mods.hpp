@@ -352,6 +352,22 @@ public:
     FOR_ICV{
       rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
     }
+        
+    if ( step == scalarSeedStep) {
+      if ( mpi_rank == 0 ) 
+        cout << ">>>>> seeding scalar field" << endl;
+      FOR_ICV {
+        const double x = x_cv[icv][0];
+        const double y = x_cv[icv][1];
+        const double z = x_cv[icv][2];
+        if (isPointIndoors(x,y,z)) {
+          cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
+          transport_scalar_vec[0][icv] = 1.0;
+          transport_scalar_vec[1][icv] = 1.0;
+          transport_scalar_vec[2][icv] = 1.0;
+        }
+      }
+    }
   }
   void massSourceHook(double * rhs) {}
 
