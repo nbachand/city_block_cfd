@@ -340,21 +340,33 @@ public:
        }
     }
 
-    if ( mpi_rank == 0 ) 
+    const double T_ref = 0.0;
+    const double beta = 0.0034; 
+    const double g = 10;
+    const double T_factor = 1.0;
+    const double T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
+    if ( mpi_rank == 0 && step == checkMomEvery) {
       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
-
-      const double T_ref = 0.0;
-      const double beta = 0.0034; 
-      const double g = 10;
-      const double T_factor = 1.0;
-    
-    if ( mpi_rank == 0 ) 
       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
-
+    }
 //      transport_scalar_vec[0][icv]=50.0;
-      FOR_ICV{
-        rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+    FOR_ICV{
+      rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[T_index][icv]-T_ref);
+    }
+        
+    if ( step == scalarSeedStep) {
+      if ( mpi_rank == 0 ) 
+        cout << ">>>>> seeding scalar field" << endl;
+      FOR_ICV {
+        const double x = x_cv[icv][0];
+        const double y = x_cv[icv][1];
+        const double z = x_cv[icv][2];
+        if (isPointIndoors(x,y,z)) {
+          // cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
+          transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+        }
       }
+    }
   }
   void massSourceHook(double * rhs) {}
 
