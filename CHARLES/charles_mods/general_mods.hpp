@@ -253,8 +253,10 @@ public:
         u[icv][0] = u_loglaw*cos(theta_wind)+.001;
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
         u[icv][1] = -0.002;
-          
-        transport_scalar_vec[0][icv]=0.0;
+        
+        int nsc = transport_scalar_vec.size();
+        for (int sc = 0; sc < nsc; sc++)
+          transport_scalar_vec[sc][icv]=0.0;
 
         // // add perturbations
         // const double perturbation_scaling = 0.1;
