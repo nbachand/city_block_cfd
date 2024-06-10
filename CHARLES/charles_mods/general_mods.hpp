@@ -344,13 +344,14 @@ public:
     const double beta = 0.0034; 
     const double g = 10;
     const double T_factor = 1.0;
+    const double T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
     if ( mpi_rank == 0 && step == checkMomEvery) {
       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
     }
 //      transport_scalar_vec[0][icv]=50.0;
     FOR_ICV{
-      rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[0][icv]-T_ref);
+      rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[T_index][icv]-T_ref);
     }
         
     if ( step == scalarSeedStep) {
@@ -361,10 +362,8 @@ public:
         const double y = x_cv[icv][1];
         const double z = x_cv[icv][2];
         if (isPointIndoors(x,y,z)) {
-          cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
-          transport_scalar_vec[0][icv] = 1.0;
-          transport_scalar_vec[1][icv] = 1.0;
-          transport_scalar_vec[2][icv] = 1.0;
+          // cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
+          transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
         }
       }
     }

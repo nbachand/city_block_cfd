@@ -17,13 +17,13 @@ CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
 RESET_STATS TIME = 800
-STATS u p rho T D S
+STATS u p rho D S T
 
 # subgrid model
 SGS_MODEL VREMAN
 
 #Temp Boundaries
-REGISTER_SCALAR T D S
+REGISTER_SCALAR D S T # pretty sure these register in alphabetical order, note for custom implementations for buoyancy
 
 T.SC_LAM = 0.71
 T.SC_T = 0.71
@@ -35,17 +35,17 @@ S.SC_LAM = 0.71
 S.SC_T = 0.71
 
 #Boundary Conditions
-buildings     = WM_ALG_WALL T 0 D 0 S 0
-ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032 T 0 D 0 S 0
-top           = SLIP T 0 D 0 S 0
-exterior      =  WM_ALG_WALL T 0  D 0  S 0
+buildings     = WM_ALG_WALL                          #T 0  D 0  S 0
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  #T 0  D 0  S 0
+top           = SLIP                                 #T 0  D 0  S 0
+exterior      =  WM_ALG_WALL                         #T 0  D 0  S 0
 ceiling       =  WM_ALG_WALL T 0  D 0  S 1
 floor         =  WM_ALG_WALL T 0  D 0  S 1
 interiorWalls =  WM_ALG_WALL T 0  D 0  S 1
 exteriorWalls =  WM_ALG_WALL T 0  D 0  S 1
 windows       =  WM_ALG_WALL T 0  D 0  S 0
-doors         =  WM_ALG_WALL T 0  D 0  S 0
-skylights     =  WM_ALG_WALL T 0  D 0  S 0
+doors         =  WM_ALG_WALL T 0  D 0  S 0 
+skylights     =  WM_ALG_WALL T 0  D 0  S 0 
 
 #################################
 ######### SOLVER SETUP ##########
