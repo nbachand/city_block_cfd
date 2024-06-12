@@ -231,7 +231,7 @@ public:
   void initialHook() {
     if (step == 0 && getParam("INTERP_FROM_RESTART") == NULL) {
       if ( mpi_rank == 0 ) 
-        cout << ">>>>> specifying initial velocity field and Temp" << endl;
+        cout << ">>>>> specifying initial velocity field and setting scalars to zero" << endl;
       
 
       FOR_ICV {
