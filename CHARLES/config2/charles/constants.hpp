@@ -15,9 +15,9 @@ const double H_scaled = domain_height - disp;
 // Momentum Source Constants (PI Control)
 const double xi = 0.707;
 const double w_n = 0.1;
-const int scalarSeedStep = 2;
 
 // Check For Indoor Cells
+const int scalarSeedStep = 40000;
 bool isPointIndoors(double x, double y, double z) {
 
     if (y >= 0 && y <= 3.0) {
