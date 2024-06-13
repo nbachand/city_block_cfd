@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=cc3_R14
-#SBATCH -N 8
-#SBATCH -n 256
-#SBATCH --time=48:00:00
+#SBATCH -N 4
+#SBATCH -n 128
+#SBATCH --time=96:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
@@ -24,4 +24,4 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun $OAK_HOME/$PARENT_DIR/charles/45_deg_2mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $OAK_HOME/$PARENT_DIR/charles/0_deg_2mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
