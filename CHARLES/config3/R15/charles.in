@@ -33,7 +33,7 @@ D.SC_T = 0.71
 S.SC_LAM = 0.71
 S.SC_T = 0.71
 
-STATS u p rho D S T
+STATS u mag(u) p rho D S T
 
 #Boundary Conditions (-666 means zero-flux)
 buildings     = WM_ALG_WALL                          T 0  D 0  S 0
@@ -89,22 +89,23 @@ WRITE_IMAGE NAME=./Images/T_y1p5           INTERVAL=$(image_int)     TARGET    0
 WRITE_IMAGE NAME=./Images/D_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=D
 WRITE_IMAGE NAME=./Images/S_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=S
                                                                                                                         
-WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/mean_u_z87       INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_z87       INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=mag(u)_avg
 
-WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/rms_u_z87        INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_z87        INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=mag(u)_rms
                                                                                                                          
 WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 WRITE_IMAGE NAME=./Images/tke_u_z87        INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 
-WRITE_IMAGE NAME=./Images/mean_p_y1p5      INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=p_avg WRITE_IMAGE NAME=./Images/mean_p_y3        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=p_avg
+WRITE_IMAGE NAME=./Images/mean_p_y1p5      INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=p_avg 
+WRITE_IMAGE NAME=./Images/mean_p_y3        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=p_avg
 WRITE_IMAGE NAME=./Images/mean_p_y12       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=p_avg
 WRITE_IMAGE NAME=./Images/mean_p_z87       INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=p_avg
 
@@ -114,54 +115,54 @@ WRITE_IMAGE NAME=./Images/rms_p_y12        INTERVAL=$(image_int_avg) TARGET   0 
 WRITE_IMAGE NAME=./Images/rms_p_z87        INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=p_rms
               
 # generated images
-WRITE_IMAGE NAME=./Images/u_avg_sl INTERVAL=$(image_int_avg) TARGET 66.0 1012.0 90.0 CAMERA 66.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 18.0 CAMERA 90.0 -988.0 18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 54.0 CAMERA 78.0 -988.0 54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-0 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 90.0 CAMERA 90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 126.0 CAMERA 78.0 -988.0 126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 162.0 CAMERA 90.0 -988.0 162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_sl_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 66.0 CAMERA -90.0 -988.0 66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bx INTERVAL=$(image_int_avg) TARGET -18.0 1012.0 90.0 CAMERA -18.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bx INTERVAL=$(image_int_avg) TARGET -54.0 1012.0 78.0 CAMERA -54.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 90.0 CAMERA -90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bx INTERVAL=$(image_int_avg) TARGET -126.0 1012.0 78.0 CAMERA -126.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bx INTERVAL=$(image_int_avg) TARGET -162.0 1012.0 90.0 CAMERA -162.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_sl_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -66.0 CAMERA 90.0 -988.0 -66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bz INTERVAL=$(image_int_avg) TARGET 18.0 1012.0 -90.0 CAMERA 18.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bz INTERVAL=$(image_int_avg) TARGET 54.0 1012.0 -78.0 CAMERA 54.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -90.0 CAMERA 90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bz INTERVAL=$(image_int_avg) TARGET 126.0 1012.0 -78.0 CAMERA 126.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bz INTERVAL=$(image_int_avg) TARGET 162.0 1012.0 -90.0 CAMERA 162.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_sl_Bxz INTERVAL=$(image_int_avg) TARGET -66.0 1012.0 -90.0 CAMERA -66.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -18.0 CAMERA -90.0 -988.0 -18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -54.0 CAMERA -78.0 -988.0 -54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -90.0 CAMERA -90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -126.0 CAMERA -78.0 -988.0 -126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -162.0 CAMERA -90.0 -988.0 -162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_avg)
-WRITE_IMAGE NAME=./Images/u_rms_sl INTERVAL=$(image_int_avg) TARGET 66.0 1012.0 90.0 CAMERA 66.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 18.0 CAMERA 90.0 -988.0 18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 54.0 CAMERA 78.0 -988.0 54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-0 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 90.0 CAMERA 90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 126.0 CAMERA 78.0 -988.0 126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 162.0 CAMERA 90.0 -988.0 162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_sl_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 66.0 CAMERA -90.0 -988.0 66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bx INTERVAL=$(image_int_avg) TARGET -18.0 1012.0 90.0 CAMERA -18.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bx INTERVAL=$(image_int_avg) TARGET -54.0 1012.0 78.0 CAMERA -54.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 90.0 CAMERA -90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bx INTERVAL=$(image_int_avg) TARGET -126.0 1012.0 78.0 CAMERA -126.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bx INTERVAL=$(image_int_avg) TARGET -162.0 1012.0 90.0 CAMERA -162.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_sl_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -66.0 CAMERA 90.0 -988.0 -66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bz INTERVAL=$(image_int_avg) TARGET 18.0 1012.0 -90.0 CAMERA 18.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bz INTERVAL=$(image_int_avg) TARGET 54.0 1012.0 -78.0 CAMERA 54.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -90.0 CAMERA 90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bz INTERVAL=$(image_int_avg) TARGET 126.0 1012.0 -78.0 CAMERA 126.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bz INTERVAL=$(image_int_avg) TARGET 162.0 1012.0 -90.0 CAMERA 162.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_sl_Bxz INTERVAL=$(image_int_avg) TARGET -66.0 1012.0 -90.0 CAMERA -66.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -18.0 CAMERA -90.0 -988.0 -18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -54.0 CAMERA -78.0 -988.0 -54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -90.0 CAMERA -90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -126.0 CAMERA -78.0 -988.0 -126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
-WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -162.0 CAMERA -90.0 -988.0 -162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u_rms)
+WRITE_IMAGE NAME=./Images/u_avg_sl INTERVAL=$(image_int_avg) TARGET 66.0 1012.0 90.0 CAMERA 66.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 18.0 CAMERA 90.0 -988.0 18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 54.0 CAMERA 78.0 -988.0 54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-0 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 90.0 CAMERA 90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 126.0 CAMERA 78.0 -988.0 126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 162.0 CAMERA 90.0 -988.0 162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_sl_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 66.0 CAMERA -90.0 -988.0 66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bx INTERVAL=$(image_int_avg) TARGET -18.0 1012.0 90.0 CAMERA -18.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bx INTERVAL=$(image_int_avg) TARGET -54.0 1012.0 78.0 CAMERA -54.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 90.0 CAMERA -90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bx INTERVAL=$(image_int_avg) TARGET -126.0 1012.0 78.0 CAMERA -126.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bx INTERVAL=$(image_int_avg) TARGET -162.0 1012.0 90.0 CAMERA -162.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_sl_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -66.0 CAMERA 90.0 -988.0 -66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bz INTERVAL=$(image_int_avg) TARGET 18.0 1012.0 -90.0 CAMERA 18.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bz INTERVAL=$(image_int_avg) TARGET 54.0 1012.0 -78.0 CAMERA 54.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -90.0 CAMERA 90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bz INTERVAL=$(image_int_avg) TARGET 126.0 1012.0 -78.0 CAMERA 126.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bz INTERVAL=$(image_int_avg) TARGET 162.0 1012.0 -90.0 CAMERA 162.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_sl_Bxz INTERVAL=$(image_int_avg) TARGET -66.0 1012.0 -90.0 CAMERA -66.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -18.0 CAMERA -90.0 -988.0 -18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0--1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -54.0 CAMERA -78.0 -988.0 -54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-0_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -90.0 CAMERA -90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -126.0 CAMERA -78.0 -988.0 -126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_avg_h_0-2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -162.0 CAMERA -90.0 -988.0 -162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/u_rms_sl INTERVAL=$(image_int_avg) TARGET 66.0 1012.0 90.0 CAMERA 66.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 18.0 CAMERA 90.0 -988.0 18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 54.0 CAMERA 78.0 -988.0 54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-0 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 90.0 CAMERA 90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 126.0 CAMERA 78.0 -988.0 126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 162.0 CAMERA 90.0 -988.0 162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_sl_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 66.0 CAMERA -90.0 -988.0 66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bx INTERVAL=$(image_int_avg) TARGET -18.0 1012.0 90.0 CAMERA -18.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bx INTERVAL=$(image_int_avg) TARGET -54.0 1012.0 78.0 CAMERA -54.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bx INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 90.0 CAMERA -90.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bx INTERVAL=$(image_int_avg) TARGET -126.0 1012.0 78.0 CAMERA -126.0 -988.0 78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bx INTERVAL=$(image_int_avg) TARGET -162.0 1012.0 90.0 CAMERA -162.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_sl_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -66.0 CAMERA 90.0 -988.0 -66.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bz INTERVAL=$(image_int_avg) TARGET 18.0 1012.0 -90.0 CAMERA 18.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bz INTERVAL=$(image_int_avg) TARGET 54.0 1012.0 -78.0 CAMERA 54.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bz INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 -90.0 CAMERA 90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bz INTERVAL=$(image_int_avg) TARGET 126.0 1012.0 -78.0 CAMERA 126.0 -988.0 -78.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bz INTERVAL=$(image_int_avg) TARGET 162.0 1012.0 -90.0 CAMERA 162.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_sl_Bxz INTERVAL=$(image_int_avg) TARGET -66.0 1012.0 -90.0 CAMERA -66.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -18.0 CAMERA -90.0 -988.0 -18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0--1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -54.0 CAMERA -78.0 -988.0 -54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-0_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -90.0 CAMERA -90.0 -988.0 -90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-1_Bxz INTERVAL=$(image_int_avg) TARGET -78.0 1012.0 -126.0 CAMERA -78.0 -988.0 -126.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/u_rms_h_0-2_Bxz INTERVAL=$(image_int_avg) TARGET -90.0 1012.0 -162.0 CAMERA -90.0 -988.0 -162.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=mag(u)_rms
 WRITE_IMAGE NAME=./Images/TKE_sl INTERVAL=$(image_int_avg) TARGET 66.0 1012.0 90.0 CAMERA 66.0 -988.0 90.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 WRITE_IMAGE NAME=./Images/TKE_h_0--2 INTERVAL=$(image_int_avg) TARGET 90.0 1012.0 18.0 CAMERA 90.0 -988.0 18.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
 WRITE_IMAGE NAME=./Images/TKE_h_0--1 INTERVAL=$(image_int_avg) TARGET 78.0 1012.0 54.0 CAMERA 78.0 -988.0 54.0 SIZE 480 480 WIDTH 20 GEOM PLANE 174.0 1.5 174.0 0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
@@ -1804,4 +1805,4 @@ PROBE NAME=$(probe_path)/col_0-0_Bz             INTERVAL $(probe_int) GEOM FILE 
 PROBE NAME=$(probe_path)/col_0-n2_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
-PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
+PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
