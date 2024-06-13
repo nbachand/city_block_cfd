@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cc3_R14
+#SBATCH --job-name=cc3_R15
 #SBATCH -N 4
 #SBATCH -n 128
 #SBATCH --time=96:00:00
