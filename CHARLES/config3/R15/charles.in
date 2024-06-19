@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config3/14M-mesh.mles #./data/result.00003000.sles
+RESTART = ../../../STITCH/config3/14M-mesh.mles ./data/result.00119000.sles
 # INTERP_FROM_RESTART ../R2/data/result.00668000.sles
-INIT time = 0 step = 0 p=0 #u = 10.0 0.0 0.000001
-RESET_ALL
+# INIT time = 0 step = 0 p=0 #u = 10.0 0.0 0.000001
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -10,13 +10,13 @@ MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
 # Time + output setup
-NSTEPS = 120000
+NSTEPS = 240000
 # TIMESTEP DT = .005
 TIMESTEP DT = .02
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
-RESET_STATS TIME = 800
+# RESET_STATS TIME = 800
 
 # subgrid model
 SGS_MODEL VREMAN
