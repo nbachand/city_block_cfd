@@ -357,6 +357,7 @@ public:
     }
         
     if ( step == scalarSeedStep ||step == tempInitStep || step == tempInitStep + scalarSeedStep ) {
+      CtiRegister::resetStats();
       if ( mpi_rank == 0 ) 
         cout << ">>>>> seeding scalar field at step " << step << endl;
           if (step == tempInitStep)
