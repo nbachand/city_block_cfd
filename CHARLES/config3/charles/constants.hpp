@@ -18,7 +18,8 @@ const double w_n = 0.1;
 
 // Check For Indoor Cells
 const int scalarSeedStep = 40000;
-
+const int tempInitStep = scalarSeedStep + 80000;
+const int delTempOutdoors = -5;
 bool isPointIndoors(double x, double y, double z) {
 
     if (y >= 0 && y <= 3.0) {

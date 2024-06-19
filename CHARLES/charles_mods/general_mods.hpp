@@ -356,9 +356,11 @@ public:
       rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[T_index][icv]-T_ref);
     }
         
-    if ( step == scalarSeedStep) {
+    if ( step == scalarSeedStep ||step == tempInitStep || step == tempInitStep + scalarSeedStep ) {
       if ( mpi_rank == 0 ) 
-        cout << ">>>>> seeding scalar field" << endl;
+        cout << ">>>>> seeding scalar field at step " << step << endl;
+          if (step == tempInitStep)
+            cout << ">>>>> initializing temperature field at step " << step << endl;
       FOR_ICV {
         const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
@@ -366,6 +368,11 @@ public:
         if (isPointIndoors(x,y,z)) {
           // cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
           transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+        } else {
+          transport_scalar_vec[0][icv] = 0.0;
+            if (step == tempInitStep) {
+              transport_scalar_vec[T_index][icv] = delTempOutdoors; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+            }
         }
       }
     }
