@@ -3,7 +3,7 @@
 #SBATCH --output=getParquet.out
 #SBATCH -N 1
 #SBATCH -n 4
-#SBATCH --time=00:10:00
+#SBATCH --time=00:30:00
 #SBATCH --mem=64G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
@@ -28,6 +28,7 @@ pwd
 conda activate pycascade
 python resultsToParquet.py $RUN $CATEGORY "FLUX_PROBES"
 python resultsToParquet.py $RUN $CATEGORY "PROBES"
+python resultsToParquet.py $RUN $CATEGORY "VOLUMETRIC_PROBES"
 end_time=$(date +%s)
 
 # Calculate the elapsed time
