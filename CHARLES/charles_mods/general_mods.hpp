@@ -358,10 +358,11 @@ public:
         
     if ( step == scalarSeedStep ||step == tempInitStep || step == tempInitStep + scalarSeedStep ) {
       CtiRegister::resetStats();
-      if ( mpi_rank == 0 ) 
+      if ( mpi_rank == 0 ) {
         cout << ">>>>> seeding scalar field at step " << step << endl;
           if (step == tempInitStep)
             cout << ">>>>> initializing temperature field at step " << step << endl;
+      }
       FOR_ICV {
         const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
