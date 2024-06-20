@@ -6,8 +6,9 @@
 #include "HelmholtzSolver.hpp"
 #include "NonpremixedSolver.hpp"
 #include "BasicPostpro.hpp"
-#include <tuple>
+// #include <tuple>
 #include <iostream>
+#include <unordered_set>
 // #include <cstdio>
         
 //==================================================================================
@@ -63,22 +64,23 @@
 // cases (boundary conditions, hooks, etc), can be found in the src/quiver directory
 //
 //==================================================================================
-
-// // General Constants
-// const double domain_height = 64;
-// const double domain_length = 192;
-// const double building_height = 6;
-      
-// // Initializaton constants
-// const double z0 = 0.366;
-// const double disp = 1.11*building_height;
-// const double vK_const = 0.41;
-// const double H_scaled = domain_height - disp;
+    
+// Initializaton constants
+const double z0 = 0.366;
+const double disp = 1.11*building_height;
+const double vK_const = 0.41;
+const double H_scaled = domain_height - disp;
 // const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
-// // Momentum Source Constants (PI Control)
-// const double xi = 0.707;
-// const double w_n = 0.1;
+// Momentum Source Constants (PI Control)
+const double xi = 0.707;
+const double w_n = 0.1;
+
+// Check For Indoor Cells
+const int scalarSeedStep = 40000;
+const int tempInitStep = scalarSeedStep + 80000;
+const int delTempIndoors = 5;
+std::unordered_set<std::string> interiorSurfaces = { "ceiling", "floor", "interiorWalls", "exteriorWalls" };
 
 
 // Helper Function
@@ -346,7 +348,7 @@ public:
     const double beta = 0.0034; 
     const double g = 10;
     const double T_factor = 1.0;
-    const double T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
+    const int T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
     if ( mpi_rank == 0 && step == checkMomEvery) {
       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
@@ -368,13 +370,26 @@ public:
         const double y = x_cv[icv][1];
         const double z = x_cv[icv][2];
         if (isPointIndoors(x,y,z)) {
-          // cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
           transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+          if (step == tempInitStep) {
+            transport_scalar_vec[T_index][icv] = delTempIndoors; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+          }
         } else {
           transport_scalar_vec[0][icv] = 0.0;
-            if (step == tempInitStep) {
-              transport_scalar_vec[T_index][icv] = delTempOutdoors; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+        }
+      }
+    }
+    if ( step >= tempInitStep ) {
+      for (vector<HelmholtzBc*>::iterator it = bcs.begin(); it != bcs.end(); ++it) {
+        if ((*it)->scbc_vals!=NULL) { //this is a const. value wall BC
+          if (interiorSurfaces.find((*it)->zone_ptr->getName()) != interiorSurfaces.end()) {
+            float old_val = (*it)->scbc_vals[T_index];
+            (*it)->scbc_vals[T_index] = delTempIndoors;
+            float new_val = (*it)->scbc_vals[T_index];
+            if (mpi_rank == 0 and step%check_interval == 0) {
+              cout << ">>>>> Setting scalar boundary condition for zone " << (*it)->zone_ptr->getName() << " to " << new_val << " from " << old_val << endl;
             }
+          }
         }
       }
     }
