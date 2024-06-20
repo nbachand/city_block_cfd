@@ -37,12 +37,13 @@ home_dir = f'{oak_home}/Cascade/city_block_cfd'
 category = sys.argv[1]
 R = sys.argv[2]
 start = int(sys.argv[3])
+stop  = int(sys.argv[4])
 
 # category = "config2"
 # R = 34
 # start = 40000
 
-print(category, R, start)
+print(category, R, f"{start} to {stop}")
 
 # %%
 hm = 6
@@ -74,12 +75,21 @@ def flip_data(df):
 
 
 # %%
-qoisOutputed = ["mass_flux", "p_flux", "comp(u,0)"]
+qoisOutputed = [
+    "mass_flux",
+    "mass_flux(p)",
+    "mass_flux(T)",
+    "mass_flux(D)",
+    "mass_flux(S)",
+    "sn_prod(u)",
+    "sn_prod(p)",
+    "sn_prod(abs(u))",
+    "sn_prod(u**2)"
+]
 qois= ["mass_flux"]
 
 
 # %%
-stop = -1
 by = 1
 
 # %%
@@ -117,8 +127,8 @@ allRoomVentilation = {}
 probes_dir = f'{home_dir}/CHARLES/{category}/R{R}/probes/probesOut_parquet'
 locations_dir = f'{scratch_dir}/CHARLES/{category}/R{R}/probes/locations'
 print(probes_dir)
-flowStatsPath = f"{probes_dir}/../flowStats.csv"
-roomVentilationPath = f"{probes_dir}/../roomVentiation.csv"
+flowStatsPath = f"{probes_dir}/../flowStats-{start}to{stop}.csv"
+roomVentilationPath = f"{probes_dir}/../roomVentiation-{start}to{stop}.csv"
 
 probes = probePost.Probes(probes_dir, probe_type = "FLUX_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
 
@@ -297,6 +307,7 @@ def seriesToFloat(s):
 
     
 ##### Flux Probes ####
+print("Writing flux probe moments")
 ## mean statistics
 mean = probes.statistics(
     names = [name for name in  probes.probe_names if "Floor" in name or "Ceil" in name],
@@ -313,13 +324,14 @@ rms = probes.statistics(
     parrallel=False
     )
 
-mean.to_csv(f"{probes_dir}/../roomFluxMean.csv")
-rms.to_csv(f"{probes_dir}/../roomFluxRms.csv")
+mean.to_csv(f"{probes_dir}/../roomFluxMean-{start}to{stop}.csv")
+rms.to_csv(f"{probes_dir}/../roomFluxRms-{start}to{stop}.csv")
 
 
 # %%
 ###### Volume Probes ######
-qoisOutputed = ["comp(u,0)","comp(u,1)","comp(u,2)","p","T"]
+print("Writing volume probe moments")
+qoisOutputed = ["comp(u,0)", "comp(u,1)", "comp(u,2)", "p", "T", "D", "S"]
 probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
 
 
@@ -337,5 +349,5 @@ rms = probes.statistics(
     parrallel=False
     )
 
-mean.to_csv(f"{probes_dir}/../roomVolMean.csv")
-rms.to_csv(f"{probes_dir}/../roomVolRms.csv")
+mean.to_csv(f"{probes_dir}/../roomVolMean-{start}to{stop}.csv")
+rms.to_csv(f"{probes_dir}/../roomVolRms.csv-{start}to{stop}")
