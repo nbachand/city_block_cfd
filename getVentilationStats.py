@@ -324,6 +324,22 @@ rms = probes.statistics(
     parrallel=False
     )
 
+retrievedIndex = mean.index
+if areas is not None:
+    print("adding areas")
+    mean["area"] = areas
+if locations is not None:
+    print("adding locations")
+    mean = pd.concat([mean, locations], axis = "columns")
+mean = mean.loc[retrievedIndex]
+
+retrievedIndex = rms.index
+if areas is not None:
+    rms["area"] = areas
+if locations is not None:
+    rms = pd.concat([rms, locations], axis = "columns")
+rms = rms.loc[retrievedIndex]
+
 mean.to_csv(f"{probes_dir}/../roomFluxMean-{start}to{stop}.csv")
 rms.to_csv(f"{probes_dir}/../roomFluxRms-{start}to{stop}.csv")
 
