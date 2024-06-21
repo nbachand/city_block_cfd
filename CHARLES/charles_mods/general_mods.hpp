@@ -240,7 +240,9 @@ public:
 
         rho[icv] = 1.0;
 
+        const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
+        const double z = x_cv[icv][2];
         const double absy = abs(y);
 
         // approximate log law mean profile
@@ -269,6 +271,9 @@ public:
         // u[icv][1] += uy_pert;
         // u[icv][2] += uz_pert;
 
+        if (isPointIndoors(x,y,z)) {
+          transport_scalar_vec[1][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe) - should be S
+        }
       }
     }
   }
