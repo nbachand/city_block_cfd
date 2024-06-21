@@ -2,7 +2,7 @@
 #SBATCH --job-name="getVentilationStats"
 #SBATCH --output=getVentilationStats.out
 #SBATCH -N 1
-#SBATCH -n 8
+#SBATCH -n 32
 #SBATCH --time=00:30:00
 #SBATCH --mem=128G
 #SBATCH --partition=serc
@@ -27,6 +27,8 @@ cd ../..
 pwd
 conda activate pycascade
 python getVentilationStats.py $CATEGORY $RUN 40000 120000
+python getVentilationStats.py $CATEGORY $RUN 120000 160000
+python getVentilationStats.py $CATEGORY $RUN 160000 240000
 end_time=$(date +%s)
 
 # Calculate the elapsed time
