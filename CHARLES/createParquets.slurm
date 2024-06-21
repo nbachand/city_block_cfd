@@ -4,7 +4,7 @@
 #SBATCH -N 1
 #SBATCH -n 4
 #SBATCH --time=00:30:00
-#SBATCH --mem=64G
+#SBATCH --mem=32G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
 
