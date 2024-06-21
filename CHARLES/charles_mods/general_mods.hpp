@@ -82,6 +82,10 @@ const int tempInitStep = scalarSeedStep + 80000;
 const int delTempIndoors = 5;
 std::unordered_set<std::string> interiorSurfaces = { "ceiling", "floor", "interiorWalls", "exteriorWalls" };
 
+// Scalar indexes (alphabetically ordered I believe)
+const int D_index = 0; // assuming seeded scalar is the first scalar
+const int S_index = 1;
+// T_index defined later, assuming T is the last scalar
 
 // Helper Function
 double getVelocityFromFile(string filename, bool clearFile) {
@@ -272,7 +276,7 @@ public:
         // u[icv][2] += uz_pert;
 
         if (isPointIndoors(x,y,z)) {
-          transport_scalar_vec[1][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe) - should be S
+          transport_scalar_vec[S_index][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe) - should be S
         }
       }
     }
@@ -375,12 +379,12 @@ public:
         const double y = x_cv[icv][1];
         const double z = x_cv[icv][2];
         if (isPointIndoors(x,y,z)) {
-          transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+          transport_scalar_vec[D_index][icv] = 1.0;
           if (step == tempInitStep) {
-            transport_scalar_vec[T_index][icv] = delTempIndoors; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+            transport_scalar_vec[T_index][icv] = delTempIndoors;
           }
         } else {
-          transport_scalar_vec[0][icv] = 0.0;
+          transport_scalar_vec[D_index][icv] = 0.0;
         }
       }
     }
