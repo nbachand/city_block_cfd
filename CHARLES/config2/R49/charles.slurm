@@ -27,5 +27,5 @@ echo "0 0 0" > ./probes/VolProbe90X.svp
 echo "0 0 0" > ./probes/VolProbe90Z.svp
 
 source ~/.bash_profile
-srun $OAK_HOME/$PARENT_DIR/charles/45_deg_0mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $OAK_HOME/$PARENT_DIR/charles/0_deg_4mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
 # srun $OAK_HOME/$PARENT_DIR/../single_family/0_deg_spinnup2/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
