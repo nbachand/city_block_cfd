@@ -16,12 +16,15 @@ module load openmpi/4.1.0
 
 source ~/.bash_profile
 
+PARENT_DIR="Cascade/city_block_cfd/CHARLES/"
 LOCAL_FOLDER=$(basename "`pwd`")
 cd ..
 CATEGORY=$(basename "`pwd`")
 echo $CATEGORY
 RUN=${LOCAL_FOLDER:1:3}
 echo $RUN
+
+cp -rf "$SCRATCH/$PARENT_DIR/$CATEGORY/R$RUN/probes/locations" "$OAK_HOME/$PARENT_DIR/$CATEGORY/R$RUN/probes/"
 
 cd ../..
 pwd
