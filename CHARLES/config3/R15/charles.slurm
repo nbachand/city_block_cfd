@@ -21,6 +21,9 @@ LOCAL_FOLDER=$(basename "`pwd`")
 
 cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
+echo "0 0 0" > ./probes/VolProbe90X.svp
+echo "0 0 0" > ./probes/VolProbe90Z.svp
+
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile

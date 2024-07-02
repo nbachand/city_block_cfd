@@ -6,8 +6,9 @@
 #include "HelmholtzSolver.hpp"
 #include "NonpremixedSolver.hpp"
 #include "BasicPostpro.hpp"
-#include <tuple>
+// #include <tuple>
 #include <iostream>
+#include <unordered_set>
 // #include <cstdio>
         
 //==================================================================================
@@ -63,23 +64,28 @@
 // cases (boundary conditions, hooks, etc), can be found in the src/quiver directory
 //
 //==================================================================================
-
-// // General Constants
-// const double domain_height = 64;
-// const double domain_length = 192;
-// const double building_height = 6;
-      
-// // Initializaton constants
-// const double z0 = 0.366;
-// const double disp = 1.11*building_height;
-// const double vK_const = 0.41;
-// const double H_scaled = domain_height - disp;
+    
+// Initializaton constants
+const double z0 = 0.366;
+const double disp = 1.11*building_height;
+const double vK_const = 0.41;
+const double H_scaled = domain_height - disp;
 // const double u_bulk = uStar/vK_const*(H_scaled*log(H_scaled/z0) - H_scaled + 1)/domain_height;
 
-// // Momentum Source Constants (PI Control)
-// const double xi = 0.707;
-// const double w_n = 0.1;
+// Momentum Source Constants (PI Control)
+const double xi = 0.707;
+const double w_n = 0.1;
 
+// Check For Indoor Cells
+const int scalarSeedStep = 40000;
+const int tempInitStep = scalarSeedStep + 80000;
+const int delTempIndoors = 5;
+std::unordered_set<std::string> interiorSurfaces = { "ceiling", "floor", "interiorWalls", "exteriorWalls" };
+
+// Scalar indexes (alphabetically ordered I believe)
+const int D_index = 0; // assuming seeded scalar is the first scalar
+const int S_index = 1;
+// T_index defined later, assuming T is the last scalar
 
 // Helper Function
 double getVelocityFromFile(string filename, bool clearFile) {
@@ -238,7 +244,9 @@ public:
 
         rho[icv] = 1.0;
 
+        const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
+        const double z = x_cv[icv][2];
         const double absy = abs(y);
 
         // approximate log law mean profile
@@ -267,6 +275,9 @@ public:
         // u[icv][1] += uy_pert;
         // u[icv][2] += uz_pert;
 
+        if (isPointIndoors(x,y,z)) {
+          transport_scalar_vec[S_index][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe) - should be S
+        }
       }
     }
   }
@@ -346,7 +357,7 @@ public:
     const double beta = 0.0034; 
     const double g = 10;
     const double T_factor = 1.0;
-    const double T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
+    const int T_index = transport_scalar_vec.size() - 1;// assuming T is the last scalar (alphabetically ordered I believe)
     if ( mpi_rank == 0 && step == checkMomEvery) {
       cout << ">>>>> adding momentum source, Boussinesq appriximation" << endl;
       cout << ">>>>> T_ref= "<< T_ref << ", beta= "<<beta << ", g="<< g << endl;
@@ -356,16 +367,38 @@ public:
       rhs[icv][1] += T_factor*vol_cv[icv]*rho[icv]*g*beta*(transport_scalar_vec[T_index][icv]-T_ref);
     }
         
-    if ( step == scalarSeedStep) {
-      if ( mpi_rank == 0 ) 
-        cout << ">>>>> seeding scalar field" << endl;
+    if ( step == scalarSeedStep ||step == tempInitStep || step == tempInitStep + scalarSeedStep ) {
+      CtiRegister::resetStats();
+      if ( mpi_rank == 0 ) {
+        cout << ">>>>> seeding scalar field at step " << step << endl;
+          if (step == tempInitStep)
+            cout << ">>>>> initializing temperature field at step " << step << endl;
+      }
       FOR_ICV {
         const double x = x_cv[icv][0];
         const double y = x_cv[icv][1];
         const double z = x_cv[icv][2];
         if (isPointIndoors(x,y,z)) {
-          // cout << ">>>>> found indoor point x = " << x << " y = " << y << "z = " << z << endl;
-          transport_scalar_vec[0][icv] = 1.0; // assuming seeded scalar is the first scalar (alphabetically ordered I believe)
+          transport_scalar_vec[D_index][icv] = 1.0;
+          if (step == tempInitStep) {
+            transport_scalar_vec[T_index][icv] = delTempIndoors;
+          }
+        } else {
+          transport_scalar_vec[D_index][icv] = 0.0;
+        }
+      }
+    }
+    if ( step >= tempInitStep ) {
+      for (vector<HelmholtzBc*>::iterator it = bcs.begin(); it != bcs.end(); ++it) {
+        if ((*it)->scbc_vals!=NULL) { //this is a const. value wall BC
+          if (interiorSurfaces.find((*it)->zone_ptr->getName()) != interiorSurfaces.end()) {
+            float old_val = (*it)->scbc_vals[T_index];
+            (*it)->scbc_vals[T_index] = delTempIndoors;
+            float new_val = (*it)->scbc_vals[T_index];
+            if (mpi_rank == 0 and step%check_interval == 0) {
+              cout << ">>>>> Setting scalar boundary condition for zone " << (*it)->zone_ptr->getName() << " to " << new_val << " from " << old_val << endl;
+            }
+          }
         }
       }
     }
