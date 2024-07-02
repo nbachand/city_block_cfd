@@ -8,6 +8,7 @@ import sys
 from IPython.core.debugger import set_trace
 import pandas as pd
 from fnmatch import fnmatch
+import re
 
 def matchNewNamingConvention(input_str):
     # Find the position of the '-' in the string
@@ -66,6 +67,12 @@ category = sys.argv[1]
 R = sys.argv[2]
 starts = list(map(int, sys.argv[3].split(',')))
 stops = list(map(int, sys.argv[4].split(',')))
+# category = "config2"
+# R = "46"
+# starts = [40000,120000]
+# stops = [120000, 160000]
+print(f"starts: {starts}")
+print(f"stops: {stops}")
 by = 1
 
 # category = "config2"
@@ -139,104 +146,94 @@ locations_dir = f'{scratch_dir}/CHARLES/{category}/R{R}/probes/locations'
 print(probes_dir)
 
 probes = probePost.Probes(probes_dir, probe_type = "FLUX_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
+print(category, R)
+
+print("Compiling window stats")
+
+## X Flow
+
+@utils.no_kwargs
+def norm_norm_blocks(data_dict):
+    if category == "config2" and int(R) < 40:
+        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bz" in name], -1)
+    return data_dict
+
+
+dfX = probes.statistics(
+    names = [name for name in  probes.probe_names if "xwindow" in name], 
+    # steps = probes.probe_steps[start:stop:by],
+    quants = qois,
+    processing = [norm_norm_blocks],
+    parrallel=False
+    )
+
+## Z Flow
+
+@utils.no_kwargs
+def norm_norm_windows(data_dict):
+    return probePost.mul_names(data_dict, [name for name in probes.probe_names if fnmatch(name, "*window_?-1*")], -1)
+
+@utils.no_kwargs
+def norm_norm_blocks(data_dict):
+    if category == "config2" and int(R) < 40:
+        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bx" in name], -1)
+    return data_dict
+
+
+dfZ = probes.statistics(
+    names = [name for name in  probes.probe_names if "zwindow" in name], 
+    # steps = probes.probe_steps[start:stop:by],
+    quants = qois,
+    processing = [norm_norm_windows, norm_norm_blocks],
+    parrallel=False
+    )
+
+## Y Flow
+
+dfY = probes.statistics(
+    names = [name for name in  probes.probe_names if "skylight" in name], 
+    # steps = probes.probe_steps[start:stop:by],
+    quants = qois,
+    processing = [flip_data, norm_norm_blocks],
+    parrallel=False
+    )
+
+#### Extra Probes ####
+
+EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet")
+
+nameKey = read_probes_file_switch(f"{probes_dir}/../locations/nameKey_extraProbe.txt")
+nameKey = nameKey.compute()
+nameKey = pd.concat([nameKey, EPprobes.locations["extraProbe"]], axis = "columns")
+
 for i, start in enumerate(starts):
     stop = stops[i]
-    print(category, R, f"{start} to {stop}")
+    print(f"... from steps {start} to {stop}")
+    flowStats = []
+    for df in [dfX, dfZ, dfY]:
+        df_sub = df.map(lambda s: s.loc[start:stop-1])
 
-    ## X Flow
+        mean = df_sub.map(probePost.time_average)
+        rms = df_sub.map(probePost.time_rms)
+        net = df_sub.map(abs)
+        net = net.map(probePost.time_average)
 
-    @utils.no_kwargs
-    def norm_norm_blocks(data_dict):
-        if category == "config2" and int(R) < 40:
-            return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bz" in name], -1)
-        return data_dict
+        dfs_calced = [mean, rms, net]
+        calcs = ["mean", "rms", "net"]
 
-
-    df = probes.statistics(
-        names = [name for name in  probes.probe_names if "xwindow" in name], 
-        steps = probes.probe_steps[start:stop:by],
-        quants = qois,
-        processing = [norm_norm_blocks],
-        parrallel=False
-        )
-
-    x_mean = df.map(probePost.time_average)
-    x_rms = df.map(probePost.time_rms)
-    x_net = df.map(abs)
-    x_net = x_net.map(probePost.time_average)
-
-    dfs_calced = [x_mean, x_rms, x_net]
-    calcs = ["mean", "rms", "net"]
-
-    for i, calc in enumerate(calcs):
-        dfs_calced[i].columns = [f"{calc}-{c}" for c in dfs_calced[i].columns]
-
-    x_flowStats = pd.concat(dfs_calced, axis = "columns")
-
-    ## Z Flow
-
-    @utils.no_kwargs
-    def norm_norm_windows(data_dict):
-        return probePost.mul_names(data_dict, [name for name in probes.probe_names if fnmatch(name, "*window_?-1*")], -1)
-
-    @utils.no_kwargs
-    def norm_norm_blocks(data_dict):
-        if category == "config2" and int(R) < 40:
-            return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bx" in name], -1)
-        return data_dict
-
-
-    df = probes.statistics(
-        names = [name for name in  probes.probe_names if "zwindow" in name], 
-        steps = probes.probe_steps[start:stop:by],
-        quants = qois,
-        processing = [norm_norm_windows, norm_norm_blocks],
-        parrallel=False
-        )
-
-    z_mean = df.map(probePost.time_average)
-    z_rms = df.map(probePost.time_rms)
-    z_net = df.map(abs)
-    z_net = z_net.map(probePost.time_average)
-
-    dfs_calced = [z_mean, z_rms, z_net]
-    calcs = ["mean", "rms", "net"]
-
-    for i, calc in enumerate(calcs):
-        dfs_calced[i].columns = [f"{calc}-{c}" for c in dfs_calced[i].columns]
-
-    z_flowStats = pd.concat(dfs_calced, axis = "columns")
-    ## Y Flow
-
-    df = probes.statistics(
-        names = [name for name in  probes.probe_names if "skylight" in name], 
-        steps = probes.probe_steps[start:stop:by],
-        quants = qois,
-        processing = [flip_data, norm_norm_blocks],
-        parrallel=False
-        )
-
-    y_mean = df.map(probePost.time_average)
-    y_rms = df.map(probePost.time_rms)
-    y_net = df.map(abs)
-    y_net = y_net.map(probePost.time_average)
-
-    dfs_calced = [y_mean, y_rms, y_net]
-    calcs = ["mean", "rms", "net"]
-
-    for i, calc in enumerate(calcs):
-        dfs_calced[i].columns = [f"{calc}-{c}" for c in dfs_calced[i].columns]
-    y_flowStats = pd.concat(dfs_calced, axis = "columns")
-
-
+        for i, calc in enumerate(calcs):
+            dfs_calced[i].columns = [f"{calc}-{c}" for c in dfs_calced[i].columns]
+        dfs_calced = pd.concat(dfs_calced, axis = "columns")
+        flowStats.append(dfs_calced)
 
 
     # %%
-    flowStats = pd.concat([x_flowStats, y_flowStats, z_flowStats], axis = "index")
+    flowStats = pd.concat(flowStats, axis = "index")
 
     locations = probes.get_avg_locations()
     locations = locations.loc[flowStats.index.values]
     areas = {k: v for k, v in probes.areas.items() if k in flowStats.index}
+
     if category == "config2" and int(R) < 40:
         flowStats = flowStats.rename(index=lambda x: matchNewNamingConvention(x))
         locations = locations.rename(index=lambda x: matchNewNamingConvention(x))
@@ -244,7 +241,7 @@ for i, start in enumerate(starts):
 
 
     # apply proper post processing to qois
-    for qoi in x_flowStats.columns.values:
+    for qoi in flowStats.columns.values:
         if fnmatch(qoi, '*mass_flux*') or fnmatch(qoi, '*sn_prod(*u*)'):
             flowStats[qoi] = flowStats[qoi].apply(norm_vent)
         if fnmatch(qoi, '*sn_prod(u**2)"'):
@@ -254,21 +251,14 @@ for i, start in enumerate(starts):
         if fnmatch(qoi, '*sn_prod(p)'):
             flowStats[qoi] = flowStats[qoi].apply(get_Cp)
     # %%
-    #### Extra Probes ####
-
-    EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet")
-
-    nameKey = read_probes_file_switch(f"{probes_dir}/../locations/nameKey_extraProbe.txt")
-    nameKey = nameKey.compute()
-
-    extraProbe = nameKey.copy()
-    extraProbe = pd.concat([extraProbe, EPprobes.locations["extraProbe"]], axis = "columns")
     df = EPprobes.statistics(
         names = [name for name in  EPprobes.probe_names if "extraProbe" in name], 
-        steps = [EPprobes.probe_steps[stop]],
-        quants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)"],
+        steps = [stop],
+        quants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"],
         parrallel=False
         )
+
+    extraProbe = nameKey.copy()
     extraProbe = pd.concat([extraProbe, df], axis = "columns")
     extraProbe.set_index(0, inplace=True)
     extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
@@ -290,18 +280,38 @@ for i, start in enumerate(starts):
     # def seriesToFloat(s):
     #     return s.values[0]
 
-    
-    ##### Flux Probes ####
-    print("Writing floor and ceiling flux probe moments")
+
+del dfX, dfY, dfZ, df
+
+##### Flux Probes ####
+print("Writing floor and ceiling flux probe moments")
+
+mean = pd.DataFrame()
+rms = pd.DataFrame()
+
+mean_rooms = pd.DataFrame()
+rms_rooms = pd.DataFrame()
+
+for qoi in probes.probe_quants:
+    print(f"qoi = {qoi}")
+
     
     df = probes.statistics(
         names = [name for name in  probes.probe_names if "Floor" in name or "Ceil" in name],
-        steps = probes.probe_steps[start:stop:by],
+        # steps = probes.probe_steps[start:stop:by],
+        quants = [qoi],
+        series_to_df=False,
         parrallel=False
         )
+
+    for i, start in enumerate(starts):
+        stop = stops[i]
+        print(f"... from steps {start} to {stop}")
+        df_sub = df.map(lambda s: s.loc[start:stop-1])
     
-    mean = df.map(probePost.time_average)
-    rms = df.map(probePost.time_rms)
+        mean[qoi] = df_sub.map(probePost.time_average)
+        rms[qoi] = df_sub.map(probePost.time_rms)
+
     retrievedIndex = mean.index
     if areas is not None:
         print("adding areas")
@@ -324,18 +334,37 @@ for i, start in enumerate(starts):
 
 # %%
 ###### Volume Probes ######
-del probes
 print("Writing volume probe moments")
 qoisOutputed = ["comp(u,0)", "comp(u,1)", "comp(u,2)", "p", "T", "D", "S"]
 probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
-for i, start in enumerate(starts):
-    stop = stops[i]
-    steps = probes.probe_steps[start:stop:by]
-    times = probes.probe_times[steps]
-    print(category, R, f"{start} to {stop}")
 
-    # Define the fitting function for taus
-    def exponential_fit(y, time = times, c = None):
+mean = pd.DataFrame()
+rms = pd.DataFrame()
+taus = pd.DataFrame()
+
+mean_rooms = pd.DataFrame()
+rms_rooms = pd.DataFrame()
+taus_rooms = pd.DataFrame()
+
+for qoi in probes.probe_quants:
+    print(f"qoi = {qoi}")
+
+    df = probes.statistics(
+        # names = probes.probe_names,
+        # steps = steps,
+        quants = [qoi],
+        parrallel=False,
+        series_to_df=False
+        )
+
+    for i, start in enumerate(starts):
+        stop = stops[i]
+        print(f"... from steps {start} to {stop}")
+        steps = probes.probe_steps[start:stop:by]
+        times = probes.probe_times[steps]
+
+        # Define the fitting function for taus
+        def exponential_fit(y, time = times, c = None):
             # Convert input to numpy arrays if they are pandas Series
             time = time.copy()
             y = y.copy()
@@ -349,35 +378,36 @@ for i, start in enumerate(starts):
             y += 1e-6
             y /= y[0]
             if c == None:
-                    exp_decay = lambda x, a, c: (1 - c) * np.exp(-x/a) + c #define theoretical exponential decay function
-                    popt, _ = sp.optimize.curve_fit(exp_decay, time, y, p0=[100, 0], bounds=([0, 0], [np.inf, 1]))
+                exp_decay = lambda x, a, c: (1 - c) * np.exp(-x/a) + c #define theoretical exponential decay function
+                popt, _ = sp.optimize.curve_fit(exp_decay, time, y, p0=[100, 0], bounds=([0, 0], [np.inf, 1]))
             else:
-                    exp_decay = lambda x, a: (1 - c) * np.exp(-x/a) + c #define theoretical exponential decay function
-                    popt, _ = sp.optimize.curve_fit(exp_decay, time, y, p0=100, bounds=(0, np.inf))
-                    popt = np.append(popt, c)
+                exp_decay = lambda x, a: (1 - c) * np.exp(-x/a) + c #define theoretical exponential decay function
+                popt, _ = sp.optimize.curve_fit(exp_decay, time, y, p0=100, bounds=(0, np.inf))
+                popt = np.append(popt, c)
             return popt
 
-    df = probes.statistics(
-        steps = steps,
-        parrallel=False
-        )
-    
-    mean = df.map(probePost.time_average)
-    rms = df.map(probePost.time_rms)
-    taus = pd.DataFrame()
-    taus['D'] = df['D'].map(lambda y: exponential_fit(y, c = 0))
-    taus['T'] = df['T'].map(exponential_fit)
+        print(category, R, f"{start} to {stop}")
+        df_sub = df.map(lambda s: s.loc[start:stop-1])
+        mean[qoi] = df_sub.map(probePost.time_average)
+        rms[qoi] = df_sub.map(probePost.time_rms)
+        if qoi == 'D':
+            taus[qoi] = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
+        if qoi == 'T':
+            taus[qoi] = df_sub[qoi].map(exponential_fit)
+
+        df_sub_rooms =  sum_columns_by_room(df_sub)
+
+        mean_rooms[qoi] = df_sub_rooms.map(probePost.time_average)
+        rms_rooms[qoi] = df_sub.map(probePost.time_rms)
+        if qoi == 'D':
+            taus_rooms[qoi] = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
+        if qoi == 'T':
+            taus_rooms[qoi] = df_sub[qoi].map(exponential_fit)
+
     mean.to_csv(f"{probes_dir}/../volMean-{start}to{stop}.csv")
     rms.to_csv(f"{probes_dir}/../volRms.csv-{start}to{stop}")
     taus.to_csv(f"{probes_dir}/../volTaus.csv-{start}to{stop}")
 
-    df_rooms =  sum_columns_by_room(df)
-
-    mean_rooms = df_rooms.map(probePost.time_average)
-    rms_rooms = df.map(probePost.time_rms)
-    taus_rooms = pd.DataFrame()
-    taus_rooms['D'] = df['D'].map(lambda y: exponential_fit(y, c = 0))
-    taus_rooms['T'] = df['T'].map(exponential_fit)
     mean_rooms.to_csv(f"{probes_dir}/../roomVolMean-{start}to{stop}.csv")
     rms_rooms.to_csv(f"{probes_dir}/../roomVolRms.csv-{start}to{stop}")
     taus_rooms.to_csv(f"{probes_dir}/../roomVolTaus.csv-{start}to{stop}")
