@@ -2,6 +2,7 @@ import pandas as pd
 from fnmatch import fnmatch
 from pyCascade import physics
 import itertools
+import numpy as np
 
 def getWindowOrientations(flowStats):
     flowStats["orientation"] = pd.Series(dtype=float)
@@ -63,59 +64,204 @@ def getRoomOrientations(roomVentilation):
 
     return roomVentilation
 
-def fillInParams(df, runs, velTenMeters):
+def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = None):
+    windowType = []
+    openingType = []
+    houseType = []
+    blockType = []
+    windowNumber = []
+    for window, row in flowStats.iterrows():
+        windowData = window.replace("_h_", '_')
+        windowData = windowData.split('_')
+        if len(windowData) == 3:
+            windowData.append(np.nan)
+        windowType.append(f"{windowData[0]}_{windowData[1]}")
+        openingType.append(windowData[0])
+        windowNumber.append(windowData[1])
+        houseType.append(windowData[2])
+        blockType.append(windowData[3])
+
+    flowStats["windowType"] = windowType
+    flowStats["openingType"] = openingType
+    flowStats["windowNumber"] = windowNumber
+    flowStats["houseType"] = houseType
+    flowStats["blockType"] = blockType
+    flowStats["blockType"].fillna("B", inplace = True)
+
+    retrievedIndex = flowStats.index
+    if areas is not None:
+        flowStats["area"] = areas
+    if locations is not None:
+        flowStats = pd.concat([flowStats, locations], axis = "columns")
+    flowStats = flowStats.loc[retrievedIndex]
+
+    flowStats["orientation"] = pd.Series(dtype=float)
+
+    flowStats.loc[(
+            (flowStats.openingType == "xwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '[!0]-?'))) & (flowStats.blockType == "B") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '0-?'))) & (flowStats.blockType == "Bxz"))
+        ) | (
+            (flowStats.openingType == "zwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "Bx") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-[!0]'))) & (flowStats.blockType == "Bz"))
+        ), "orientation"] = 0
+
+    flowStats.loc[(
+            (flowStats.openingType == "xwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '0-?'))) & (flowStats.blockType == "B") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '[!0]-?'))) & (flowStats.blockType == "Bxz"))
+        ) | (
+            (flowStats.openingType == "zwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-[!0]'))) & (flowStats.blockType == "Bx") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "Bz"))
+        ), "orientation"] = 180
+
+    flowStats.loc[(
+            (flowStats.openingType == "xwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '[!0]-?'))) & (flowStats.blockType == "Bx") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '0-?'))) & (flowStats.blockType == "Bz"))
+        ) | (                                                                             
+            (flowStats.openingType == "zwindow") & (                                    
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "Bxz") |
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-[!0]')))& (flowStats.blockType == "B"))
+        ), "orientation"] = 90
+
+    flowStats.loc[(
+            (flowStats.openingType == "xwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '0-?'))) & (flowStats.blockType == "Bx") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '[!0]-?'))) & (flowStats.blockType == "Bz"))
+        ) | (
+            (flowStats.openingType == "zwindow") & (
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-[!0]'))) & (flowStats.blockType == "Bxz") | 
+            (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "B"))
+        ), "orientation"] = 270
+    
+    EP_mag = []
+    EP_vel_orientation = []
+    EP_normal = []
+    EP_shear = []
+    EPR_mag = []
+    EPR_vel_orientation = []
+    if extraProbe is not None:
+        flowStats = pd.concat([flowStats.sort_index(), extraProbe.sort_index()], axis = "columns")
+        for window, row in flowStats.iterrows():
+            if np.isnan(row["x"]) == False and np.isnan(row["EP_x"]) == False:
+                EP_vector = row[["EP_x", "EP_y", "EP_z"]].values - row[["x", "y", "z"]].values
+                EP_vector = EP_vector / np.linalg.norm(EP_vector)
+                # EP_vector
+                EP_velocity = row[["EP_comp(u_avg,0)", "EP_comp(u_avg,1)", "EP_comp(u_avg,2)"]].values
+                EP_mag.append(row["EP_mag(u)_avg"])
+                EP_vector_mag = np.linalg.norm(EP_velocity)
+                EP_normal.append(np.dot(EP_vector, EP_velocity))
+                EP_vel_orientation.append(np.arccos(EP_normal[-1]/EP_vector_mag)*180/np.pi)
+                EP_normal[-1] *= -1 # adjusting for positive being into the room
+                EP_shear.append(np.sqrt(EP_vector_mag**2 - EP_normal[-1]**2))
+            else:
+                EP_mag.append(np.nan)
+                EP_vel_orientation.append(np.nan)
+                EP_normal.append(np.nan)
+                EP_shear.append(np.nan)
+            EPRoof = f"roof_h_{row['houseType']}_{row['blockType']}".removesuffix("_B")
+            if "sl" in EPRoof:
+                EPRoof = EPRoof.replace("_h_", "_")
+            if EPRoof in flowStats.index:
+                EPR_velocity = flowStats.loc[EPRoof, ["EP_comp(u_avg,0)", "EP_comp(u_avg,1)", "EP_comp(u_avg,2)"]].values
+                EPR_magnitude = np.linalg.norm(EPR_velocity)
+                EPR_mag.append(EPR_magnitude)
+                EPR_vel_orientation.append(np.arccos(np.dot([1, 0, 0], EPR_velocity/EPR_magnitude))*180/np.pi)
+            else:
+                EPR_mag.append(np.nan)
+                EPR_vel_orientation.append(np.nan)
+        
+        flowStats["EP_mag"] = EP_mag
+        flowStats["EP_vel_orientation"] = EP_vel_orientation
+        flowStats["EP_normal"] = EP_normal
+        flowStats["EP_shear"] = EP_shear
+        flowStats["EPR_mag"] = EPR_mag
+        flowStats["EPR_vel_orientation"] = EPR_vel_orientation
+        flowStats.dropna(subset = "x", inplace = True)
+
+    return flowStats
 
 
-    for run in runs:
-        runs[run]["Ri"] = physics.getVentRi(runs[run]["delT"] * runs[run]['B'], runs[run]["WS"])
+def genKey(type, house, block):
+    key = f"{type}_h_{house}_{block}"
+    key = key.rstrip('_')
+    return key.replace("h_sl", "sl")
 
-    A = pd.Series(index = df.index, dtype = float)
-    AofA = pd.Series(index = df.index, dtype = float)
-    WS = pd.Series(index = df.index, dtype = float)
-    Buoyancy = pd.Series(index = df.index, dtype = bool)
-    category = pd.Series(index = df.index, dtype = str)
-    delT = pd.Series(index = df.index, dtype = float)
-    delTPart = pd.Series(index = df.index, dtype = float)
-    Ri = pd.Series(index = df.index, dtype = str)
-    Params = pd.Series(index = df.index, dtype = str)
-    for index, row in df.iterrows():
-        run = index[0]
-        A[index] = runs[run]["A"]
-        AofA[index] = (row["orientation"] + A[index]) % 360
-        WS[index] = runs[run]["WS"]
-        Buoyancy[index] = runs[run]["B"]
-        category[index] = runs[run]["C"]
-        delT[index] = runs[run]["delT"]
-        delTPart[index] = runs[run]["delTPart"]
-        Ri[index] = runs[run]["Ri"]
-        Params[index] = f"Wind Speed: {WS[index]} m/s; Ri = {Ri[index]:.2f}; T Partition = {delTPart[index]}"
-        if category[index] == 2:
-            Params[index] += "; High Density"
-        elif category[index] == 3:
-            Params[index] += "; Low Density"
-    df["A"] = A
-    df["AofA"] = AofA
-    df["AofA_str"] = AofA.apply(lambda i: str(i))
-    df["AofA_resid"] = AofA.apply(lambda i: str(i%90))
-    df["WS"] = WS
-    df["B"] = Buoyancy
-    df["C"] = category
-    df["Ri"] = Ri
-    df["delT"] = delT
-    df["delTPart"] = delTPart
-    df["delTPartRatio"] = delTPart/delT
-    df["delTPartRatio"].fillna(0, inplace = True)
-    df["Params"] = Params
-    for param in ["mean", "net"]:
-        df[f"{param}Norm"] = df[param] / df["WS"] * velTenMeters
-        df[f"{param}NormEPR"] = df[param] / df["EPR_mag"] * velTenMeters
-        # df["f{param}NormFractional"] = df[f"{param}Norm] / 
-    # display(df)
-    df.sort_values(["C", "WS", "B"])
+def roomStatistics(windowStats, windowMap, roomQois):
+    for key in ["houseType", "blockType", "windowType"]:
+        if key not in windowStats:
+            raise Exception("missing requisit information. Try running 'addWindowDetails' before this function")
+
+    roomVentilation = {}
+    roomList = []
+
+    for windowKey, row in windowStats.iterrows():
+        i = 0
+        for room, windows in windowMap.items():
+            i += 1
+            if row["windowType"] in windows:
+                break
+            if i == len(windowMap.keys()):
+                raise Exception(f"room not found for window f{windowKey}")
+
+        roomKey = genKey(room, row["houseType"], row["blockType"])
+        if roomKey not in roomVentilation:
+            roomVentilation[roomKey] = {} #create room
+            for qoi in roomQois:
+                roomVentilation[roomKey][qoi] = [] #initlialize list for extra probes
+        for qoi in roomQois:
+            addValue = windowStats.loc[windowKey, qoi] # keep as list to be combined later (outside function)
+            roomVentilation[roomKey][qoi].append(addValue)
+
+        roomVentilation[roomKey].update(row[["houseType", "blockType"]])
+        roomVentilation[roomKey]["roomType"] = room
+        roomList.append(room)
+
+    windowStats["roomType"] = roomList # modifying in place, should modify outside function i.e. pass by reference
+    roomVentilation = pd.DataFrame(roomVentilation).T
+
+    return roomVentilation
+
+def fillInParams(df, velTenMeters):
+    def process_row(row):
+        row["AofA"] = (row["orientation"] + row["A"]) % 360
+        row["AofA_resid"] = row["AofA"] % 90
+        row["Ri"] = physics.getVentRi(row["delT"], row["WS"])
+        row["EPR_Ri"] = physics.getVentRi(row["delT"], row["EPR_mag"])
+        row["Params"] = f"Wind Speed: {row['WS']} m/s; Ri = {row['Ri']:.2f}; delT = {row['delT']}; SS = {row['SS']}"
+        if row["C"] == 2:
+            row["Params"] += "; High Density"
+        elif row["C"] == 3:
+            row["Params"] += "; Low Density"
+        return row
+    
+    df = df.apply(process_row, axis="columns")
+
+    new_columns = {}
+
+    for col in df.columns:
+        if fnmatch(col, '*mass_flux*') or fnmatch(col, '*sn_prod(*u*)'):
+            if fnmatch(col, '*sn_prod(u**2)"'):
+                udim = 2
+            else:
+                udim = 1
+            new_columns[f"{col}-Norm"] = df[col] / (df["WS"] * velTenMeters)**udim
+            new_columns[f"{col}-NormEP"] = df[col] / (df["EP_mag"] * velTenMeters)**udim
+            new_columns[f"{col}-NormEPR"] = df[col] / (df["EPR_mag"] * velTenMeters)**udim
+
+    # Combine new columns into a new DataFrame and concatenate with the original DataFrame
+    new_df = pd.DataFrame(new_columns, index=df.index)
+    df = pd.concat([df, new_df], axis=1)
+
+    df.sort_values(["C", "WS", "delT", "SS"], inplace=True)
     return df
 
 
-def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'Ri', 'delTPartRatio', 'roomType', 'houseType', 'blockType']):
+
+def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'Ri', 'SS', 'roomType', 'houseType', 'blockType']):
     values = [df[col].unique() for col in split_cols]
     sort_cols = list(set(sort_cols) - set(split_cols))
     plotdfMulti = df.set_index([*split_cols, df.index]).sort_index(level = 0)
