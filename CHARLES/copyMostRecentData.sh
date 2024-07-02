@@ -26,6 +26,6 @@ cp "$source_dir/result.00159000.sles" "$destination_dir/"
 
 echo "Copied sles from important run transitions to '$destination_dir'."
 
-cp -r "$locations_dir" "./probes/locations/"
+cp -r "$locations_dir" "./probes/"
 
 echo "Copied locations from '$locations_dir'."
