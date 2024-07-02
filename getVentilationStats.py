@@ -399,11 +399,11 @@ for qoi in probes.probe_quants:
         df_sub_rooms =  sum_columns_by_room(df_sub)
 
         mean_rooms[qoi] = df_sub_rooms.map(probePost.time_average)
-        rms_rooms[qoi] = df_sub.map(probePost.time_rms)
+        rms_rooms[qoi] = df_sub_rooms.map(probePost.time_rms)
         if qoi == 'D':
-            taus_rooms[qoi] = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
+            taus_rooms[qoi] = df_sub_rooms[qoi].map(lambda y: exponential_fit(y, c = 0))
         if qoi == 'T':
-            taus_rooms[qoi] = df_sub[qoi].map(exponential_fit)
+            taus_rooms[qoi] = df_sub_rooms[qoi].map(exponential_fit)
 
     mean.to_csv(f"{probes_dir}/../volMean-{start}to{stop}.csv")
     rms.to_csv(f"{probes_dir}/../volRms.csv-{start}to{stop}")
