@@ -1,6 +1,7 @@
 # %%
 from pyCascade import probePost, physics, utils, probeReadWrite
 from pyCascade.probeReadWrite import read_probes_file_switch
+from filloutVentilationStats import addWindowDetails
 import numpy as np
 import scipy as sp
 import os
@@ -264,7 +265,7 @@ for i, start in enumerate(starts):
     extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
     extraProbe = extraProbe.rename(index=lambda x: x.replace("extraProbe_", ''))
 
-    flowStats = probePost.addWindowDetails(flowStats, locations, areas, extraProbe)
+    flowStats = addWindowDetails(flowStats, locations, areas, extraProbe)
     flowStats["blockType"].fillna("B", inplace = True)
 
     flowStatsPath = f"{probes_dir}/../flowStats-{start}to{stop}.csv"
