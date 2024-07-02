@@ -3,6 +3,7 @@
 # Source directory where the files are located
 . cd_scratch
 source_dir="$(pwd)/data"
+locations_dir="$(pwd)/probes/locations"
 cd -
 
 # Destination directory where the largest file will be copied
@@ -19,3 +20,12 @@ cp "$source_dir/$largest_file" "$destination_dir/"
 
 echo "The most recent data file '$largest_file' has been copied to '$destination_dir'."
 
+cp "$source_dir/result.00039000.sles" "$destination_dir/"
+cp "$source_dir/result.00119000.sles" "$destination_dir/"
+cp "$source_dir/result.00159000.sles" "$destination_dir/"
+
+echo "Copied sles from important run transitions to '$destination_dir'."
+
+cp -r "$locations_dir" "./probes/locations/"
+
+echo "Copied locations from '$locations_dir'."
