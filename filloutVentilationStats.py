@@ -248,9 +248,9 @@ def fillInParams(df, velTenMeters):
                 udim = 2
             else:
                 udim = 1
-            new_columns[f"{col}-Norm"] = df[col] / (df["WS"] * velTenMeters)**udim
-            new_columns[f"{col}-NormEP"] = df[col] / (df["EP_mag"] * velTenMeters)**udim
-            new_columns[f"{col}-NormEPR"] = df[col] / (df["EPR_mag"] * velTenMeters)**udim
+            new_columns[f"{col}-Norm"] = df[col] / (df["WS"] / velTenMeters)**udim
+            new_columns[f"{col}-NormEP"] = df[col] / (df["EP_mag"] / velTenMeters)**udim
+            new_columns[f"{col}-NormEPR"] = df[col] / (df["EPR_mag"] / velTenMeters)**udim
 
     # Combine new columns into a new DataFrame and concatenate with the original DataFrame
     new_df = pd.DataFrame(new_columns, index=df.index)
