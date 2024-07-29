@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=cc2_R47
-#SBATCH -N 4
+#SBATCH --job-name=cc2_R50
+#SBATCH -N 8
 #SBATCH -n 128
 #SBATCH --time=120:00:00
 #SBATCH --mem 128G

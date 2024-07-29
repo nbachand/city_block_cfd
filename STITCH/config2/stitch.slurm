@@ -2,7 +2,7 @@
 #SBATCH --job-name=stitch
 #SBATCH -c 1
 #SBATCH -N 2
-#SBATCH -n 32
+#SBATCH -n 64
 #SBATCH --time=04:00:00
 #SBATCH --mem=192G
 #SBATCH --partition=serc

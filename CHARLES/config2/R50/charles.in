@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00119000.sles
-# INTERP_FROM_RESTART ../R21/data/result.0015800.sles
-INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-RESET_ALL
+RESTART = ../../../STITCH/config2/53M-mesh.mles #./data/result.00119000.sles
+INTERP_FROM_RESTART ../R47/data/result.00039000.sles
+INIT time = 195.0 step = 39000 #p=0 u = 10.0 0.0 0.000001
+#RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -10,9 +10,9 @@ MU = 1.7894e-5
 HELMHOLTZ_SOS 340.65
 
 # Time + output setup
-NSTEPS = 240000
-# TIMESTEP DT = .005
-TIMESTEP DT = .01
+NSTEPS = 120000
+TIMESTEP DT = .005
+# TIMESTEP DT = .01
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
