@@ -1,6 +1,6 @@
-RESTART = ../../../STITCH/config2/53M-mesh.mles #./data/result.00119000.sles
-INTERP_FROM_RESTART ../R47/data/result.00039000.sles
-INIT time = 195.0 step = 39000 #p=0 u = 10.0 0.0 0.000001
+RESTART = ../../../STITCH/config2/53M-mesh.mles ./data/result.00078000.sles
+#INTERP_FROM_RESTART ../R47/data/result.00039000.sles
+#INIT time = 195.0 step = 39000 #p=0 u = 10.0 0.0 0.000001
 #RESET_ALL
  
 #Equation of state

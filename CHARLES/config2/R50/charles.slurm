@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=cc2_R50
+#SBATCH --job-name=hiRob_cc2_R50
 #SBATCH -N 8
-#SBATCH -n 128
+#SBATCH -n 256
 #SBATCH --time=120:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
