@@ -261,7 +261,7 @@ def fillInParams(df, velTenMeters):
 
 
 
-def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'Ri', 'SS', 'roomType', 'houseType', 'blockType']):
+def getComparativeDf(df, split_cols, sort_cols = ['WS', 'AofA', 'C', 'delT', 'SS', 'roomType', 'houseType', 'blockType']):
     values = [df[col].unique() for col in split_cols]
     sort_cols = list(set(sort_cols) - set(split_cols))
     plotdfMulti = df.set_index([*split_cols, df.index]).sort_index(level = 0)
