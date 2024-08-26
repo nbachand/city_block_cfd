@@ -1,0 +1,152 @@
+POST
+RESTART = ../../../STITCH/config2/9M-mesh.mles
+# INTERP_FROM_RESTART ./data/result.00119000.sles
+INTERP_FROM_RESTART ./data/result.00240000.sles
+# SNAPSHOT NAME=data/result RANGE=1000 10000 240000
+
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+#Boundary Conditions (-666 means zero-flux)
+buildings     = WM_ALG_WALL                          T 0  D 0  S 0
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
+top           = SLIP                                 T 0  D 0  S 0
+exterior      =  WM_ALG_WALL                         T 0  D 0  S 0
+ceiling       =  WM_ALG_WALL T 0     D -666  S 1
+floor         =  WM_ALG_WALL T 0     D -666  S 1
+interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
+exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
+windows       =  WM_ALG_WALL T -666  D -666  S -666
+doors         =  WM_ALG_WALL T -666  D -666  S -666 
+skylights     =  WM_ALG_WALL T -666  D -666  S -666 
+
+STATS u mag(u)
+OVERWRITE_STATS=false #default true
+
+#Define variables for probes
+DEFINE flush_probes=1000
+DEFINE probe_path=probes/probesOut
+DEFINE location_path=probes/locations
+FLUSH_PROBES $(flush_probes)
+
+# For other volumetric probes
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe0         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 0   1    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe1         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 1   2    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe2         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 2   3    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe3         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 3   4    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe4         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 4   5    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe5         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 5   6    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe6         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 6   7    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe7         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 7   8    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe8         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 8   9    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe9         INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 9  10    -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe10        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 10  11   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe11        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 11  12   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe12        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 12  13   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe13        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 13  14   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe14        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 14  15   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe15        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 15  16   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe16        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 16  17   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe17        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 17  18   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe18        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 18  19   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe19        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 19  20   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe20        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 20  21   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe21        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 21  22   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe22        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 22  23   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe23        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 23  24   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe24        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 24  25   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe25        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 25  26   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe26        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 26  27   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe27        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 27  28   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe28        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 28  29   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe29        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 29  30   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe30        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 30  31   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe31        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 31  32   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe32        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 32  33   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe33        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 33  34   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe34        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 34  35   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe35        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 35  36   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe36        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 36  37   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe37        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 37  38   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe38        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 38  39   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe39        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 39  40   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe40        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 40  41   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe41        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 41  42   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe42        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 42  43   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe43        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 43  44   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe44        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 44  45   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe45        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 45  46   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe46        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 46  47   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe47        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 47  48   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe48        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 48  49   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe49        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 49  50   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe50        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 50  51   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe51        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 51  52   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe52        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 52  53   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe53        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 53  54   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe54        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 54  55   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe55        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 55  56   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe56        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 56  57   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe57        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 57  58   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe58        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 58  59   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe59        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 59  60   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe60        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 60  61   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe61        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 61  62   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe62        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 62  63   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe63        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 63  64   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe64        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 64  65   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe65        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 65  66   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe66        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 66  67   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe67        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 67  68   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe68        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 68  69   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe69        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 69  70   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe70        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 70  71   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe71        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 71  72   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe72        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 72  73   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe73        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 73  74   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe74        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 74  75   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe75        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 75  76   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe76        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 76  77   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe77        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 77  78   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe78        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 78  79   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe79        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 79  80   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe80        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 80  81   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe81        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 81  82   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe82        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 82  83   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe83        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 83  84   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe84        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 84  85   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe85        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 85  86   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe86        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 86  87   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe87        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 87  88   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe88        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 88  89   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe89        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 89  90   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe90        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 90  91   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe91        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 91  92   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe92        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 92  93   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe93        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 93  94   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe94        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 94  95   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe95        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 95  96   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe96        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 96  97   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe97        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 97  98   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe98        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 98  99   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe99        INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 99 100   -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe100       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 100 101  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe101       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 101 102  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe102       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 102 103  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe103       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 103 104  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe104       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 104 105  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe105       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 105 106  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe106       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 106 107  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe107       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 107 108  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe108       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 108 109  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe109       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 109 110  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe110       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 110 111  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe111       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 111 112  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe112       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 112 113  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe113       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 113 114  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe114       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 114 115  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+VOLUMETRIC_PROBE NAME=$(probe_path)/VolProbe115       INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 115 116  -116.000000 116.000000   VARS=mag(u)_avg mag(u)_rms comp(u_rms,0) comp(u_rms,1) comp(u_rms,2)
+
