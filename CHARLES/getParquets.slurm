@@ -27,8 +27,8 @@ echo $RUN
 cd ../..
 pwd
 conda activate pycascade
-python resultsToParquet.py $RUN $CATEGORY "FLUX_PROBES"
-python resultsToParquet.py $RUN $CATEGORY "PROBES"
+# python resultsToParquet.py $RUN $CATEGORY "FLUX_PROBES"
+# python resultsToParquet.py $RUN $CATEGORY "PROBES"
 python resultsToParquet.py $RUN $CATEGORY "VOLUMETRIC_PROBES"
 end_time=$(date +%s)
 

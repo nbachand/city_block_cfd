@@ -23,6 +23,8 @@ cd $SCRATCH/$PARENT_DIR/$LOCAL_FOLDER
 
 echo "Executing charles from $(pwd)"
 
+# echo "Clearing old Vol Probes"
+# rm ./probes/probesOut/VolProbe*.svp
+
 # source ~/.bash_profile
 srun $OAK_HOME/$PARENT_DIR/charles/0_deg_4mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/../charles-post.in
-# srun $OAK_HOME/$PARENT_DIR/../single_family/0_deg_spinnup2/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
