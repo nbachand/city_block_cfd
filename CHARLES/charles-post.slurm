@@ -5,7 +5,7 @@
 #SBATCH -n 16
 #SBATCH --time=0:03:00
 #SBATCH --mem 128G
-#SBATCH --partition=owners
+#SBATCH --partition=serc
 #SBATCH --mail-type=ALL
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
