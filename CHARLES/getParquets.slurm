@@ -24,8 +24,6 @@ echo $CATEGORY
 RUN=${LOCAL_FOLDER:1:3}
 echo $RUN
 
-cp -rf "$SCRATCH/$PARENT_DIR/$CATEGORY/R$RUN/probes/locations" "$OAK_HOME/$PARENT_DIR/$CATEGORY/R$RUN/probes/"
-
 cd ../..
 pwd
 conda activate pycascade

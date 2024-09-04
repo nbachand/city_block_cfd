@@ -1,6 +1,7 @@
 # %%
 from pyCascade import probePost, physics, utils, probeReadWrite
 from pyCascade.probeReadWrite import read_probes_file_switch
+from filloutVentilationStats import addWindowDetails
 import numpy as np
 import scipy as sp
 import os
@@ -56,6 +57,13 @@ def sum_columns_by_room(df):
             summed_df[base_name][col] = s
 
     return pd.DataFrame(summed_df).T
+
+def add_calc_col_names(dfs, calcs):
+    for k, calc in enumerate(calcs):
+        if isinstance(dfs[k], pd.Series):
+            dfs[k] = dfs[k].to_frame()
+        dfs[k].columns = [f"{calc}-{c}" for c in dfs[k].columns]
+    return pd.concat(dfs, axis = "columns")
 
 ############ Universal ################
 scratch_home = os.getenv('SCRATCH') #need to set SCRATCH (even if there is no real SCRATCH) to the location where results are written
@@ -221,9 +229,7 @@ for i, start in enumerate(starts):
         dfs_calced = [mean, rms, net]
         calcs = ["mean", "rms", "net"]
 
-        for i, calc in enumerate(calcs):
-            dfs_calced[i].columns = [f"{calc}-{c}" for c in dfs_calced[i].columns]
-        dfs_calced = pd.concat(dfs_calced, axis = "columns")
+        dfs_calced = add_calc_col_names(dfs_calced, calcs)
         flowStats.append(dfs_calced)
 
 
@@ -264,7 +270,7 @@ for i, start in enumerate(starts):
     extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
     extraProbe = extraProbe.rename(index=lambda x: x.replace("extraProbe_", ''))
 
-    flowStats = probePost.addWindowDetails(flowStats, locations, areas, extraProbe)
+    flowStats = addWindowDetails(flowStats, locations, areas, extraProbe)
     flowStats["blockType"].fillna("B", inplace = True)
 
     flowStatsPath = f"{probes_dir}/../flowStats-{start}to{stop}.csv"
@@ -286,15 +292,12 @@ del dfX, dfY, dfZ, df
 ##### Flux Probes ####
 print("Writing floor and ceiling flux probe moments")
 
-mean = pd.DataFrame()
-rms = pd.DataFrame()
-
-mean_rooms = pd.DataFrame()
-rms_rooms = pd.DataFrame()
+fluxStatsAll = {}
+for start in starts:
+    fluxStatsAll[start] = pd.DataFrame()
 
 for qoi in probes.probe_quants:
     print(f"qoi = {qoi}")
-
     
     df = probes.statistics(
         names = [name for name in  probes.probe_names if "Floor" in name or "Ceil" in name],
@@ -309,28 +312,30 @@ for qoi in probes.probe_quants:
         print(f"... from steps {start} to {stop}")
         df_sub = df.map(lambda s: s.loc[start:stop-1])
     
-        mean[qoi] = df_sub.map(probePost.time_average)
-        rms[qoi] = df_sub.map(probePost.time_rms)
+        mean = df_sub.map(probePost.time_average)
+        rms = df_sub.map(probePost.time_rms)
 
-    retrievedIndex = mean.index
-    if areas is not None:
-        print("adding areas")
-        mean["area"] = areas
-    if locations is not None:
-        print("adding locations")
-        mean = pd.concat([mean, locations], axis = "columns")
-    mean = mean.loc[retrievedIndex]
+        dfs_calced = [mean, rms]
+        calcs = ["mean", "rms"]
+        dfs_calced = add_calc_col_names(dfs_calced, calcs)
+        fluxStatsAll[start] =  pd.concat([fluxStatsAll[start], dfs_calced], axis = "columns")
 
-    retrievedIndex = rms.index
-    if areas is not None:
-        rms["area"] = areas
-    if locations is not None:
-        rms = pd.concat([rms, locations], axis = "columns")
-    rms = rms.loc[retrievedIndex]
 
-    mean.to_csv(f"{probes_dir}/../roomFluxMean-{start}to{stop}.csv")
-    rms.to_csv(f"{probes_dir}/../roomFluxRms-{start}to{stop}.csv")
 
+for i, (start, df) in enumerate(fluxStatsAll.items()):
+    stop = stops[i]
+    retrievedIndex = df.index
+    if i == 0:
+        locations = probes.get_avg_locations()
+        locations = locations.loc[df.index.values]
+        areas = {k: v for k, v in probes.areas.items() if k in df.index}
+    print("adding areas")
+    df["area"] = areas
+    print("adding locations")
+    df = pd.concat([df, locations], axis = "columns")
+    df = df.loc[retrievedIndex]
+
+    df.to_csv(f"{probes_dir}/../roomFluxStats-{start}to{stop}.csv")
 
 # %%
 ###### Volume Probes ######
@@ -338,19 +343,16 @@ print("Writing volume probe moments")
 qoisOutputed = ["comp(u,0)", "comp(u,1)", "comp(u,2)", "p", "T", "D", "S"]
 probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
 
-mean = pd.DataFrame()
-rms = pd.DataFrame()
-taus = pd.DataFrame()
-
-mean_rooms = pd.DataFrame()
-rms_rooms = pd.DataFrame()
-taus_rooms = pd.DataFrame()
+volStatsAll = {"vol": {}, "roomVol": {}}
+for start in starts:
+    for key in volStatsAll:
+        volStatsAll[key][start] = pd.DataFrame()
 
 for qoi in probes.probe_quants:
     print(f"qoi = {qoi}")
 
     df = probes.statistics(
-        # names = probes.probe_names,
+        names = probes.probe_names,
         # steps = steps,
         quants = [qoi],
         parrallel=False,
@@ -373,7 +375,7 @@ for qoi in probes.probe_quants:
             if hasattr(time, 'values'):
                     time = time.values
             if y[0] == 0:
-                    return 0
+                    return [0, 0]
             time -= time[0]
             y += 1e-6
             y /= y[0]
@@ -386,28 +388,28 @@ for qoi in probes.probe_quants:
                 popt = np.append(popt, c)
             return popt
 
-        print(category, R, f"{start} to {stop}")
-        df_sub = df.map(lambda s: s.loc[start:stop-1])
-        mean[qoi] = df_sub.map(probePost.time_average)
-        rms[qoi] = df_sub.map(probePost.time_rms)
-        if qoi == 'D':
-            taus[qoi] = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
-        if qoi == 'T':
-            taus[qoi] = df_sub[qoi].map(exponential_fit)
+        df_dict = {}
+        df_dict["vol"] = df.map(lambda s: s.loc[start:stop-1])
+        df_dict["roomVol"] =  sum_columns_by_room(df_dict["vol"])
 
-        df_sub_rooms =  sum_columns_by_room(df_sub)
+        for key, df_sub in df_dict.items():
+            mean = df_sub.map(probePost.time_average)
+            rms = df_sub.map(probePost.time_rms)
 
-        mean_rooms[qoi] = df_sub_rooms.map(probePost.time_average)
-        rms_rooms[qoi] = df_sub.map(probePost.time_rms)
-        if qoi == 'D':
-            taus_rooms[qoi] = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
-        if qoi == 'T':
-            taus_rooms[qoi] = df_sub[qoi].map(exponential_fit)
+            tau = pd.DataFrame()
+            if qoi in ['D']:
+                tau = df_sub[qoi].map(lambda y: exponential_fit(y, c = 0))
+            if qoi == 'T':
+                tau = df_sub[qoi].map(exponential_fit)
 
-    mean.to_csv(f"{probes_dir}/../volMean-{start}to{stop}.csv")
-    rms.to_csv(f"{probes_dir}/../volRms.csv-{start}to{stop}")
-    taus.to_csv(f"{probes_dir}/../volTaus.csv-{start}to{stop}")
+            dfs_calced = [mean, rms, tau]
+            calcs = ["mean", "rms", "tau"]
 
-    mean_rooms.to_csv(f"{probes_dir}/../roomVolMean-{start}to{stop}.csv")
-    rms_rooms.to_csv(f"{probes_dir}/../roomVolRms.csv-{start}to{stop}")
-    taus_rooms.to_csv(f"{probes_dir}/../roomVolTaus.csv-{start}to{stop}")
+            dfs_calced = add_calc_col_names(dfs_calced, calcs)
+
+            volStatsAll[key][start] =  pd.concat([volStatsAll[key][start], dfs_calced], axis = "columns")
+
+for key, starts_dict in volStatsAll.items():
+    for i, (start, df) in enumerate(starts_dict.items()):
+        stop = stops[i]
+        df.to_csv(f"{probes_dir}/../{key}Stats-{start}to{stop}.csv")
