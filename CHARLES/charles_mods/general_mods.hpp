@@ -254,9 +254,9 @@ public:
         y_scaled = max(1.0, y_scaled);
         const double u_loglaw = (uStar/vK_const)*log(y_scaled);
 
-        //const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
-        //u[icv][0] = u_parr*cos(theta_wind);
-        //u[icv][2] = u_parr*sin(theta_wind);
+        // const double u_parr = 2*(u_loglaw - u_bulk*(absy/domain_height));
+        // u[icv][0] = u_parr*cos(theta_wind);
+        // u[icv][2] = u_parr*sin(theta_wind);
         
         u[icv][0] = u_loglaw*cos(theta_wind)+.001;
         u[icv][2] = u_loglaw*sin(theta_wind)+.001;
@@ -301,7 +301,7 @@ public:
     const double u_ct = u_scaling*cos(theta_wind);
     const double w_ct = u_scaling*sin(theta_wind);
     
-    const double y_ref = domain_height*.9; //building_height*2;
+    const double y_ref = domain_height *.9; //building_height*2;
     const double plantA = -(2 * pow(vK_const,2) * u_scaling)/(domain_height * pow(log(y_ref/z0),2));
     const double f1 = 2*xi*w_n;
     const double f2 = pow(w_n,2);
