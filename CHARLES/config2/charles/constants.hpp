@@ -3,7 +3,7 @@
 const double domain_length = 232;
 const double domain_height = domain_length / 3;
 const double building_height = 6;
-const double u_ref_4mps = 5.41;
+const double u_ref_4mps = 6.3;
 const double uStar_ref_4mps = 0.4958;
       
 bool isPointIndoors(double x, double y, double z) {
