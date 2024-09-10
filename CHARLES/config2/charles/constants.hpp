@@ -1,5 +1,4 @@
 // Config Constants
-// CCC
 const double domain_length = 232;
 const double domain_height = domain_length / 3;
 const double building_height = 6;
