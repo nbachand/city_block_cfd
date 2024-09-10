@@ -65,6 +65,7 @@
 //
 //==================================================================================
     
+// CCC
 // Initializaton constants
 const double z0 = 0.366;
 const double disp = 1.11*building_height;
