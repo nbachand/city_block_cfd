@@ -243,7 +243,7 @@ def fillInParams(df, velTenMeters):
     new_columns = {}
 
     for col in df.columns:
-        if fnmatch(col, '*mass_flux*') or fnmatch(col, '*sn_prod(*u*)'):
+        if fnmatch(col, '*mass_flux*') or fnmatch(col, '*sn_prod(*u*)') or fnmatch(col, 'q-*'):
             if fnmatch(col, '*sn_prod(u**2)"'):
                 udim = 2
             else:
