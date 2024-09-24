@@ -288,8 +288,10 @@ def roomStatistics(windowStats, windowMap, roomQois):
         roomKey = genKey(room, row["houseType"], row["blockType"])
         if roomKey not in roomVentilation:
             roomVentilation[roomKey] = {} #create room
+            roomVentilation[roomKey]["windowKeys"] = [] #initlialize list for extra probes
             for qoi in roomQois:
                 roomVentilation[roomKey][qoi] = [] #initlialize list for extra probes
+        roomVentilation[roomKey]["windowKeys"].append(windowKey)
         for qoi in roomQois:
             addValue = windowStats.loc[windowKey, qoi] # keep as list to be combined later (outside function)
             roomVentilation[roomKey][qoi].append(addValue)
