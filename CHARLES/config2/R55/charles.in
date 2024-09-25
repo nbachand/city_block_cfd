@@ -1,7 +1,7 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles #./data/result.00193000.sles
-INTERP_FROM_RESTART ../R48/data/result.00240000.sles
-INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 10.0 0.0 0.000001
-RESET_ALL
+RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00199000.sles
+# INTERP_FROM_RESTART ../R48/data/result.00240000.sles
+# INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 10.0 0.0 0.000001
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
