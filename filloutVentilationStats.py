@@ -514,6 +514,7 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
                     warnings.warn(f"Run {run} from steps {start} to {stop} does not has associated ventilation file {path} Run createVentilationStats.slurm from run folder first.")
 
             flowStats = pd.read_csv(flowStatsPath, index_col=0)
+            flowStats.index = flowStats.index.map(indexPlusB)
             runParams = []
             for k, v in runs[run].items():
                 runParams.append(k)
@@ -521,6 +522,12 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
                     flowStats[k] = v[j]
                 else:
                     flowStats[k] = v
+
+
+            # correct negative values introduced by flipping for window orientations
+            for index, row in flowStats.iterrows():
+                if row["mean-sn_prod(abs(u))"] < 0: # this indicates it was flipped since it should always be positive
+                    flowStats.loc[index,["mean-sn_prod(abs(u))", "mean-sn_prod(u**2)", "mean-sn_prod(p)"]] *= -1
 
             roomQois = ["EP_normal", "EP_shear", "EPR_mag", "EP_mag"]
             roomQois += runParams
@@ -534,7 +541,6 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
             roomVentilation = roomVentilation.sort_values(by = sort_order)
             sort_order.append("windowType")
             flowStats = flowStats.sort_values(by = sort_order)
-            flowStats.index = flowStats.index.map(indexPlusB)
 
             # room flux probes
             fluxStats = pd.read_csv(fluxStatsPath, index_col=0)
