@@ -4,6 +4,7 @@ from pyCascade import physics
 import itertools
 import numpy as np
 import os
+import warnings
 
 hm = 6
 window_dim = hm/2/4
