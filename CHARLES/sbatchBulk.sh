@@ -3,8 +3,8 @@
 bashScript="$1"
 
 # Define an array of numbers
-numbersC2=(46 47 48 49)
-numbersC3=(16 17 18 19)
+numbersC2=(53 54 55 56)
+numbersC3=(21 22 23 24)
 
 # Iterate through the array
 cd ./config2

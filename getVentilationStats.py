@@ -341,7 +341,7 @@ for i, (start, df) in enumerate(fluxStatsAll.items()):
 ###### Volume Probes ######
 print("Writing volume probe moments")
 qoisOutputed = ["comp(u,0)", "comp(u,1)", "comp(u,2)", "p", "T", "D", "S"]
-probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
+probes = probePost.Probes(probes_dir, probe_type = "VOLUMETRIC_PROBES", flux_quants = qoisOutputed, file_type = "parquet", name_pattern="room")
 
 volStatsAll = {"vol": {}, "roomVol": {}}
 for start in starts:
@@ -371,11 +371,11 @@ for qoi in probes.probe_quants:
             time = time.copy()
             y = y.copy()
             if hasattr(y, 'values'):
-                    y = y.values
+                y = y.values
             if hasattr(time, 'values'):
-                    time = time.values
+                time = time.values
             if y[0] == 0:
-                    return [0, 0]
+                return [0, 0]
             time -= time[0]
             y += 1e-6
             y /= y[0]
