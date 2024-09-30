@@ -178,7 +178,7 @@ dfX = probes.statistics(
 ## Z Flow
 
 @utils.no_kwargs
-def norm_norm_windows(data_dict):
+def norm_norm_windows(data_dict): # Currently this is applying to qois that shouldnt be negative like sn_prod(abs(u))
     return probePost.mul_names(data_dict, [name for name in probes.probe_names if fnmatch(name, "*window_?-1*")], -1)
 
 @utils.no_kwargs
