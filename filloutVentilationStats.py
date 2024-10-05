@@ -332,6 +332,7 @@ def fillInParams(df, velTenMeters):
             new_columns[f"{col}-Norm"] = df[col] / (df["WS"] / velTenMeters)**udim
             new_columns[f"{col}-NormEP"] = df[col] / (df["EP_mag"] / velTenMeters)**udim
             new_columns[f"{col}-NormEPR"] = df[col] / (df["EPR_mag"] / velTenMeters)**udim
+            new_columns[f"{col}-NormABL"] = df[col] / (df["u10_2"] / velTenMeters)**udim
 
     # Combine new columns into a new DataFrame and concatenate with the original DataFrame
     new_df = pd.DataFrame(new_columns, index=df.index)
@@ -490,6 +491,11 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
     allVolStats = {}
     allRoomVolStats = {}
 
+    blockFitsABLPath = f'{home_dir}/CHARLES/multiRuns/blockFitsABL.csv'
+    if os.path.exists(blockFitsABLPath) == False:
+        warnings.warn("ABL fits not found. Run LESResults-multiRun.ipynb first.")
+    blockFitsABL = pd.read_csv(blockFitsABLPath, index_col = ["runs", "blockType"])
+
     for run in runs:
         C = runs[run]['C']
         category = f"config{C}"
@@ -504,6 +510,7 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
         if len(set([len(starts), len(stops), len(delT), len(SS)])) != 1:
             raise Exception(f"Run {runs} has array properties of different lengths")
         for j, start in enumerate(starts):
+            runIndex = int(10*run + j)
             stop = stops[j]
             flowStatsPath = f"{probes_dir}/../flowStats-{start}to{stop}.csv"
             fluxStatsPath = f"{probes_dir}/../roomFluxStats-{start}to{stop}.csv" 
@@ -524,13 +531,18 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
                 else:
                     flowStats[k] = v
 
+            # read in ABL Fits
+            flowStats["u10_2"] = None
+            for blockType in flowStats["blockType"].unique():
+                flowStats["u10_2"][flowStats["blockType"] == blockType] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
+
 
             # correct negative values introduced by flipping for window orientations
             for index, row in flowStats.iterrows():
                 if row["mean-sn_prod(abs(u))"] < 0: # this indicates it was flipped since it should always be positive
                     flowStats.loc[index,["mean-sn_prod(abs(u))", "mean-sn_prod(u**2)", "mean-sn_prod(p)"]] *= -1
 
-            roomQois = ["EP_normal", "EP_shear", "EPR_mag", "EP_mag"]
+            roomQois = ["EP_normal", "EP_shear", "EPR_mag", "EP_mag", "u10_2"]
             roomQois += runParams
             roomQois += [q for q in flowStats.columns.values if 'net-' in q or 'mean-' in q]
             roomQois.append("rms-sn_prod(p)")
@@ -554,8 +566,6 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
             roomVolStats = pd.read_csv(roomVolStatsPath, index_col=0)
             roomVolStats = splitRoomStats(roomVolStats)
             roomVolStats = roomVolStats.map(string_to_list)
-
-            runIndex = int(10*run + j)
         
             allFlowStats[runIndex] = flowStats
             allRoomVentilation[runIndex] = roomVentilation
@@ -596,6 +606,7 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
             roomVentilationMI[qoi] = roomVentilationMI[qoi].apply(lambda l : np.mean(l))
         elif qoi in runParams:
             roomVentilationMI[qoi] = roomVentilationMI[qoi].apply(lambda l : l[0])
+    roomVentilationMI["u10_2"] = roomVentilationMI["u10_2"].apply(lambda l: np.mean(l))
     roomVentilationMI["EPR_mag"] = roomVentilationMI["EPR_mag"].apply(lambda l: np.mean(l))
     roomVentilationMI["EP_shear"] = roomVentilationMI["EP_shear"].apply(lambda l: sum(l))
     roomVentilationMI["EP_mag"] = roomVentilationMI["EP_mag"].apply(lambda l: sum(l))
