@@ -37,20 +37,21 @@ DEFINE image_int_avg=1
 DEFINE image_int=1
 
 
-WRITE_IMAGE NAME=./Images/theta_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
-WRITE_IMAGE NAME=./Images/theta_y3             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
-WRITE_IMAGE NAME=./Images/theta_y12            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
-WRITE_IMAGE NAME=./Images/theta_z87            INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=atan(dot(u_avg,d3(-1,0,1))/dot(u_avg,d3(1,0,1)))
+WRITE_IMAGE NAME=./Images/theta_y3             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=atan(dot(u_avg,d3(-1,0,1))/dot(u_avg,d3(1,0,1)))
+WRITE_IMAGE NAME=./Images/theta_y12            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=atan(dot(u_avg,d3(-1,0,1))/dot(u_avg,d3(1,0,1)))
+WRITE_IMAGE NAME=./Images/theta_z87            INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=atan(dot(u_avg,d3(-1,0,1))/dot(u_avg,d3(1,0,1)))
 
-WRITE_IMAGE NAME=./Images/uz_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(u_avg,2)
-WRITE_IMAGE NAME=./Images/uz_y3             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(u_avg,2)
-WRITE_IMAGE NAME=./Images/uz_y12            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(u_avg,2)
-WRITE_IMAGE NAME=./Images/uz_z87            INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uT_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=dot(u_avg,d3(-1,0,1))
+WRITE_IMAGE NAME=./Images/uT_y3             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=dot(u_avg,d3(-1,0,1))
+WRITE_IMAGE NAME=./Images/uT_y12            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=dot(u_avg,d3(-1,0,1))
+WRITE_IMAGE NAME=./Images/uT_z87            INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=dot(u_avg,d3(-1,0,1))
 
 WRITE_IMAGE NAME=./Images/uy_y1p5           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(u_avg,1)
 WRITE_IMAGE NAME=./Images/uy_y3             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(u_avg,1)
 WRITE_IMAGE NAME=./Images/uy_y12            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(u_avg,1)
 WRITE_IMAGE NAME=./Images/uy_z87            INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(u_avg,1)
+
  #################################
  ###########  PROBING  ###########
  #################################
