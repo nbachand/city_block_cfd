@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=cc_posty
+#SBATCH --job-name=cc3_posty
 #SBATCH --output=post.out
 #SBATCH -N 2
-#SBATCH -n 64
-#SBATCH --time=0:13:00
-#SBATCH --mem 256G
+#SBATCH -n 16
+#SBATCH --time=00:02:00
+#SBATCH --mem 64G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
 export CTI_LICENSE=$HOME/Cascade/license.dat
