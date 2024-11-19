@@ -1,12 +1,13 @@
 #Read the surface
-PART SURF SBIN ../../city_block_geom/SURFER/config3/mesh_geom.sbin
+# PART SURF SBIN ../../city_block_geom/SURFER/config3/mesh_geom.sbin
+PART SURF SBIN ../../city_block_geom/SURFER/config3/mesh_geom_noInteriors.sbin
 
 HCP_DELTA 9.666
 # HCP_DELTA 4.833
 
 HCP_WINDOW FAZONE ground LEVEL=3 D=6
 HCP_WINDOW FAZONE buildings LEVEl=4 D=4
-# HCP_WINDOW FAZONE interior LEVEl=6 N=6 DLAYERS=2,12
+HCP_WINDOW FAZONE interior LEVEl=6 N=6 DLAYERS=2,20 # included for no interiors
 HCP_WINDOW FAZONE exteriors LEVEl=6 N=6 DLAYERS=2,20
 HCP_WINDOW FAZONE ceiling LEVEl=6 N=6 DLAYERS=2
 HCP_WINDOW FAZONE floor LEVEl=6 N=6 DLAYERS=2
@@ -19,9 +20,10 @@ HCP_WINDOW FAZONE skylights LEVEl=6 N=6 DLAYERS=2
 # HCP_WINDOW HEMISPHERE 104 0 108 0 1 0 20 LEVEL=5
 COUNT_POINTS
 
-# INTERACTIVE
+INTERACTIVE
 
 SMOOTH_MODE ALL
 NSMOOTH 10
 
-WRITE_RESTART = 14M-mesh.mles
+# WRITE_RESTART = 14M-mesh.mles
+WRITE_RESTART = 14M-mesh_noInteriors.mles
