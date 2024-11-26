@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cc3_R25
+#SBATCH --job-name=cc3_R26
 #SBATCH -N 4
 #SBATCH -n 128
 #SBATCH --time=168:00:00
@@ -27,4 +27,4 @@ echo "0 0 0" > ./probes/VolProbe90Z.svp
 echo "Executing charles from $(pwd)"
 
 source ~/.bash_profile
-srun $OAK_HOME/$PARENT_DIR/charles/45_deg_2mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
+srun $OAK_HOME/$PARENT_DIR/charles/45_deg_4mps/charles.exe -i $OAK_HOME/$PARENT_DIR/$LOCAL_FOLDER/charles.in
