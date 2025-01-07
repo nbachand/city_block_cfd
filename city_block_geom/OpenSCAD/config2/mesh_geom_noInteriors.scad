@@ -153,11 +153,13 @@ difference() {
 			}
 		}
 		translate(v = [38.0, 0, 56.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
@@ -183,51 +185,61 @@ difference() {
 			}
 		}
 		translate(v = [54.0, 0, 8.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
 		}
 		translate(v = [46.0, 0, 32.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
 		}
 		translate(v = [54.0, 0, 56.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
 		}
 		translate(v = [46.0, 0, 80.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
 		}
 		translate(v = [54.0, 0, 104.0]) {
-			union() {
-				cube(size = [12, 3, 8]);
-				translate(v = [6.0, 3, 4.0]) {
-					xrot(a = -90) {
-						prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+			difference() {
+				union() {
+					cube(size = [12, 3, 8]);
+					translate(v = [6.0, 3, 4.0]) {
+						xrot(a = -90) {
+							prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+						}
 					}
 				}
 			}
@@ -505,11 +517,13 @@ difference() {
 					}
 				}
 				translate(v = [38.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
@@ -535,51 +549,61 @@ difference() {
 					}
 				}
 				translate(v = [54.0, 0, 8.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 32.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 80.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 104.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
@@ -859,11 +883,13 @@ difference() {
 					}
 				}
 				translate(v = [38.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
@@ -889,51 +915,61 @@ difference() {
 					}
 				}
 				translate(v = [54.0, 0, 8.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 32.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 80.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 104.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
@@ -1213,11 +1249,13 @@ difference() {
 					}
 				}
 				translate(v = [38.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
@@ -1243,51 +1281,61 @@ difference() {
 					}
 				}
 				translate(v = [54.0, 0, 8.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 32.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 56.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [46.0, 0, 80.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}
 				}
 				translate(v = [54.0, 0, 104.0]) {
-					union() {
-						cube(size = [12, 3, 8]);
-						translate(v = [6.0, 3, 4.0]) {
-							xrot(a = -90) {
-								prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+					difference() {
+						union() {
+							cube(size = [12, 3, 8]);
+							translate(v = [6.0, 3, 4.0]) {
+								xrot(a = -90) {
+									prismoid(h = 3, size1 = [12, 8], size2 = [8.0, 0]);
+								}
 							}
 						}
 					}

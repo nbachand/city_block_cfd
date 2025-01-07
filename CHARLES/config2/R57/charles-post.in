@@ -39,7 +39,7 @@ DEFINE image_int=1
 # WRITE_IMAGE NAME=./Images/u_y1p5            INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
 # WRITE_IMAGE NAME=./Images/u_y3              INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
 # WRITE_IMAGE NAME=./Images/u_y12             INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/nogeom_u_z58          INTERVAL=$(image_int) TARGET       0 38.5 -58 CAMERA 0 38.5 -57   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -57.5   0 0 -1 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/nogeom_u_z58          INTERVAL=$(image_int) TARGET       0 38.5 -58 CAMERA 0 38.5 -57   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -57.5   0 0 -1 VAR=mag(u)
 # WRITE_IMAGE NAME=./Images/u_x58             INTERVAL=$(image_int)     TARGET    58 38.5 0    CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE 58 36 116    -1 0 0 VAR=mag(u)
 # WRITE_IMAGE NAME=./Images/u_xn58            INTERVAL=$(image_int)     TARGET    -58 38.5 0   CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE -58 36 116   -1 0 0 VAR=mag(u)
 # WRITE_IMAGE NAME=./Images/u_xz0             INTERVAL=$(image_int)     TARGET    0 38.5 0     CAMERA -9 38.5 -9  UP 0 1 0     SIZE 1358 320 WIDTH  328  GEOM PLANE 0 36 0      -1 0 -1 VAR=mag(u)
