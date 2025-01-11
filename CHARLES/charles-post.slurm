@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=cc_posty
 #SBATCH --output=post.out
-#SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=0:03:00
 #SBATCH --mem 128G
