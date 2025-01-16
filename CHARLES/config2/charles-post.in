@@ -1,8 +1,8 @@
 POST
 # RESTART = ../../../STITCH/config2/9M-mesh.mles
-RESTART = ../../../STITCH/config2/7M-mesh-noInteriors.mles
+RESTART = ../../../STITCH/config2/7M-mesh-noInteriors.mles ./data/result.00119000.sles
 # INTERP_FROM_RESTART ./data/result.00159000.sles
-INTERP_FROM_RESTART ./data/result.00119000.sles
+# INTERP_FROM_RESTART ./data/result.00119000.sles
 # INTERP_FROM_RESTART ./data/result.00240000.sles
 # SNAPSHOT NAME=data/result RANGE=1000 10000 240000
 
