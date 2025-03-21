@@ -447,7 +447,6 @@ def processTracerDecay(df):
 
             qoi_q = qoi.replace('tau', 'q')
             df[qoi_q] = np.nan
-            df[f"{qoi_q}-Norm"] = np.nan
             for index, row in df.iterrows():
 
                 room = index[1].split('_')[0]
@@ -457,15 +456,15 @@ def processTracerDecay(df):
                     V = y/6 * floor_area
                 tau = row[qoi]
                 if tau > 0:
-                    q = V * rho / row[qoi]
+                    q = V * rho / tau
                 else:
                     q = 0
                 df.loc[index, qoi_q] = q
 
-            df[qoi_q] = norm_vent(df[qoi_q])
+            df[qoi_q] = norm_vent(df[qoi_q]) # other ventilations normalized in getVentilationStats.py
 
         elif fnmatch(qoi, '*T*'):
-            df[f"{qoi_q}-Norm"] = df[qoi].apply(norm_Temp)
+            df[f"{qoi}-Norm"] = df[qoi].apply(norm_Temp)
 
     return df
 
@@ -534,7 +533,7 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
             # read in ABL Fits
             flowStats["u10_2"] = None
             for blockType in flowStats["blockType"].unique():
-                flowStats["u10_2"][flowStats["blockType"] == blockType] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
+                flowStats.loc[flowStats["blockType"] == blockType, "u10_2"] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
 
 
             # correct negative values introduced by flipping for window orientations
