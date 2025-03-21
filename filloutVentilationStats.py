@@ -465,7 +465,7 @@ def processTracerDecay(df):
             df[qoi_q] = norm_vent(df[qoi_q])
 
         elif fnmatch(qoi, '*T*'):
-            df[qoi] = df[qoi].apply(norm_Temp)
+            df[f"{qoi_q}-Norm"] = df[qoi].apply(norm_Temp)
 
     return df
 
