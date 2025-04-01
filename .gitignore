@@ -18,6 +18,7 @@
 !runs.txt
 !*.m
 !*.dat
+!CHARLES/multiRuns/*.csv
 
 # ...even if they are in subdirectories
 !*/
