@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=stitch
 #SBATCH -c 1
-#SBATCH -N 2
-#SBATCH -n 64
+#SBATCH -N 4
+#SBATCH -n 128
 #SBATCH --time=01:00:00
 #SBATCH --mem=192G
 #SBATCH --partition=serc
