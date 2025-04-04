@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=cc2_R61
-#SBATCH -N 4
-#SBATCH -n 128
+#SBATCH -N 2
+#SBATCH -n 64
 #SBATCH --time=120:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
