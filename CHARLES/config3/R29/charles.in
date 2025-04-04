@@ -40,7 +40,7 @@ buildings     =          WM_ALG_WALL                          T 0  D 0  S 0
 ground        =          WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
 top           =          SLIP                                 T 0  D 0  S 0
 exterior      =          WM_ALG_WALL                          T 0  D 0  S 0
-interiorWalls =          WM_ALG_WALL T 0     D -666  S 1
+interior      =          WM_ALG_WALL T 0     D -666  S 1
 windowsDoorsSkylights =  WM_ALG_WALL T -666  D -666  S -666
 
 #################################
@@ -88,9 +88,9 @@ WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=$(image_int_avg) TARGET   0 
 WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u)_avg
 WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=mag(u)_avg
 WRITE_IMAGE NAME=./Images/mean_u_z87       INTERVAL=$(image_int_avg) TARGET   0 58 -87   CAMERA 0 58 87  UP 0 1 0       SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=mag(u)_avg
-WRITE_IMAGE NAME=./Images/mean_u_x87         INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(u_avg,0)
-WRITE_IMAGE NAME=./Images/mean_u_xn87        INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(u_avg,0)
-WRITE_IMAGE NAME=./Images/mean_u_xz0         INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(u_avg,0)
+WRITE_IMAGE NAME=./Images/mean_u_x87         INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_xn87        INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_xz0         INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=mag(u)_avg
 
 WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=mag(u)_rms
 WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=$(image_int_avg) TARGET   0 174 0    CAMERA 0 -174 0                SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=mag(u)_rms
@@ -2650,16 +2650,28 @@ FLUX_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2_Bxz INTERVAL $(probe_int) XP -9
 FLUX_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2_Bxz INTERVAL $(probe_int) XP -94.000000 2.950000 -164.000000 NP 0.000000 2.000000 0.000000 VARS mass_flux() mass_flux(p) mass_flux(T) mass_flux(D) mass_flux(S) sn_prod(comp(u,1),0.000000,2.000000,0.000000) sn_prod(p,0.000000,2.000000,0.000000) sn_prod(abs(comp(u,1)),0.000000,2.000000,0.000000) sn_prod(comp(u,1)*comp(u,1),0.000000,2.000000,0.000000) 
 
 # For output Probe files
+PROBE NAME=$(probe_path)/col_-1-0               INTERVAL $(probe_int) GEOM FILE $(location_path)/col_-1-0.txt              VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n2               INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2.txt              VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1               INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1.txt              VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-1                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-1.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-2                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-2.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_-1-0_Bx            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_-1-0_Bx.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n2_Bx            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bx.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1_Bx            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bx.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-1_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-1_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-2_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-2_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_-1-0_Bz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_-1-0_Bz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n2_Bz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1_Bz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-1_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-1_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-2_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-2_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_-1-0_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_-1-0_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n2_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-1_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-1_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/col_0-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
