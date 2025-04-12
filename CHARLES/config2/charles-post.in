@@ -374,4 +374,4 @@ POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-2_Bxz     INTERVAL $(probe_
 POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-2_Bxz.txt    VARS p_avg comp(u_avg,0) comp(u_avg,2)
 POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-2_Bxz.txt    VARS p_avg comp(u_avg,0) comp(u_avg,2)
 POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-2_Bxz.txt    VARS p_avg comp(u_avg,0) comp(u_avg,2)
-PROBE NAME=$(probe_path)/extraProbe2                 INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt                VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
+PROBE NAME=$(probe_path)/extraProbe                 INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt                VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
