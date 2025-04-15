@@ -73,12 +73,12 @@ home_dir = f'{oak_home}/Cascade/city_block_cfd'
 
 category = sys.argv[1]
 R = sys.argv[2]
-starts = list(map(int, sys.argv[3].split(',')))
-stops = list(map(int, sys.argv[4].split(',')))
+starts = list(map(int, filter(None, sys.argv[3].split(','))))
+stops =  list(map(int, filter(None, sys.argv[4].split(','))))
 # category = "config2"
-# R = "46"
-# starts = [40000,120000]
-# stops = [120000, 160000]
+# R = "50"
+# starts = [40000]
+# stops = [120000]
 print(f"starts: {starts}")
 print(f"stops: {stops}")
 by = 1
