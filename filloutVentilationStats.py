@@ -481,7 +481,7 @@ def processConnectedRooms(df):
 
     return df, dfDuplicates
 
-def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
+def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, saveResults = True):
 
     ### get Stat dfs for individual runs
     allFlowStats = {}
@@ -530,10 +530,11 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
                 else:
                     flowStats[k] = v
 
-            # read in ABL Fits
-            flowStats["u10_2"] = None
-            for blockType in flowStats["blockType"].unique():
-                flowStats.loc[flowStats["blockType"] == blockType, "u10_2"] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
+            flowStats["u10_2"] = np.nan
+            if readABLFits:
+                # read in ABL Fits
+                for blockType in flowStats["blockType"].unique():
+                    flowStats.loc[flowStats["blockType"] == blockType, "u10_2"] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
 
 
             # correct negative values introduced by flipping for window orientations
@@ -680,7 +681,8 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
     flowStatsMI = fillInParams(flowStatsMI, velTenMeters)
     roomVentilationMI = fillInParams(roomVentilationMI, velTenMeters)
 
-    flowStatsMI.to_csv(f"{multiRun_dir}/flowStatsMI.csv")
-    roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
+    if saveResults:
+        flowStatsMI.to_csv(f"{multiRun_dir}/flowStatsMI.csv")
+        roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
 
     return flowStatsMI, roomVentilationMI
