@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=stitch
 #SBATCH -c 1
-#SBATCH -N 2
-#SBATCH -n 64
+#SBATCH -N 4
+#SBATCH -n 128
 #SBATCH --time=04:00:00
-#SBATCH --mem=192G
+#SBATCH --mem=256G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
 # #SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
@@ -31,7 +31,7 @@ SURFER_DIR="Cascade/city_block_cfd/city_block_geom/SURFER"
 echo "Executing stitch from $(pwd)"
 
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-gen.in
-# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
-mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
+mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch.in
+# mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-course.in
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-noHouseRefine.in
 # mpiexec stitch.exe -i $OAK_HOME/$STITCH_DIR/$LOCAL_FOLDER/stitch-OSX.in
