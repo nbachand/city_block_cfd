@@ -1,7 +1,7 @@
-RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/53M-mesh.mles
-INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R50/data/result.00120000.sles
-INIT time = 100.0 step = 20000 #p=0 u = 10.0 0.0 0.000001
-RESET_ALL
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/53M-mesh.mles ./data/result.00111000.sles
+# INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R50/data/result.00120000.sles
+# INIT time = 100.0 step = 20000 #p=0 u = 10.0 0.0 0.000001
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ

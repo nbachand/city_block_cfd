@@ -1,7 +1,7 @@
-RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh_allSkylights.mles #./data/result.00170000.sles
-INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R56/data/result.00240000.sles
-INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 1.0 0.0 0.000001
-RESET_ALL
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh_allSkylights.mles ./data/result.00192000.sles
+# INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R56/data/result.00240000.sles
+# INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 1.0 0.0 0.000001
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
