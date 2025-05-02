@@ -686,3 +686,19 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, 
         roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
 
     return flowStatsMI, roomVentilationMI
+
+def combine_stats(df, group):
+    rms_cols = [col for col in df.columns if "rms" in col]
+    df[rms_cols] = df[rms_cols] ** 2
+    
+    df.index.names = ["run_id", "key"]
+    df = df.reset_index()
+    string_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
+    group += string_cols
+    print(f"Grouping by {group}")
+    df = df.groupby(group, as_index=False).mean(numeric_only=True)
+    df = df.set_index(["run_id", "key"])
+
+    df[rms_cols] = df[rms_cols] ** 0.5
+
+    return df
