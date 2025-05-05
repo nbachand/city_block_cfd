@@ -738,7 +738,7 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, 
 
     return flowStatsMI, roomVentilationMI
 
-def combine_stats(df, group):
+def combine_stats(df, group, index_col = None):
     df = df.copy()
     rms_cols = [col for col in df.columns if "rms" in col]
     df[rms_cols] = df[rms_cols] ** 2
@@ -749,7 +749,11 @@ def combine_stats(df, group):
     group += string_cols
     print(f"Grouping by {group}")
     df = df.groupby(group, as_index=False, dropna=False).mean(numeric_only=True)
-    df = df.set_index(["run_id", "key"])
+
+    if index_col is None:
+        index_col = "run_id"
+    
+    df = df.set_index([index_col, "key"])
 
     df[rms_cols] = df[rms_cols] ** 0.5
 
