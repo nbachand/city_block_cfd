@@ -2,7 +2,7 @@
 #SBATCH --job-name=hiRob_cc2_R65
 #SBATCH -N 8
 #SBATCH -n 256
-#SBATCH --time=168:00:00
+#SBATCH --time=72:00:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL

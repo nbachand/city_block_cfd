@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 import os
 import warnings
+from collections.abc import Sequence
 
 hm = 6
 window_dim = hm/2/4
@@ -481,6 +482,55 @@ def processConnectedRooms(df):
 
     return df, dfDuplicates
 
+def find_sequence_columns(df):
+    """
+    Return names of all columns in df where every non-null entry
+    is a Sequence (list, tuple, ndarray, etc.), but not a str/bytes.
+    """
+    seq_cols = []
+    for col in df.columns:
+        non_null = df[col].dropna()
+        if non_null.empty:
+            continue
+        if non_null.apply(lambda x: isinstance(x, Sequence) and not isinstance(x, (str, bytes))).all():
+            seq_cols.append(col)
+    return seq_cols
+
+def expand_variable_length_sequences(df, seq_cols=None, fill_value=np.nan):
+    """
+    Expand each list/tuple/array column into multiple new columns,
+    padding shorter sequences up to the column's max length with fill_value.
+
+    Params:
+      df          - the original DataFrame
+      seq_cols    - list of column names to expand; if None, auto-detect
+      fill_value  - value to use to pad shorter sequences (default: np.nan)
+    Returns:
+      A new DataFrame with those columns dropped and their elements unpacked
+      into new columns named <origcol>_0, <origcol>_1, … up to the max length.
+    """
+    df = df.copy()
+    if seq_cols is None:
+        seq_cols = find_sequence_columns(df)
+
+    for col in seq_cols:
+        # turn every entry into a list (so that tuples, arrays, etc. all become lists)
+        sequences = df[col].apply(lambda x: list(x) if isinstance(x, Sequence) and not isinstance(x, (str, bytes)) else [])
+        # figure out the max length
+        max_len = sequences.apply(len).max()
+        # pad each list up to max_len
+        padded = sequences.apply(lambda lst: lst + [fill_value]*(max_len - len(lst)))
+        # build the expanded DataFrame
+        expanded = pd.DataFrame(
+            padded.tolist(),
+            index=df.index,
+            columns=[f"{col}_{i}" for i in range(max_len)]
+        )
+        # drop original & join
+        df = df.drop(columns=[col]).join(expanded)
+
+    return df
+
 def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, saveResults = True):
 
     ### get Stat dfs for individual runs
@@ -680,9 +730,27 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, 
 
     flowStatsMI = fillInParams(flowStatsMI, velTenMeters)
     roomVentilationMI = fillInParams(roomVentilationMI, velTenMeters)
+    roomVentilationMI = expand_variable_length_sequences(roomVentilationMI)
 
     if saveResults:
         flowStatsMI.to_csv(f"{multiRun_dir}/flowStatsMI.csv")
         roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
 
     return flowStatsMI, roomVentilationMI
+
+def combine_stats(df, group):
+    df = df.copy()
+    rms_cols = [col for col in df.columns if "rms" in col]
+    df[rms_cols] = df[rms_cols] ** 2
+    
+    df.index.names = ["run_id", "key"]
+    df = df.reset_index()
+    string_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
+    group += string_cols
+    print(f"Grouping by {group}")
+    df = df.groupby(group, as_index=False, dropna=False).mean(numeric_only=True)
+    df = df.set_index(["run_id", "key"])
+
+    df[rms_cols] = df[rms_cols] ** 0.5
+
+    return df

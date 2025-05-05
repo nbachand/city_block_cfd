@@ -1,5 +1,5 @@
 POST
-RESTART = ../../../STITCH/config3/14M-mesh.mles ./data/result.00240000.sles
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config3/14M-mesh.mles /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config3/R23/data/result.00240000.sles
 # INTERP_FROM_RESTART ./data/result.00119000.sles
 # INTERP_FROM_RESTART ./data/result.00240000.sles
 # SNAPSHOT NAME=data/result RANGE=10000 10000 240000
