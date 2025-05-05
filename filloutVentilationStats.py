@@ -748,7 +748,7 @@ def combine_stats(df, group):
     string_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
     group += string_cols
     print(f"Grouping by {group}")
-    df = df.groupby(group, as_index=False).mean(numeric_only=True)
+    df = df.groupby(group, as_index=False, dropna=False).mean(numeric_only=True)
     df = df.set_index(["run_id", "key"])
 
     df[rms_cols] = df[rms_cols] ** 0.5
