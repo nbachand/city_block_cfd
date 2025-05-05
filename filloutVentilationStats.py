@@ -745,13 +745,15 @@ def combine_stats(df, group, index_col = None):
     
     df.index.names = ["run_id", "key"]
     df = df.reset_index()
+    if index_col is None:
+        index_col = "run_id"
+    else:
+        df[index_col] = df[index_col] * 10 + df["run_id"] % 10
+        
     string_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
     group += string_cols
     print(f"Grouping by {group}")
     df = df.groupby(group, as_index=False, dropna=False).mean(numeric_only=True)
-
-    if index_col is None:
-        index_col = "run_id"
     
     df = df.set_index([index_col, "key"])
 
