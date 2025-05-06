@@ -3,7 +3,7 @@
 #SBATCH --output=post.out
 #SBATCH -N 2
 #SBATCH -n 16
-#SBATCH --time=00:02:00
+#SBATCH --time=00:10:00
 #SBATCH --mem 64G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
