@@ -2,7 +2,7 @@
 #SBATCH --job-name=cc_posty
 #SBATCH --output=post.out
 #SBATCH -n 16
-#SBATCH --time=0:03:00
+#SBATCH --time=0:05:00
 #SBATCH --mem 128G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL

@@ -73,12 +73,12 @@ home_dir = f'{oak_home}/Cascade/city_block_cfd'
 
 category = sys.argv[1]
 R = sys.argv[2]
-starts = list(map(int, sys.argv[3].split(',')))
-stops = list(map(int, sys.argv[4].split(',')))
+starts = list(map(int, filter(None, sys.argv[3].split(','))))
+stops =  list(map(int, filter(None, sys.argv[4].split(','))))
 # category = "config2"
-# R = "46"
-# starts = [40000,120000]
-# stops = [120000, 160000]
+# R = "50"
+# starts = [40000]
+# stops = [120000]
 print(f"starts: {starts}")
 print(f"stops: {stops}")
 by = 1
@@ -219,7 +219,7 @@ for i, start in enumerate(starts):
     print(f"... from steps {start} to {stop}")
     flowStats = []
     for df in [dfX, dfZ, dfY]:
-        df_sub = df.map(lambda s: s.loc[start:stop-1])
+        df_sub = df.map(lambda s: s.loc[start:stop-1]) # not sure about the -1 but leaving for consistency, shouldnt matter
 
         mean = df_sub.map(probePost.time_average)
         rms = df_sub.map(probePost.time_rms)
@@ -362,8 +362,9 @@ for qoi in probes.probe_quants:
     for i, start in enumerate(starts):
         stop = stops[i]
         print(f"... from steps {start} to {stop}")
-        steps = probes.probe_steps[start:stop:by]
-        times = probes.probe_times[steps]
+        # steps = probes.probe_steps[start:stop:by]
+        steps = [step for step in range(start, stop, by)]
+        times = probes.probe_times.loc[steps]
 
         # Define the fitting function for taus
         def exponential_fit(y, time = times, c = None):
