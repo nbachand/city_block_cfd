@@ -144,11 +144,11 @@ def getRoomOrientations(roomVentilation):
 
     return roomVentilation
 
-def houseTypeRename(houseType):
-    if houseType == "-1-0":
-        return "-1-0"
-    else:
-        return "sl"
+# def houseTypeRename(houseType):
+#     if houseType == "-1-0":
+#         return "-1-0"
+#     else:
+#         return "sl"
 
 def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = None):
     windowType = []
@@ -164,7 +164,7 @@ def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = Non
         windowType.append(f"{windowData[0]}_{windowData[1]}")
         openingType.append(windowData[0])
         windowNumber.append(windowData[1])
-        houseType.append(houseTypeRename(windowData[2]))
+        houseType.append(windowData[2])
         blockType.append(windowData[3])
 
     flowStats["windowType"] = windowType
@@ -687,20 +687,16 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, 
     roomVentilationMI[f"{calc}-mass_flux-roomCeil-slEx"] = roomVentilationMI[f"{calc}-mass_flux-roomCeil"]
     roomVentilationMI[f"{qoi}-roomCeil-slEx"] = roomVentilationMI[f"{qoi}-roomCeil"]
     for index, row in roomVentilationMI.iterrows():
-        index_split = index[1].split('_')
-        room = index_split[0]
-        house_type = index_split[1]
+        windowKeys = row["windowKeys"]
 
-        if house_type == "sl":
-            skylight_flow = 0
-            skylight_flux = 0
-            for window in connectedWindows[room]:
-                if "skylight" in window:
-                    skylight_index = '_'.join([window, *index_split[1:]])
-                    skylight_flow += flowStatsMI.loc[(index[0], skylight_index), f"{calc}-mass_flux"]
-                    skylight_flux += flowStatsMI.loc[(index[0], skylight_index), qoi]
-            roomVentilationMI.loc[index, f"{calc}-mass_flux-roomCeil-slEx"] += skylight_flow
-            roomVentilationMI.loc[index, f"{qoi}-roomCeil-slEx"] += skylight_flux
+        skylight_flow = 0
+        skylight_flux = 0
+        for window in row["windowKeys"]:
+            if "skylight" in window:
+                skylight_flow += flowStatsMI.loc[(index[0], window), f"{calc}-mass_flux"]
+                skylight_flux += flowStatsMI.loc[(index[0], window), qoi]
+        roomVentilationMI.loc[index, f"{calc}-mass_flux-roomCeil-slEx"] += skylight_flow
+        roomVentilationMI.loc[index, f"{qoi}-roomCeil-slEx"] += skylight_flux
 
     errorCeil = roomVentilationMI[f"{calc}-mass_flux-roomCeil-slEx"] * roomVentilationMI[f"mean-{scalar}-room5"]
     errorFloor = roomVentilationMI[f"{calc}-mass_flux-roomFloor"] * roomVentilationMI[f"mean-{scalar}-room0"]
@@ -716,11 +712,9 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, 
     roomVentilationMI[f"{qoi}-roomWalls-perA"] = np.nan
 
     for index, row in roomVentilationMI.iterrows():
-        index_split = index[1].split('_')
-        room = index_split[0]
-        house_type = index_split[1]
+        room = row["roomType"]
 
-        if "sl" in house_type:
+        if "sl" in row["houseType"] or row["slAll"]:
             ceilA = room_areas["ceilings"][room]
         else:
             ceilA = room_areas["floors"][room]
