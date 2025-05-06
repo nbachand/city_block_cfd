@@ -144,6 +144,12 @@ def getRoomOrientations(roomVentilation):
 
     return roomVentilation
 
+def houseTypeRename(houseType):
+    if houseType == "-1-0":
+        return "-1-0"
+    else:
+        return "sl"
+
 def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = None):
     windowType = []
     openingType = []
@@ -158,7 +164,7 @@ def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = Non
         windowType.append(f"{windowData[0]}_{windowData[1]}")
         openingType.append(windowData[0])
         windowNumber.append(windowData[1])
-        houseType.append(windowData[2])
+        houseType.append(houseTypeRename(windowData[2]))
         blockType.append(windowData[3])
 
     flowStats["windowType"] = windowType
