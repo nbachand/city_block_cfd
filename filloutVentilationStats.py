@@ -223,13 +223,14 @@ def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = Non
             (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "B"))
         ), "orientation"] = 270
     
-    EP_mag = []
-    EP_vel_orientation = []
-    EP_normal = []
-    EP_shear = []
-    EPR_mag = []
-    EPR_vel_orientation = []
     if extraProbe is not None:
+        EP_mag = []
+        EP_vel_orientation = []
+        EP_normal = []
+        EP_shear = []
+        EPR_mag = []
+        EPR_vel_orientation = []
+        
         flowStats = pd.concat([flowStats.sort_index(), extraProbe.sort_index()], axis = "columns")
         for window, row in flowStats.iterrows():
             if np.isnan(row["x"]) == False and np.isnan(row["EP_x"]) == False:
