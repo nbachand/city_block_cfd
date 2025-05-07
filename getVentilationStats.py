@@ -73,12 +73,15 @@ home_dir = f'{oak_home}/Cascade/city_block_cfd'
 
 category = sys.argv[1]
 R = sys.argv[2]
-starts = list(map(int, filter(None, sys.argv[3].split(','))))
-stops =  list(map(int, filter(None, sys.argv[4].split(','))))
-# category = "config2"
-# R = "50"
+windowType = sys.argv[3]
+starts = list(map(int, filter(None, sys.argv[4].split(','))))
+stops =  list(map(int, filter(None, sys.argv[5].split(','))))
+# category = "config3"
+# R = "25"
+# windowType = "POINTCLOUD_PROBES"
 # starts = [40000]
-# stops = [120000]
+# stops = [119000]
+print(f"category: {category}, R: {R}, windowType: {windowType}")
 print(f"starts: {starts}")
 print(f"stops: {stops}")
 by = 1
@@ -153,7 +156,10 @@ probes_dir = f'{home_dir}/CHARLES/{category}/R{R}/probes/probesOut_parquet'
 locations_dir = f'{scratch_dir}/CHARLES/{category}/R{R}/probes/locations'
 print(probes_dir)
 
-probes = probePost.Probes(probes_dir, probe_type = "FLUX_PROBES", flux_quants = qoisOutputed, file_type = "parquet")
+probes = probePost.Probes(probes_dir, probe_type = windowType, flux_quants = qoisOutputed, file_type = "parquet")
+if windowType == "POINTCLOUD_PROBES":
+    qois = probes.probe_quants
+
 print(category, R)
 
 print("Compiling window stats")
@@ -208,7 +214,7 @@ dfY = probes.statistics(
 
 #### Extra Probes ####
 
-EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet")
+EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_type = "parquet",  name_pattern = "extraProbe")
 
 nameKey = read_probes_file_switch(f"{probes_dir}/../locations/nameKey_extraProbe.txt")
 nameKey = nameKey.compute()
@@ -219,7 +225,10 @@ for i, start in enumerate(starts):
     print(f"... from steps {start} to {stop}")
     flowStats = []
     for df in [dfX, dfZ, dfY]:
-        df_sub = df.map(lambda s: s.loc[start:stop-1]) # not sure about the -1 but leaving for consistency, shouldnt matter
+        if probes.probe_type == "FLUX_PROBES":
+            df_sub = df.map(lambda s: s.loc[start:stop-1]) # not sure about the -1 but leaving for consistency, shouldnt matter
+        else:
+            df_sub = df.map(lambda s: s.loc[0])
 
         mean = df_sub.map(probePost.time_average)
         rms = df_sub.map(probePost.time_rms)
@@ -238,7 +247,10 @@ for i, start in enumerate(starts):
 
     locations = probes.get_avg_locations()
     locations = locations.loc[flowStats.index.values]
-    areas = {k: v for k, v in probes.areas.items() if k in flowStats.index}
+    if probes.probe_type == "FLUX_PROBES":
+        areas = {k: v for k, v in probes.areas.items() if k in flowStats.index}
+    else:
+        areas = None
 
     if category == "config2" and int(R) < 40:
         flowStats = flowStats.rename(index=lambda x: matchNewNamingConvention(x))
@@ -257,10 +269,15 @@ for i, start in enumerate(starts):
         if fnmatch(qoi, '*sn_prod(p)'):
             flowStats[qoi] = flowStats[qoi].apply(get_Cp)
     # %%
+    if windowType == "POINTCLOUD_PROBES":
+        EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg"]
+    else:
+        EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"]
+
     df = EPprobes.statistics(
         names = [name for name in  EPprobes.probe_names if "extraProbe" in name], 
         steps = [stop],
-        quants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"],
+        quants = EPquants,
         parrallel=False
         )
 
@@ -275,6 +292,9 @@ for i, start in enumerate(starts):
 
     flowStatsPath = f"{probes_dir}/../flowStats-{start}to{stop}.csv"
     flowStats.to_csv(flowStatsPath)
+
+if windowType == "POINTCLOUD_PROBES":
+    exit()
 
     # %%
     ##### Room Interior Probing ####
