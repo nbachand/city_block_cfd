@@ -145,6 +145,11 @@ qoisOutputed = [
 ]
 qois = qoisOutputed
 
+signed_qois = [
+    "sn_prod(p)",
+    "sn_prod(abs(u))",
+    "sn_prod(u**2)"
+]
 
 
 
@@ -159,6 +164,7 @@ print(probes_dir)
 probes = probePost.Probes(probes_dir, probe_type = windowType, flux_quants = qoisOutputed, file_type = "parquet")
 if windowType == "POINTCLOUD_PROBES":
     qois = probes.probe_quants
+    signed_qois = [qoi for qoi in qois if not (fnmatch(qoi, "*abs*") or fnmatch(qoi, "p*"))]
 
 print(category, R)
 
@@ -169,7 +175,7 @@ print("Compiling window stats")
 @utils.no_kwargs
 def norm_norm_blocks(data_dict):
     if category == "config2" and int(R) < 40:
-        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bz" in name], -1)
+        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bz" in name], -1, qois = signed_qois)
     return data_dict
 
 
@@ -184,13 +190,13 @@ dfX = probes.statistics(
 ## Z Flow
 
 @utils.no_kwargs
-def norm_norm_windows(data_dict): # Currently this is applying to qois that shouldnt be negative like sn_prod(abs(u))
-    return probePost.mul_names(data_dict, [name for name in probes.probe_names if fnmatch(name, "*window_?-1*")], -1)
+def norm_norm_windows(data_dict):
+    return probePost.mul_names(data_dict, [name for name in probes.probe_names if fnmatch(name, "*window_?-1*")], -1, qois = signed_qois)
 
 @utils.no_kwargs
 def norm_norm_blocks(data_dict):
     if category == "config2" and int(R) < 40:
-        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bx" in name], -1)
+        return probePost.mul_names(data_dict, [name for name in probes.probe_names if "Bxz" in name or "Bx" in name], -1, qois = signed_qois)
     return data_dict
 
 
@@ -204,11 +210,15 @@ dfZ = probes.statistics(
 
 ## Y Flow
 
+@utils.no_kwargs
+def norm_norm_windows(data_dict): # Currently this is applying to qois that shouldnt be negative like sn_prod(abs(u))
+    return probePost.mul_names(data_dict, probes.probe_names, -1, qois = signed_qois)
+
 dfY = probes.statistics(
     names = [name for name in  probes.probe_names if "skylight" in name], 
     # steps = probes.probe_steps[start:stop:by],
     quants = qois,
-    processing = [flip_data, norm_norm_blocks],
+    processing = [norm_norm_windows, norm_norm_blocks],
     parrallel=False
     )
 
