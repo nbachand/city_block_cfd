@@ -76,9 +76,9 @@ R = sys.argv[2]
 windowType = sys.argv[3]
 starts = list(map(int, filter(None, sys.argv[4].split(','))))
 stops =  list(map(int, filter(None, sys.argv[5].split(','))))
-# category = "config3"
-# R = "25"
-# windowType = "POINTCLOUD_PROBES"
+# category = "config2"
+# R = "57"
+# windowType = "FLUX_PROBES"
 # starts = [40000]
 # stops = [119000]
 print(f"category: {category}, R: {R}, windowType: {windowType}")
@@ -146,9 +146,12 @@ qoisOutputed = [
 qois = qoisOutputed
 
 signed_qois = [
-    "sn_prod(p)",
-    "sn_prod(abs(u))",
-    "sn_prod(u**2)"
+    "mass_flux",
+    "mass_flux(p)",
+    "mass_flux(T)",
+    "mass_flux(D)",
+    "mass_flux(S)",
+    "sn_prod(u)",
 ]
 
 
