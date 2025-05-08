@@ -237,7 +237,7 @@ for i, start in enumerate(starts):
             dfs_calced = add_calc_col_names(dfs_calced, calcs)
         else:
             df_sub = df.squeeze()
-            mean = df_sub.map(probePost.time_average)
+            mean = df_sub.map(probePost.time_average) # here this acts instead an average over probes
             dfs_calced = mean.apply(pd.Series)
 
         flowStats.append(dfs_calced)
@@ -267,8 +267,8 @@ for i, start in enumerate(starts):
             flowStats[qoi] = flowStats[qoi].apply(norm_vel) # normalize again because velocity squared
         if fnmatch(qoi, '*mass_flux(T)'):
             flowStats[qoi] = flowStats[qoi].apply(norm_Temp)
-        if fnmatch(qoi, '*sn_prod(p)'):
-            flowStats[qoi] = flowStats[qoi].apply(get_Cp)
+        # if fnmatch(qoi, '*sn_prod(p)') or fnmatch(qoi, 'p_avg'):
+        #     flowStats[qoi] = flowStats[qoi].apply(get_Cp)
     # %%
     if windowType == "POINTCLOUD_PROBES":
         EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg"]
