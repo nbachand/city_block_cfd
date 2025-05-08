@@ -227,18 +227,19 @@ for i, start in enumerate(starts):
     for df in [dfX, dfZ, dfY]:
         if probes.probe_type == "FLUX_PROBES":
             df_sub = df.map(lambda s: s.loc[start:stop-1]) # not sure about the -1 but leaving for consistency, shouldnt matter
+            mean = df_sub.map(probePost.time_average)
+            rms = df_sub.map(probePost.time_rms)
+            net = df_sub.map(abs)
+            net = net.map(probePost.time_average)
+
+            dfs_calced = [mean, rms, net]
+            calcs = ["mean", "rms", "net"]
+            dfs_calced = add_calc_col_names(dfs_calced, calcs)
         else:
-            df_sub = df.map(lambda s: s.loc[0])
+            df_sub = df.squeeze()
+            mean = df_sub.map(probePost.time_average)
+            dfs_calced = mean.apply(pd.Series)
 
-        mean = df_sub.map(probePost.time_average)
-        rms = df_sub.map(probePost.time_rms)
-        net = df_sub.map(abs)
-        net = net.map(probePost.time_average)
-
-        dfs_calced = [mean, rms, net]
-        calcs = ["mean", "rms", "net"]
-
-        dfs_calced = add_calc_col_names(dfs_calced, calcs)
         flowStats.append(dfs_calced)
 
 
