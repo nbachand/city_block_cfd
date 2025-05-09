@@ -78,7 +78,7 @@ starts = list(map(int, filter(None, sys.argv[4].split(','))))
 stops =  list(map(int, filter(None, sys.argv[5].split(','))))
 # category = "config2"
 # R = "57"
-# windowType = "FLUX_PROBES"
+# windowType = "POINTCLOUD_PROBES"
 # starts = [40000]
 # stops = [119000]
 print(f"category: {category}, R: {R}, windowType: {windowType}")
