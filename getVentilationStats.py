@@ -76,11 +76,11 @@ R = sys.argv[2]
 windowType = sys.argv[3]
 starts = list(map(int, filter(None, sys.argv[4].split(','))))
 stops =  list(map(int, filter(None, sys.argv[5].split(','))))
-# category = "config2"
-# R = "57"
-# windowType = "POINTCLOUD_PROBES"
-# starts = [40000]
-# stops = [119000]
+# category = "config3"
+# R = "31"
+# windowType = "FLUX_PROBES"
+# starts = [160000]
+# stops =  [200000]
 print(f"category: {category}, R: {R}, windowType: {windowType}")
 print(f"starts: {starts}")
 print(f"stops: {stops}")
@@ -232,10 +232,31 @@ EPprobes = probePost.Probes(probes_dir, directory_parquet = probes_dir, file_typ
 nameKey = read_probes_file_switch(f"{probes_dir}/../locations/nameKey_extraProbe.txt")
 nameKey = nameKey.compute()
 nameKey = pd.concat([nameKey, EPprobes.locations["extraProbe"]], axis = "columns")
+    
+if windowType == "POINTCLOUD_PROBES":
+    EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg"]
+else:
+    EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"]
 
 for i, start in enumerate(starts):
     stop = stops[i]
     print(f"... from steps {start} to {stop}")
+    
+    print(f"Extra probe steps from {min(EPprobes.probe_steps)}, {max(EPprobes.probe_steps)}")
+
+    df = EPprobes.statistics(
+        names = [name for name in  EPprobes.probe_names if "extraProbe" in name], 
+        steps = [stop],
+        quants = EPquants,
+        parrallel=False
+        )
+
+    extraProbe = nameKey.copy()
+    extraProbe = pd.concat([extraProbe, df], axis = "columns")
+    extraProbe.set_index(0, inplace=True)
+    extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
+    extraProbe = extraProbe.rename(index=lambda x: x.replace("extraProbe_", ''))
+
     flowStats = []
     for df in [dfX, dfZ, dfY]:
         if probes.probe_type == "FLUX_PROBES":
@@ -283,23 +304,6 @@ for i, start in enumerate(starts):
         # if fnmatch(qoi, '*sn_prod(p)') or fnmatch(qoi, 'p_avg'):
         #     flowStats[qoi] = flowStats[qoi].apply(get_Cp)
     # %%
-    if windowType == "POINTCLOUD_PROBES":
-        EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg"]
-    else:
-        EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"]
-
-    df = EPprobes.statistics(
-        names = [name for name in  EPprobes.probe_names if "extraProbe" in name], 
-        steps = [stop],
-        quants = EPquants,
-        parrallel=False
-        )
-
-    extraProbe = nameKey.copy()
-    extraProbe = pd.concat([extraProbe, df], axis = "columns")
-    extraProbe.set_index(0, inplace=True)
-    extraProbe = extraProbe.rename(columns=lambda x: f"EP_{x}")
-    extraProbe = extraProbe.rename(index=lambda x: x.replace("extraProbe_", ''))
 
     flowStats = addWindowDetails(flowStats, locations, areas, extraProbe)
     flowStats["blockType"].fillna("B", inplace = True)
