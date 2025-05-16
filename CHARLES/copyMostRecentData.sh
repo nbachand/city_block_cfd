@@ -1,4 +1,12 @@
 #!/bin/bash
+#SBATCH --job-name="copyData"
+#SBATCH --output=copyData.out
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --time=01:30:00
+#SBATCH --mem=32G
+#SBATCH --partition=serc
+#SBATCH --mail-type=ALL
 
 # Source directory where the files are located
 . cd_scratch
