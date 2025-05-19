@@ -18,15 +18,15 @@ ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
 top           = SLIP                                 T 0  D 0  S 0
 exterior      =  WM_ALG_WALL                         T 0  D 0  S 0
 
-# interior      =  WM_ALG_WALL                         T 0  D 0  S 0
+interior      =  WM_ALG_WALL                         T 0  D 0  S 0
 
-ceiling       =  WM_ALG_WALL T 0     D -666  S 1
-floor         =  WM_ALG_WALL T 0     D -666  S 1
-interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
-exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
-windows       =  WM_ALG_WALL T -666  D -666  S -666
-doors         =  WM_ALG_WALL T -666  D -666  S -666 
-skylights     =  WM_ALG_WALL T -666  D -666  S -666 
+# ceiling       =  WM_ALG_WALL T 0     D -666  S 1
+# floor         =  WM_ALG_WALL T 0     D -666  S 1
+# interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
+# exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
+# windows       =  WM_ALG_WALL T -666  D -666  S -666
+# doors         =  WM_ALG_WALL T -666  D -666  S -666 
+# skylights     =  WM_ALG_WALL T -666  D -666  S -666 
 
 STATS u mag(u) p
 OVERWRITE_STATS=false #default true
