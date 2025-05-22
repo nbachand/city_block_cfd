@@ -17,165 +17,7 @@ import numpy as np
 import glob
 
 #---------------------------------------------------------------------------
-# Set up the configuration
-#---------------------------------------------------------------------------
-
-inpOpts = [
-    {"varName":"help",
-     "shortName":"h","longName":"help","default":False,"type":"boolean",
-     "helpString":"list help and exit"},
-    {"varName":"infile",
-     "shortName":"infile","longName":"infile","default":'',"type":"string",
-     "helpString":"input png images, e,g, '/path/to/images/T*png'"},
-    {"varName":"prefix",
-     "shortName":"prefix","longName":"prefix","default":'./',"type":"string",
-     "helpString":"path where outputs will saved."},
-    {"varName":"movie_filename",
-     "shortName":"movie_filename","longName":"movie_filename","default":'output_video',"type":"string",
-     "helpString":"provide the output file name without the extension. it will be .mp4"}, 
-    {"varName":"fps",
-     "shortName":"fps","longName":"frames_per_second","default":10,"type":"integer",
-     "helpString":"choose frames per second"},
-    {"varName":"add_cbar_movie",
-     "shortName":"add_cbar_movie","longName":"add_cbar_movie","default":True,"type":"boolean",
-     "helpString":"Should colorbar be added in the movie?"}, 
-    {"varName":"colormap",
-    "shortName":"colormap","longName":"colormap_planar","default":'jet',"type":"string",
-    "helpString":"choose a colormap"},
-    {"varName":"colormap_iso",
-    "shortName":"colormap_iso","longName":"colormap_iso","default":'viridis',"type":"string",
-    "helpString":"choose a colormap for iso surfaces"},
-    {"varName":"colormap_surf",
-    "shortName":"colormap_surf","longName":"colormap_surf","default":'coolwarm',"type":"string",
-    "helpString":"choose a surface colormap"},
-    {"varName":"colormap_particle",
-    "shortName":"colormap_particle","longName":"colormap_particle","default":'hot',"type":"string",
-    "helpString":"choose a colormap for the particles"},
-    {"varName":"cbar_title",
-    "shortName":"cbar_title","longName":"colormap_title_planar","default":'planar_data',"type":"string",
-    "helpString":"choose a cbar title for planar data"},
-    {"varName":"cbar_iso_title",
-    "shortName":"cbar_iso_title","longName":"cbar_iso_title","default":'iso_data',"type":"string",
-    "helpString":"choose a cbar title for iso data"},
-    {"varName":"cbar_surf_title",
-    "shortName":"cbar_surf_title","longName":"cbar_surf_title","default":'surface_data',"type":"string",
-    "helpString":"choose a cbar title for surface data"},
-    {"varName":"cbar_particle_title",
-    "shortName":"cbar_particle_title","longName":"cbar_particle_title","default":'particle data',"type":"string",
-    "helpString":"choose a cbar title for the particle data"},
-    {"varName":"cbar_width_frac",
-    "shortName":"cbar_width_frac","longName":"cbar_width_frac","default":0.2,"type":"float",
-    "helpString":"choose cbar width fraction comapared to the original image width"},
-    {"varName":"cbar_height_frac",
-    "shortName":"cbar_height_frac","longName":"cbar_height_frac","default":0.1,"type":"float",
-    "helpString":"choose cbar height fraction comapared to the original image height"},
-    {"varName":"cbar_orient",
-    "shortName":"cbar_orient","longName":"cbar_orientation","default":'horizontal',"type":"string",
-    "helpString":"choose colorbar orientation: horizontal or vertical"},
-    {"varName":"nticks",
-    "shortName":"nticks","longName":"nticks","default":5,"type":"integer",
-    "helpString":"choose number of ticks in each colorbar"},
-    {"varName":"fontsize",
-    "shortName":"fontsize","longName":"fontsize","default":12,"type":"integer",
-    "helpString":"choose fontsize for the ticklabels and title in each colorbar"},
-]
-
-# Directly specify inpOpts values in the script
-optTable = so.scrOpts(inpOpts)
-image_base = "u_y1p5"
-image_folder = "//scratch/users/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Images"
-# image_base = "SIDE"
-# image_folder = "/oak/stanford/groups/gorle/form2flow/CEE261C-local/SUBS/nbachand/Final/submission-02/IMAGES"
-
-video_folder = "/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Videos"
-video_base = f"{image_base}_pyVid"
-
-# Set options directly
-optTable.setOptionVal("infile", f"{image_folder}/{image_base}*.png")
-optTable.setOptionVal("movie_filename", f"{video_folder}/{video_base}")
-optTable.setOptionVal("prefix", "")
-optTable.setOptionVal("fps", 15)
-optTable.setOptionVal("colormap", "plasma")
-optTable.setOptionVal("colormap_iso", "seismic")
-optTable.setOptionVal("cbar_orient", "vertical")
-optTable.setOptionVal("cbar_width_frac", 0.02)
-optTable.setOptionVal("cbar_height_frac", 0.45)
-optTable.setOptionVal("fontsize", 14)
-
-#---------------------------------------------------------------------------
-# get the configuration values
-#---------------------------------------------------------------------------
-
-infile         = optTable.getOptionVal(   "infile"               ) ;
-prefix         = optTable.getOptionVal(   "prefix"               ) ;
-movie_filename         = optTable.getOptionVal(   "movie_filename"               ) ;
-fps         = optTable.getOptionVal(   "fps"               ) ;
-add_cbar_movie         = optTable.getOptionVal(   "add_cbar_movie"               ) ;
-colormap         = optTable.getOptionVal(   "colormap"               ) ;
-colormap_iso         = optTable.getOptionVal(   "colormap_iso"               ) ;
-colormap_surf         = optTable.getOptionVal(   "colormap_surf"               ) ;
-colormap_particle         = optTable.getOptionVal(   "colormap_particle"               ) ;
-cbar_title         = optTable.getOptionVal(   "cbar_title"               ) ;
-cbar_iso_title         = optTable.getOptionVal(   "cbar_iso_title"               ) ;
-cbar_surf_title         = optTable.getOptionVal(   "cbar_surf_title"               ) ;
-cbar_particle_title         = optTable.getOptionVal(   "cbar_particle_title"               ) ;
-cbar_width_frac         = optTable.getOptionVal(   "cbar_width_frac"               ) ;
-cbar_height_frac         = optTable.getOptionVal(   "cbar_height_frac"               ) ;
-cbar_orient         = optTable.getOptionVal(   "cbar_orient"               ) ;
-nticks         = optTable.getOptionVal(   "nticks"               ) ;
-fontsize         = optTable.getOptionVal(   "fontsize"               ) ;
-
-
-#---------------------------------------------------------------------------
-# Check the parameters
-#---------------------------------------------------------------------------
-
-if infile=='':
-    st.scrErr("No input file given")
-
-output = prefix + movie_filename + '.mp4'
-colormap_planar = colormap
-
-all_mpl_cmaps = list(colormaps)
-if colormap_planar not in all_mpl_cmaps:
-    st.scrErr("colormap planar: " + colormap_planar + " not available in matplotlib")
-if colormap_iso not in all_mpl_cmaps:
-    st.scrErr("colormap iso: " + colormap_iso + " not available in matplotlib")
-if colormap_surf not in all_mpl_cmaps:
-    st.scrErr("colormap surf: " + colormap_surf + " not available in matplotlib")
-if colormap_particle not in all_mpl_cmaps:
-    st.scrErr("colormap particle: " + colormap_particle + " not available in matplotlib")
-
-
-
-
-#---------------------------------------------------------------------------
-# print the parameters
-#---------------------------------------------------------------------------
-
-st.scrPrint('input params:')
-st.scrPrint('  infile  = %s' % infile )
-st.scrPrint('  prefix  = %s' % prefix )
-st.scrPrint('  movie_filename  = %s' % movie_filename )
-st.scrPrint('  fps  = %s' % fps )
-st.scrPrint('  add_cbar_movie  = %s' % add_cbar_movie )
-st.scrPrint('  colormap  = %s' % colormap )
-st.scrPrint('  colormap_iso  = %s' % colormap_iso )
-st.scrPrint('  colormap_surf  = %s' % colormap_surf )
-st.scrPrint('  colormap_particle  = %s' % colormap_particle )
-st.scrPrint('  cbar_title  = %s' % cbar_title )
-st.scrPrint('  cbar_iso_title  = %s' % cbar_iso_title )
-st.scrPrint('  cbar_surf_title  = %s' % cbar_surf_title )
-st.scrPrint('  cbar_particle_title  = %s' % cbar_particle_title )
-st.scrPrint('  cbar_width_frac  = %s' % cbar_width_frac )
-st.scrPrint('  cbar_height_frac  = %s' % cbar_height_frac )
-st.scrPrint('  cbar_orient  = %s' % cbar_orient )
-st.scrPrint('  nticks  = %s' % nticks )
-st.scrPrint('  fontsize  = %s' % fontsize )
-
-
-#---------------------------------------------------------------------------
-# add definitions
+# func definitions
 #---------------------------------------------------------------------------
 
 def create_cbar(data_min, data_max, cm, nticks, title, cb_image_name, cb_w, cb_h, cbar_orient):
@@ -482,68 +324,228 @@ def get_varTypes(image_path):
     return varslist, cmaplist, cb_names, data_min, data_max, titles
     
 
-#---------------------------------------------------------------------------
-# load data and do calculations
-#---------------------------------------------------------------------------
-files = sorted(glob.glob(infile))
+if __name__ == "__main__":
 
-dpi = 80
-background_color = [73, 175, 205] # bahama blue rgb
+    #---------------------------------------------------------------------------
+    # Set up the configuration
+    #---------------------------------------------------------------------------
 
-vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1])
-nvar = len(vars_list)
-last_image = process_image(files[-1], vars_list, cmaplist)
-image_width = last_image.shape[1]
-image_height = last_image.shape[0]
-cbar_width = cbar_width_frac*image_width/dpi
-cbar_height = cbar_height_frac*image_height/dpi
+    inpOpts = [
+        {"varName":"help",
+        "shortName":"h","longName":"help","default":False,"type":"boolean",
+        "helpString":"list help and exit"},
+        {"varName":"infile",
+        "shortName":"infile","longName":"infile","default":'',"type":"string",
+        "helpString":"input png images, e,g, '/path/to/images/T*png'"},
+        {"varName":"prefix",
+        "shortName":"prefix","longName":"prefix","default":'./',"type":"string",
+        "helpString":"path where outputs will saved."},
+        {"varName":"movie_filename",
+        "shortName":"movie_filename","longName":"movie_filename","default":'output_video',"type":"string",
+        "helpString":"provide the output file name without the extension. it will be .mp4"}, 
+        {"varName":"fps",
+        "shortName":"fps","longName":"frames_per_second","default":10,"type":"integer",
+        "helpString":"choose frames per second"},
+        {"varName":"add_cbar_movie",
+        "shortName":"add_cbar_movie","longName":"add_cbar_movie","default":True,"type":"boolean",
+        "helpString":"Should colorbar be added in the movie?"}, 
+        {"varName":"colormap",
+        "shortName":"colormap","longName":"colormap_planar","default":'jet',"type":"string",
+        "helpString":"choose a colormap"},
+        {"varName":"colormap_iso",
+        "shortName":"colormap_iso","longName":"colormap_iso","default":'viridis',"type":"string",
+        "helpString":"choose a colormap for iso surfaces"},
+        {"varName":"colormap_surf",
+        "shortName":"colormap_surf","longName":"colormap_surf","default":'coolwarm',"type":"string",
+        "helpString":"choose a surface colormap"},
+        {"varName":"colormap_particle",
+        "shortName":"colormap_particle","longName":"colormap_particle","default":'hot',"type":"string",
+        "helpString":"choose a colormap for the particles"},
+        {"varName":"cbar_title",
+        "shortName":"cbar_title","longName":"colormap_title_planar","default":'planar_data',"type":"string",
+        "helpString":"choose a cbar title for planar data"},
+        {"varName":"cbar_iso_title",
+        "shortName":"cbar_iso_title","longName":"cbar_iso_title","default":'iso_data',"type":"string",
+        "helpString":"choose a cbar title for iso data"},
+        {"varName":"cbar_surf_title",
+        "shortName":"cbar_surf_title","longName":"cbar_surf_title","default":'surface_data',"type":"string",
+        "helpString":"choose a cbar title for surface data"},
+        {"varName":"cbar_particle_title",
+        "shortName":"cbar_particle_title","longName":"cbar_particle_title","default":'particle data',"type":"string",
+        "helpString":"choose a cbar title for the particle data"},
+        {"varName":"cbar_width_frac",
+        "shortName":"cbar_width_frac","longName":"cbar_width_frac","default":0.2,"type":"float",
+        "helpString":"choose cbar width fraction comapared to the original image width"},
+        {"varName":"cbar_height_frac",
+        "shortName":"cbar_height_frac","longName":"cbar_height_frac","default":0.1,"type":"float",
+        "helpString":"choose cbar height fraction comapared to the original image height"},
+        {"varName":"cbar_orient",
+        "shortName":"cbar_orient","longName":"cbar_orientation","default":'horizontal',"type":"string",
+        "helpString":"choose colorbar orientation: horizontal or vertical"},
+        {"varName":"nticks",
+        "shortName":"nticks","longName":"nticks","default":5,"type":"integer",
+        "helpString":"choose number of ticks in each colorbar"},
+        {"varName":"fontsize",
+        "shortName":"fontsize","longName":"fontsize","default":12,"type":"integer",
+        "helpString":"choose fontsize for the ticklabels and title in each colorbar"},
+    ]
 
-cbar_img = []
-for v, var in enumerate(vars_list):
-    cbar_path = create_cbar(data_min[v], data_max[v], cmaplist[v], nticks, titles[v], cb_names[v],
-                                    cbar_width, cbar_height, cbar_orient)
-    cbar_img.append(cv.imread(cbar_path))
+    # Directly specify inpOpts values in the script
+    optTable = so.scrOpts(inpOpts)
+    image_base = "u_y1p5"
+    image_folder = "//scratch/users/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Images"
+    # image_base = "SIDE"
+    # image_folder = "/oak/stanford/groups/gorle/form2flow/CEE261C-local/SUBS/nbachand/Final/submission-02/IMAGES"
 
-if add_cbar_movie:
-    cb_resized = cbar_padding(None, last_image.shape[0], last_image.shape[1], cbar_img, nvar, cbar_orient)
+    video_folder = "/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Videos"
+    video_base = f"{image_base}_pyVid"
 
-    if cbar_orient == 'horizontal':
-        if len(cb_resized) == 1:
-            last_image_combined = np.vstack((last_image, cb_resized[0]))
-        elif len(cb_resized) == 2:
-            last_image_combined = np.vstack((cb_resized[1], last_image, cb_resized[0]))
-    elif cbar_orient == 'vertical':
-        if len(cb_resized) == 1:
-            last_image_combined = np.hstack((last_image, cb_resized[0]))
-        elif len(cb_resized) == 2:
-            last_image_combined = np.hstack((cb_resized[1], last_image, cb_resized[0]))
+    # Set options directly
+    optTable.setOptionVal("infile", f"{image_folder}/{image_base}*.png")
+    optTable.setOptionVal("movie_filename", f"{video_folder}/{video_base}")
+    optTable.setOptionVal("prefix", "")
+    optTable.setOptionVal("fps", 30)
+    optTable.setOptionVal("colormap", "plasma")
+    optTable.setOptionVal("colormap_iso", "seismic")
+    optTable.setOptionVal("cbar_orient", "vertical")
+    optTable.setOptionVal("cbar_width_frac", 0.02)
+    optTable.setOptionVal("cbar_height_frac", 0.45)
+    optTable.setOptionVal("fontsize", 14)
 
-    h, w, _ = last_image_combined.shape
-else:
-    h, w, _ = last_image.shape
+    #---------------------------------------------------------------------------
+    # get the configuration values
+    #---------------------------------------------------------------------------
 
-fourcc = cv.VideoWriter_fourcc(*'mp4v')  # Codec (e.g., XVID, MJPG, MP4V)  
-frame_size = (w, h)  # (width, height)
-out = cv.VideoWriter(output, fourcc, fps, frame_size)
+    infile         = optTable.getOptionVal(   "infile"               ) ;
+    prefix         = optTable.getOptionVal(   "prefix"               ) ;
+    movie_filename         = optTable.getOptionVal(   "movie_filename"               ) ;
+    fps         = optTable.getOptionVal(   "fps"               ) ;
+    add_cbar_movie         = optTable.getOptionVal(   "add_cbar_movie"               ) ;
+    colormap         = optTable.getOptionVal(   "colormap"               ) ;
+    colormap_iso         = optTable.getOptionVal(   "colormap_iso"               ) ;
+    colormap_surf         = optTable.getOptionVal(   "colormap_surf"               ) ;
+    colormap_particle         = optTable.getOptionVal(   "colormap_particle"               ) ;
+    cbar_title         = optTable.getOptionVal(   "cbar_title"               ) ;
+    cbar_iso_title         = optTable.getOptionVal(   "cbar_iso_title"               ) ;
+    cbar_surf_title         = optTable.getOptionVal(   "cbar_surf_title"               ) ;
+    cbar_particle_title         = optTable.getOptionVal(   "cbar_particle_title"               ) ;
+    cbar_width_frac         = optTable.getOptionVal(   "cbar_width_frac"               ) ;
+    cbar_height_frac         = optTable.getOptionVal(   "cbar_height_frac"               ) ;
+    cbar_orient         = optTable.getOptionVal(   "cbar_orient"               ) ;
+    nticks         = optTable.getOptionVal(   "nticks"               ) ;
+    fontsize         = optTable.getOptionVal(   "fontsize"               ) ;
 
-for img_path in files:
-    print(img_path)
-    frame = process_image(img_path, vars_list, cmaplist)
+
+    #---------------------------------------------------------------------------
+    # Check the parameters
+    #---------------------------------------------------------------------------
+
+    if infile=='':
+        st.scrErr("No input file given")
+
+    output = prefix + movie_filename + '.mp4'
+    colormap_planar = colormap
+
+    all_mpl_cmaps = list(colormaps)
+    if colormap_planar not in all_mpl_cmaps:
+        st.scrErr("colormap planar: " + colormap_planar + " not available in matplotlib")
+    if colormap_iso not in all_mpl_cmaps:
+        st.scrErr("colormap iso: " + colormap_iso + " not available in matplotlib")
+    if colormap_surf not in all_mpl_cmaps:
+        st.scrErr("colormap surf: " + colormap_surf + " not available in matplotlib")
+    if colormap_particle not in all_mpl_cmaps:
+        st.scrErr("colormap particle: " + colormap_particle + " not available in matplotlib")
+
+
+
+
+    #---------------------------------------------------------------------------
+    # print the parameters
+    #---------------------------------------------------------------------------
+
+    st.scrPrint('input params:')
+    st.scrPrint('  infile  = %s' % infile )
+    st.scrPrint('  prefix  = %s' % prefix )
+    st.scrPrint('  movie_filename  = %s' % movie_filename )
+    st.scrPrint('  fps  = %s' % fps )
+    st.scrPrint('  add_cbar_movie  = %s' % add_cbar_movie )
+    st.scrPrint('  colormap  = %s' % colormap )
+    st.scrPrint('  colormap_iso  = %s' % colormap_iso )
+    st.scrPrint('  colormap_surf  = %s' % colormap_surf )
+    st.scrPrint('  colormap_particle  = %s' % colormap_particle )
+    st.scrPrint('  cbar_title  = %s' % cbar_title )
+    st.scrPrint('  cbar_iso_title  = %s' % cbar_iso_title )
+    st.scrPrint('  cbar_surf_title  = %s' % cbar_surf_title )
+    st.scrPrint('  cbar_particle_title  = %s' % cbar_particle_title )
+    st.scrPrint('  cbar_width_frac  = %s' % cbar_width_frac )
+    st.scrPrint('  cbar_height_frac  = %s' % cbar_height_frac )
+    st.scrPrint('  cbar_orient  = %s' % cbar_orient )
+    st.scrPrint('  nticks  = %s' % nticks )
+    st.scrPrint('  fontsize  = %s' % fontsize )
+
+
+    #---------------------------------------------------------------------------
+    # load data and do calculations
+    #---------------------------------------------------------------------------
+    files = sorted(glob.glob(infile))
+
+    dpi = 80
+    background_color = [73, 175, 205] # bahama blue rgb
+
+    vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1])
+    nvar = len(vars_list)
+    last_image = process_image(files[-1], vars_list, cmaplist)
+    image_width = last_image.shape[1]
+    image_height = last_image.shape[0]
+    cbar_width = cbar_width_frac*image_width/dpi
+    cbar_height = cbar_height_frac*image_height/dpi
+
+    cbar_img = []
+    for v, var in enumerate(vars_list):
+        cbar_path = create_cbar(data_min[v], data_max[v], cmaplist[v], nticks, titles[v], cb_names[v],
+                                        cbar_width, cbar_height, cbar_orient)
+        cbar_img.append(cv.imread(cbar_path))
 
     if add_cbar_movie:
+        cb_resized = cbar_padding(None, last_image.shape[0], last_image.shape[1], cbar_img, nvar, cbar_orient)
+
         if cbar_orient == 'horizontal':
             if len(cb_resized) == 1:
-                combined_frame = np.vstack((frame, cb_resized[0]))
+                last_image_combined = np.vstack((last_image, cb_resized[0]))
             elif len(cb_resized) == 2:
-                combined_frame = np.vstack((cb_resized[1], frame, cb_resized[0]))
+                last_image_combined = np.vstack((cb_resized[1], last_image, cb_resized[0]))
         elif cbar_orient == 'vertical':
             if len(cb_resized) == 1:
-                combined_frame = np.hstack((frame, cb_resized[0]))
+                last_image_combined = np.hstack((last_image, cb_resized[0]))
             elif len(cb_resized) == 2:
-                combined_frame = np.hstack((cb_resized[1], frame, cb_resized[0]))
+                last_image_combined = np.hstack((cb_resized[1], last_image, cb_resized[0]))
+
+        h, w, _ = last_image_combined.shape
     else:
-        combined_frame = frame
+        h, w, _ = last_image.shape
 
-    out.write(combined_frame)
+    fourcc = cv.VideoWriter_fourcc(*'mp4v')  # Codec (e.g., XVID, MJPG, MP4V)  
+    frame_size = (w, h)  # (width, height)
+    out = cv.VideoWriter(output, fourcc, fps, frame_size)
 
-out.release()
+    for img_path in files:
+        print(img_path)
+        frame = process_image(img_path, vars_list, cmaplist)
+
+        if add_cbar_movie:
+            if cbar_orient == 'horizontal':
+                if len(cb_resized) == 1:
+                    combined_frame = np.vstack((frame, cb_resized[0]))
+                elif len(cb_resized) == 2:
+                    combined_frame = np.vstack((cb_resized[1], frame, cb_resized[0]))
+            elif cbar_orient == 'vertical':
+                if len(cb_resized) == 1:
+                    combined_frame = np.hstack((frame, cb_resized[0]))
+                elif len(cb_resized) == 2:
+                    combined_frame = np.hstack((cb_resized[1], frame, cb_resized[0]))
+        else:
+            combined_frame = frame
+
+        out.write(combined_frame)
+
+    out.release()
