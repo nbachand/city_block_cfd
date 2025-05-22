@@ -253,7 +253,7 @@ def cbar_padding(cb_loc, img_h, img_w, cb_images, nvar, cbar_orient):
 
     return padded_cb
 
-def process_image(image_path, varlist, cmaplist):
+def process_image(image_path, varlist, cmaplist, data_min = None, data_max = None):
 
     im = cti_image.Image(image_path)
     im.getImageMetadataAndChunks()
@@ -264,11 +264,12 @@ def process_image(image_path, varlist, cmaplist):
             color_mapped_img = plt.get_cmap(cmaplist[v])(im.chunks['daTa']/255.0)
         else:
             img_gs = np.mean(new_image, axis=-1) / 255
-            var_min = im.metadata[var]['range'][0]
-            var_max = im.metadata[var]['range'][1]
-            img_gs = img_gs * (var_max - var_min) + var_min # scale up with local range
-            img_gs = (img_gs - data_min[v]) / (data_max[v] - data_min[v]) # scale down with global range
-            color_mapped_img = plt.get_cmap(colormap)(img_gs)
+            if data_min is not None and data_max is not None: 
+                var_min = im.metadata[var]['range'][0]
+                var_max = im.metadata[var]['range'][1]
+                img_gs = img_gs * (var_max - var_min) + var_min # scale up with local range
+                img_gs = (img_gs - data_min[v]) / (data_max[v] - data_min[v]) # scale down with global range
+            color_mapped_img = plt.get_cmap(cmaplist[v])(img_gs)
 
         color_mapped_img = (color_mapped_img[:,:,:3] * 255).astype(np.uint8)
 
@@ -494,7 +495,7 @@ if __name__ == "__main__":
 
     vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1])
     nvar = len(vars_list)
-    last_image = process_image(files[-1], vars_list, cmaplist)
+    last_image = process_image(files[-1], vars_list, cmaplist, data_min, data_max)
     image_width = last_image.shape[1]
     image_height = last_image.shape[0]
     cbar_width = cbar_width_frac*image_width/dpi
@@ -530,7 +531,7 @@ if __name__ == "__main__":
 
     for img_path in files:
         print(img_path)
-        frame = process_image(img_path, vars_list, cmaplist)
+        frame = process_image(img_path, vars_list, cmaplist, data_min, data_max)
 
         if add_cbar_movie:
             if cbar_orient == 'horizontal':
