@@ -1,0 +1,108 @@
+POST
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config3/14M-mesh.mles /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config3/R24/data/result.00119000.sles
+# INTERP_FROM_RESTART ./data/result.00119000.sles
+# INTERP_FROM_RESTART ./data/result.00240000.sles
+# SNAPSHOT NAME=data/result RANGE=10000 10000 240000
+
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+#Boundary Conditions (-666 means zero-flux)
+buildings     = WM_ALG_WALL                          T 0  D 0  S 0
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
+top           = SLIP                                 T 0  D 0  S 0
+exteriors     =  WM_ALG_WALL                         T 0  D 0  S 0
+ceiling       =  WM_ALG_WALL T 0     D -666  S 1
+floor         =  WM_ALG_WALL T 0     D -666  S 1
+interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
+exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
+windows       =  WM_ALG_WALL T -666  D -666  S -666
+doors         =  WM_ALG_WALL T -666  D -666  S -666 
+skylights     =  WM_ALG_WALL T -666  D -666  S -666 
+
+STATS u #mag(u)
+OVERWRITE_STATS=false #default true
+
+
+ #################################
+ ###########  Images  ###########
+ #################################
+
+# FLUSH_IMAGES 500
+#Define variables for images
+DEFINE image_int_avg=1
+DEFINE image_int=1
+
+
+WRITE_IMAGE NAME=./Images/theta_y1p5         INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_y3           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_y12          INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_z87          INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_x87          INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_xn87         INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/theta_xz0          INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=atan(comp(u_avg,2)/comp(u_avg,0))
+
+WRITE_IMAGE NAME=./Images/thetaT_y1p5        INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_y3          INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_y12         INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_z87         INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_x87         INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_xn87        INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+WRITE_IMAGE NAME=./Images/thetaT_xz0         INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=atan(comp(u_avg,1)/comp(u_avg,0))
+
+WRITE_IMAGE NAME=./Images/uz_y1p5            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_y3              INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_y12             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_z87             INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_x87             INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_xn87            INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(u_avg,2)
+WRITE_IMAGE NAME=./Images/uz_xz0             INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(u_avg,2)
+
+WRITE_IMAGE NAME=./Images/uy_y1p5            INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_y3              INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_y12             INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_z87             INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_x87             INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_xn87            INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(u_avg,1)
+WRITE_IMAGE NAME=./Images/uy_xz0             INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(u_avg,1)
+
+WRITE_IMAGE NAME=./Images/mean_u_x87         INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(u_avg,0)
+WRITE_IMAGE NAME=./Images/mean_u_xn87        INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(u_avg,0)
+WRITE_IMAGE NAME=./Images/mean_u_xz0         INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(u_avg,0)
+
+WRITE_IMAGE NAME=./Images/vortx_y1p5         INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_y3           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_y12          INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_z87          INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_x87          INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_xn87         INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(curl(u_avg),0)
+WRITE_IMAGE NAME=./Images/vortx_xz0          INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(curl(u_avg),0)
+
+WRITE_IMAGE NAME=./Images/vorty_y1p5         INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_y3           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_y12          INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_z87          INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_x87          INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_xn87         INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(curl(u_avg),1)
+WRITE_IMAGE NAME=./Images/vorty_xz0          INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(curl(u_avg),1)
+
+WRITE_IMAGE NAME=./Images/vortz_y1p5         INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 1.5 174  0 -1 0 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_y3           INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 3 174    0 -1 0 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_y12          INTERVAL=$(image_int)     TARGET    0 174 0    CAMERA 0 -174 0               SIZE 480 480 WIDTH   348  GEOM PLANE 174 12 174   0 -1 0 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_z87          INTERVAL=$(image_int)     TARGET    0 58 -87   CAMERA 0 58 87   UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 174 36 -87   0 0 -1 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_x87          INTERVAL=$(image_int)     TARGET    87 58 0    CAMERA -87 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE 87 36 174    -1 0 0 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_xn87         INTERVAL=$(image_int)     TARGET    -87 58 0   CAMERA -88 58 0  UP 0 1 0     SIZE 960 320 WIDTH   348  GEOM PLANE -87 36 174   -1 0 0 VAR=comp(curl(u_avg),2)
+WRITE_IMAGE NAME=./Images/vortz_xz0          INTERVAL=$(image_int)     TARGET    0 58 0     CAMERA -9 58 -9  UP 0 1 0     SIZE 1358 320 WIDTH  492  GEOM PLANE 0 36 0      -1 0 -1 VAR=comp(curl(u_avg),2)
+
+ #################################
+ ###########  PROBING  ###########
+ #################################
+
+# #Define variables for probes
+# DEFINE flush_probes=1000
+# DEFINE probe_path=probes/probesOut
+# DEFINE location_path=probes/locations
+# FLUSH_PROBES $(flush_probes)

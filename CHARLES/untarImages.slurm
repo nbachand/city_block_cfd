@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name="copyImages"
+#SBATCH --job-name="untarImages"
 #SBATCH --output=untarImages.out
 #SBATCH -N 1
 #SBATCH -n 1
