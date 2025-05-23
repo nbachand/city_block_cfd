@@ -17,13 +17,15 @@ import os
 
 #%%
 # Define global variables needed by lesCreateMovie functions
+global background_color, fontsize
+
 background_color = [73, 175, 205]  # bahama blue rgb
 fontsize = 14
 
 # Define path to image and parameters
 image_path = "/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config3/temp_images/R16_mean_u_y1p5.00240000.png"
-output_dir = "/Users/nicholasbachand/Documents/Research/Cascade/city_block_cfd/CHARLES/output_images"
-os.makedirs(output_dir, exist_ok=True)
+output_dir = "/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config3/temp_images/python_images"
+# os.makedirs(output_dir, exist_ok=True)
 
 # Define variable parameters
 varslist = ['planar']
