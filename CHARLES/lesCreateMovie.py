@@ -285,13 +285,25 @@ def process_image(image_path, varlist, cmaplist, data_min = None, data_max = Non
     return color_mapped_img
 
 
-def get_varTypes(image_path):
-
+def get_varTypes(image_path, params):
+    """Get variable types and their properties from the image
+    
+    Args:
+        image_path: Path to the image file
+        params: Dictionary containing configuration parameters
+        
+    Returns:
+        varslist: List of variable types
+        cmaplist: List of colormaps for each variable
+        cb_names: List of colorbar image names
+        data_min: List of minimum data values
+        data_max: List of maximum data values
+        titles: List of colorbar titles
+    """
     varslist = ['planar']
-    cmaplist = [colormap_planar]
-    cb_names = [prefix + 'colorbar.png']
-    titles = [cbar_title]
-
+    cmaplist = [params['colormap_planar']]
+    cb_names = [params['prefix'] + 'colorbar.png']
+    titles = [params['cbar_title']]
 
     im = cti_image.Image(image_path)
     im.getImageMetadataAndChunks()
@@ -300,27 +312,27 @@ def get_varTypes(image_path):
 
     if im.metadata['iso']['available'] == True:
         varslist.append('iso')
-        cmaplist.append(colormap_iso)
-        cb_names.append(prefix + 'colorbar_iso.png')
+        cmaplist.append(params['colormap_iso'])
+        cb_names.append(params['prefix'] + 'colorbar_iso.png')
         data_min.append(im.metadata['iso']['range'][0])
         data_max.append(im.metadata['iso']['range'][1])
-        titles.append(cbar_iso_title)
+        titles.append(params['cbar_iso_title'])
 
     if im.metadata['surf']['available'] == True:
         varslist.append('surf')
-        cmaplist.append(colormap_surf)
-        cb_names.append(prefix + 'colorbar_surf.png')
+        cmaplist.append(params['colormap_surf'])
+        cb_names.append(params['prefix'] + 'colorbar_surf.png')
         data_min.append(im.metadata['surf']['range'][0])
         data_max.append(im.metadata['surf']['range'][1])
-        titles.append(cbar_surf_title)
+        titles.append(params['cbar_surf_title'])
 
     if im.metadata['particle']['available'] == True:
         varslist.append('particle')
-        cmaplist.append(colormap_particle)
-        cb_names.append(prefix + 'colorbar_particle.png')
+        cmaplist.append(params['colormap_particle'])
+        cb_names.append(params['prefix'] + 'colorbar_particle.png')
         data_min.append(im.metadata['particle']['range'][0])
         data_max.append(im.metadata['particle']['range'][1])
-        titles.append(cbar_particle_title)
+        titles.append(params['cbar_particle_title'])
 
     return varslist, cmaplist, cb_names, data_min, data_max, titles
     
@@ -544,7 +556,7 @@ def create_video(params):
     files = sorted(glob.glob(params['infile']))
     
     # Get variable types and necessary information
-    vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1])
+    vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1], params)
     nvar = len(vars_list)
     
     # Process the last image to get dimensions
