@@ -575,7 +575,7 @@ def print_parameters(params):
 def create_video(params):
     """Main function to create the video"""
     # Define parameters that were previously global
-    background_color = [73, 175, 205]  # bahama blue rgb
+    background_color = [255, 255, 255] #[73, 175, 205]  # bahama blue rgb
     fontsize = params['fontsize']
     dpi = 85
     
