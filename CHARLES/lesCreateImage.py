@@ -18,9 +18,7 @@ import os
 
 #%% Method 3: Reusable function leveraging lesCreateMovie components
 def create_image_with_colorbar(
-    image_path, output_path, 
-    varlist=['planar'], cmaplist=['plasma'],
-    data_min=[0], data_max=[1], 
+    image, output_path, cmaplist, data_min, data_max, 
     cbar_title="Data", cbar_orient="vertical",
     cbar_width_frac=0.05, cbar_height_frac=0.8,
     nticks=5, fontsize=14,
@@ -29,9 +27,8 @@ def create_image_with_colorbar(
     """Create and save an image with a properly formatted colorbar
     
     Args:
-        image_path: Path to input image
-        output_path: Path to save the resulting image
-        varlist: List of variable types to process
+        image: processed image
+        output_path: Path to save the image
         cmaplist: List of colormaps to use
         data_min: List of minimum values for colormaps
         data_max: List of maximum values for colormaps
@@ -46,11 +43,7 @@ def create_image_with_colorbar(
     Returns:
         Combined image with colorbar
     """
-    # No need for context manager or global variables anymore
-    
-    # Process the image
-    image = process_image(image_path, varlist, cmaplist, data_min, data_max)
-    
+
     # Calculate dimensions
     dpi = 80
     image_width = image.shape[1]
@@ -96,11 +89,18 @@ def main():
     image_name = os.path.basename(image_path)
     # os.makedirs(output_dir, exist_ok=True)
 
+    varlist=['planar']
+    cmaplist=['plasma']
+    data_min=[0]
+    data_max=[2]
+
+     # Process the image
+    image = process_image(image_path, varlist, cmaplist, data_min, data_max)
+
     # Example usage of the reusable function
     custom_output = os.path.join(output_dir, image_name)
     result = create_image_with_colorbar(
-        image_path, custom_output,
-        data_min=[0], data_max=[2], 
+        image, custom_output, cmaplist, data_min, data_max, 
         cbar_title="Velocity (m/s)",
         cbar_orient="vertical"
     )
