@@ -577,6 +577,7 @@ def create_video(params):
     # Define parameters that were previously global
     background_color = [73, 175, 205]  # bahama blue rgb
     fontsize = params['fontsize']
+    dpi = 85
     
     # Get image files
     files = sorted(glob.glob(params['infile']))
