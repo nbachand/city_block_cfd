@@ -325,12 +325,8 @@ def get_varTypes(image_path):
     return varslist, cmaplist, cb_names, data_min, data_max, titles
     
 
-if __name__ == "__main__":
-
-    #---------------------------------------------------------------------------
-    # Set up the configuration
-    #---------------------------------------------------------------------------
-
+def setup_options():
+    """Set up the configuration options"""
     inpOpts = [
         {"varName":"help",
         "shortName":"h","longName":"help","default":False,"type":"boolean",
@@ -390,163 +386,248 @@ if __name__ == "__main__":
         "shortName":"fontsize","longName":"fontsize","default":12,"type":"integer",
         "helpString":"choose fontsize for the ticklabels and title in each colorbar"},
     ]
-
-    # Directly specify inpOpts values in the script
+    
+    # Create option table
     optTable = so.scrOpts(inpOpts)
-    image_base = "u_y1p5"
-    image_folder = "//scratch/users/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Images"
-    # image_base = "SIDE"
-    # image_folder = "/oak/stanford/groups/gorle/form2flow/CEE261C-local/SUBS/nbachand/Final/submission-02/IMAGES"
+    
+    return optTable
 
-    video_folder = "/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Videos"
-    video_base = f"{image_base}_pyVid"
+def set_default_options(optTable, 
+                        image_base="u_y1p5",
+                        image_folder="//scratch/users/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Images",
+                        video_folder="/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R53/Videos",
+                        video_suffix="_pyVid",
+                        prefix="",
+                        fps=30,
+                        colormap="plasma",
+                        colormap_iso="seismic",
+                        colormap_surf="coolwarm",
+                        colormap_particle="hot",
+                        cbar_orient="vertical",
+                        cbar_width_frac=0.02,
+                        cbar_height_frac=0.45,
+                        fontsize=14,
+                        add_cbar_movie=True,
+                        nticks=5,
+                        cbar_title="planar_data",
+                        cbar_iso_title="iso_data",
+                        cbar_surf_title="surface_data",
+                        cbar_particle_title="particle data"):
+    """Set default options with customizable parameters
+    
+    Args:
+        optTable: The option table to populate
+        image_base: Base name for input images
+        image_folder: Folder containing input images
+        video_folder: Folder where output video will be saved
+        video_suffix: Suffix to add to video filename
+        prefix: Prefix for output files
+        fps: Frames per second for output video
+        colormap: Colormap for planar data
+        colormap_iso: Colormap for iso surfaces
+        colormap_surf: Colormap for surface data
+        colormap_particle: Colormap for particle data
+        cbar_orient: Orientation of colorbars ("horizontal" or "vertical")
+        cbar_width_frac: Width fraction of colorbar compared to image
+        cbar_height_frac: Height fraction of colorbar compared to image
+        fontsize: Font size for colorbar text
+        add_cbar_movie: Whether to add colorbars to the movie
+        nticks: Number of ticks on colorbars
+        cbar_title: Title for planar data colorbar
+        cbar_iso_title: Title for iso data colorbar
+        cbar_surf_title: Title for surface data colorbar
+        cbar_particle_title: Title for particle data colorbar
+    
+    Returns:
+        The populated option table
+    """
+    video_base = f"{image_base}{video_suffix}"
 
     # Set options directly
     optTable.setOptionVal("infile", f"{image_folder}/{image_base}*.png")
     optTable.setOptionVal("movie_filename", f"{video_folder}/{video_base}")
-    optTable.setOptionVal("prefix", "")
-    optTable.setOptionVal("fps", 30)
-    optTable.setOptionVal("colormap", "plasma")
-    optTable.setOptionVal("colormap_iso", "seismic")
-    optTable.setOptionVal("cbar_orient", "vertical")
-    optTable.setOptionVal("cbar_width_frac", 0.02)
-    optTable.setOptionVal("cbar_height_frac", 0.45)
-    optTable.setOptionVal("fontsize", 14)
+    optTable.setOptionVal("prefix", prefix)
+    optTable.setOptionVal("fps", fps)
+    optTable.setOptionVal("add_cbar_movie", add_cbar_movie)
+    optTable.setOptionVal("colormap", colormap)
+    optTable.setOptionVal("colormap_iso", colormap_iso)
+    optTable.setOptionVal("colormap_surf", colormap_surf)
+    optTable.setOptionVal("colormap_particle", colormap_particle)
+    optTable.setOptionVal("cbar_title", cbar_title)
+    optTable.setOptionVal("cbar_iso_title", cbar_iso_title)
+    optTable.setOptionVal("cbar_surf_title", cbar_surf_title)
+    optTable.setOptionVal("cbar_particle_title", cbar_particle_title)
+    optTable.setOptionVal("cbar_orient", cbar_orient)
+    optTable.setOptionVal("cbar_width_frac", cbar_width_frac)
+    optTable.setOptionVal("cbar_height_frac", cbar_height_frac)
+    optTable.setOptionVal("nticks", nticks)
+    optTable.setOptionVal("fontsize", fontsize)
+    
+    return optTable
 
-    #---------------------------------------------------------------------------
-    # get the configuration values
-    #---------------------------------------------------------------------------
+def get_options(optTable):
+    """Extract all options from the option table"""
+    params = {
+        "infile": optTable.getOptionVal("infile"),
+        "prefix": optTable.getOptionVal("prefix"),
+        "movie_filename": optTable.getOptionVal("movie_filename"),
+        "fps": optTable.getOptionVal("fps"),
+        "add_cbar_movie": optTable.getOptionVal("add_cbar_movie"),
+        "colormap": optTable.getOptionVal("colormap"),
+        "colormap_iso": optTable.getOptionVal("colormap_iso"),
+        "colormap_surf": optTable.getOptionVal("colormap_surf"),
+        "colormap_particle": optTable.getOptionVal("colormap_particle"),
+        "cbar_title": optTable.getOptionVal("cbar_title"),
+        "cbar_iso_title": optTable.getOptionVal("cbar_iso_title"),
+        "cbar_surf_title": optTable.getOptionVal("cbar_surf_title"),
+        "cbar_particle_title": optTable.getOptionVal("cbar_particle_title"),
+        "cbar_width_frac": optTable.getOptionVal("cbar_width_frac"),
+        "cbar_height_frac": optTable.getOptionVal("cbar_height_frac"),
+        "cbar_orient": optTable.getOptionVal("cbar_orient"),
+        "nticks": optTable.getOptionVal("nticks"),
+        "fontsize": optTable.getOptionVal("fontsize"),
+    }
+    return params
 
-    infile         = optTable.getOptionVal(   "infile"               ) ;
-    prefix         = optTable.getOptionVal(   "prefix"               ) ;
-    movie_filename         = optTable.getOptionVal(   "movie_filename"               ) ;
-    fps         = optTable.getOptionVal(   "fps"               ) ;
-    add_cbar_movie         = optTable.getOptionVal(   "add_cbar_movie"               ) ;
-    colormap         = optTable.getOptionVal(   "colormap"               ) ;
-    colormap_iso         = optTable.getOptionVal(   "colormap_iso"               ) ;
-    colormap_surf         = optTable.getOptionVal(   "colormap_surf"               ) ;
-    colormap_particle         = optTable.getOptionVal(   "colormap_particle"               ) ;
-    cbar_title         = optTable.getOptionVal(   "cbar_title"               ) ;
-    cbar_iso_title         = optTable.getOptionVal(   "cbar_iso_title"               ) ;
-    cbar_surf_title         = optTable.getOptionVal(   "cbar_surf_title"               ) ;
-    cbar_particle_title         = optTable.getOptionVal(   "cbar_particle_title"               ) ;
-    cbar_width_frac         = optTable.getOptionVal(   "cbar_width_frac"               ) ;
-    cbar_height_frac         = optTable.getOptionVal(   "cbar_height_frac"               ) ;
-    cbar_orient         = optTable.getOptionVal(   "cbar_orient"               ) ;
-    nticks         = optTable.getOptionVal(   "nticks"               ) ;
-    fontsize         = optTable.getOptionVal(   "fontsize"               ) ;
-
-
-    #---------------------------------------------------------------------------
-    # Check the parameters
-    #---------------------------------------------------------------------------
-
-    if infile=='':
+def validate_parameters(params):
+    """Check the parameters for validity"""
+    if params['infile'] == '':
         st.scrErr("No input file given")
 
-    output = prefix + movie_filename + '.mp4'
-    colormap_planar = colormap
+    params['output'] = params['prefix'] + params['movie_filename'] + '.mp4'
+    params['colormap_planar'] = params['colormap']
 
     all_mpl_cmaps = list(colormaps)
-    if colormap_planar not in all_mpl_cmaps:
-        st.scrErr("colormap planar: " + colormap_planar + " not available in matplotlib")
-    if colormap_iso not in all_mpl_cmaps:
-        st.scrErr("colormap iso: " + colormap_iso + " not available in matplotlib")
-    if colormap_surf not in all_mpl_cmaps:
-        st.scrErr("colormap surf: " + colormap_surf + " not available in matplotlib")
-    if colormap_particle not in all_mpl_cmaps:
-        st.scrErr("colormap particle: " + colormap_particle + " not available in matplotlib")
+    if params['colormap_planar'] not in all_mpl_cmaps:
+        st.scrErr("colormap planar: " + params['colormap_planar'] + " not available in matplotlib")
+    if params['colormap_iso'] not in all_mpl_cmaps:
+        st.scrErr("colormap iso: " + params['colormap_iso'] + " not available in matplotlib")
+    if params['colormap_surf'] not in all_mpl_cmaps:
+        st.scrErr("colormap surf: " + params['colormap_surf'] + " not available in matplotlib")
+    if params['colormap_particle'] not in all_mpl_cmaps:
+        st.scrErr("colormap particle: " + params['colormap_particle'] + " not available in matplotlib")
+    
+    return params
 
-
-
-
-    #---------------------------------------------------------------------------
-    # print the parameters
-    #---------------------------------------------------------------------------
-
+def print_parameters(params):
+    """Print the parameters for user information"""
     st.scrPrint('input params:')
-    st.scrPrint('  infile  = %s' % infile )
-    st.scrPrint('  prefix  = %s' % prefix )
-    st.scrPrint('  movie_filename  = %s' % movie_filename )
-    st.scrPrint('  fps  = %s' % fps )
-    st.scrPrint('  add_cbar_movie  = %s' % add_cbar_movie )
-    st.scrPrint('  colormap  = %s' % colormap )
-    st.scrPrint('  colormap_iso  = %s' % colormap_iso )
-    st.scrPrint('  colormap_surf  = %s' % colormap_surf )
-    st.scrPrint('  colormap_particle  = %s' % colormap_particle )
-    st.scrPrint('  cbar_title  = %s' % cbar_title )
-    st.scrPrint('  cbar_iso_title  = %s' % cbar_iso_title )
-    st.scrPrint('  cbar_surf_title  = %s' % cbar_surf_title )
-    st.scrPrint('  cbar_particle_title  = %s' % cbar_particle_title )
-    st.scrPrint('  cbar_width_frac  = %s' % cbar_width_frac )
-    st.scrPrint('  cbar_height_frac  = %s' % cbar_height_frac )
-    st.scrPrint('  cbar_orient  = %s' % cbar_orient )
-    st.scrPrint('  nticks  = %s' % nticks )
-    st.scrPrint('  fontsize  = %s' % fontsize )
+    st.scrPrint('  infile  = %s' % params['infile'])
+    st.scrPrint('  prefix  = %s' % params['prefix'])
+    st.scrPrint('  movie_filename  = %s' % params['movie_filename'])
+    st.scrPrint('  fps  = %s' % params['fps'])
+    st.scrPrint('  add_cbar_movie  = %s' % params['add_cbar_movie'])
+    st.scrPrint('  colormap  = %s' % params['colormap'])
+    st.scrPrint('  colormap_iso  = %s' % params['colormap_iso'])
+    st.scrPrint('  colormap_surf  = %s' % params['colormap_surf'])
+    st.scrPrint('  colormap_particle  = %s' % params['colormap_particle'])
+    st.scrPrint('  cbar_title  = %s' % params['cbar_title'])
+    st.scrPrint('  cbar_iso_title  = %s' % params['cbar_iso_title'])
+    st.scrPrint('  cbar_surf_title  = %s' % params['cbar_surf_title'])
+    st.scrPrint('  cbar_particle_title  = %s' % params['cbar_particle_title'])
+    st.scrPrint('  cbar_width_frac  = %s' % params['cbar_width_frac'])
+    st.scrPrint('  cbar_height_frac  = %s' % params['cbar_height_frac'])
+    st.scrPrint('  cbar_orient  = %s' % params['cbar_orient'])
+    st.scrPrint('  nticks  = %s' % params['nticks'])
+    st.scrPrint('  fontsize  = %s' % params['fontsize'])
 
-
-    #---------------------------------------------------------------------------
-    # load data and do calculations
-    #---------------------------------------------------------------------------
-    files = sorted(glob.glob(infile))
-
+def create_video(params):
+    """Main function to create the video"""
+    # Define global variables used by other functions
+    global background_color, fontsize
+    
     dpi = 80
-    background_color = [73, 175, 205] # bahama blue rgb
-
+    background_color = [73, 175, 205]  # bahama blue rgb
+    fontsize = params['fontsize']
+    
+    # Get image files
+    files = sorted(glob.glob(params['infile']))
+    
+    # Get variable types and necessary information
     vars_list, cmaplist, cb_names, data_min, data_max, titles = get_varTypes(files[-1])
     nvar = len(vars_list)
+    
+    # Process the last image to get dimensions
     last_image = process_image(files[-1], vars_list, cmaplist, data_min, data_max)
     image_width = last_image.shape[1]
     image_height = last_image.shape[0]
-    cbar_width = cbar_width_frac*image_width/dpi
-    cbar_height = cbar_height_frac*image_height/dpi
-
+    cbar_width = params['cbar_width_frac'] * image_width / dpi
+    cbar_height = params['cbar_height_frac'] * image_height / dpi
+    
+    # Create colorbar images
     cbar_img = []
     for v, var in enumerate(vars_list):
-        cbar_path = create_cbar(data_min[v], data_max[v], cmaplist[v], nticks, titles[v], cb_names[v],
-                                        cbar_width, cbar_height, cbar_orient)
+        cbar_path = create_cbar(data_min[v], data_max[v], cmaplist[v], params['nticks'], 
+                               titles[v], cb_names[v], cbar_width, cbar_height, 
+                               params['cbar_orient'])
         cbar_img.append(cv.imread(cbar_path))
-
-    if add_cbar_movie:
-        cb_resized = cbar_padding(None, last_image.shape[0], last_image.shape[1], cbar_img, nvar, cbar_orient)
-
-        if cbar_orient == 'horizontal':
+    
+    # Prepare final image dimensions
+    if params['add_cbar_movie']:
+        cb_resized = cbar_padding(None, last_image.shape[0], last_image.shape[1], 
+                                 cbar_img, nvar, params['cbar_orient'])
+        
+        if params['cbar_orient'] == 'horizontal':
             if len(cb_resized) == 1:
                 last_image_combined = np.vstack((last_image, cb_resized[0]))
             elif len(cb_resized) == 2:
                 last_image_combined = np.vstack((cb_resized[1], last_image, cb_resized[0]))
-        elif cbar_orient == 'vertical':
+        elif params['cbar_orient'] == 'vertical':
             if len(cb_resized) == 1:
                 last_image_combined = np.hstack((last_image, cb_resized[0]))
             elif len(cb_resized) == 2:
                 last_image_combined = np.hstack((cb_resized[1], last_image, cb_resized[0]))
-
+                
         h, w, _ = last_image_combined.shape
     else:
         h, w, _ = last_image.shape
-
-    fourcc = cv.VideoWriter_fourcc(*'mp4v')  # Codec (e.g., XVID, MJPG, MP4V)  
-    frame_size = (w, h)  # (width, height)
-    out = cv.VideoWriter(output, fourcc, fps, frame_size)
-
+    
+    # Set up video writer
+    fourcc = cv.VideoWriter_fourcc(*'mp4v')
+    frame_size = (w, h)
+    out = cv.VideoWriter(params['output'], fourcc, params['fps'], frame_size)
+    
+    # Process each frame and add to video
     for img_path in files:
         print(img_path)
         frame = process_image(img_path, vars_list, cmaplist, data_min, data_max)
-
-        if add_cbar_movie:
-            if cbar_orient == 'horizontal':
+        
+        if params['add_cbar_movie']:
+            if params['cbar_orient'] == 'horizontal':
                 if len(cb_resized) == 1:
                     combined_frame = np.vstack((frame, cb_resized[0]))
                 elif len(cb_resized) == 2:
                     combined_frame = np.vstack((cb_resized[1], frame, cb_resized[0]))
-            elif cbar_orient == 'vertical':
+            elif params['cbar_orient'] == 'vertical':
                 if len(cb_resized) == 1:
                     combined_frame = np.hstack((frame, cb_resized[0]))
                 elif len(cb_resized) == 2:
                     combined_frame = np.hstack((cb_resized[1], frame, cb_resized[0]))
         else:
             combined_frame = frame
-
+            
         out.write(combined_frame)
-
+    
     out.release()
+    print(f"Video saved to {params['output']}")
+
+def main():
+    """Main function to orchestrate the video creation process"""
+    # Set up options
+    optTable = setup_options()
+    
+    # Set default options (can be commented out if using command line args)
+    optTable = set_default_options(optTable)
+    
+    # Get and validate parameters
+    params = get_options(optTable)
+    params = validate_parameters(params)
+    
+    # Print parameters
+    print_parameters(params)
+    
+    # Create the video
+    create_video(params)
+
+if __name__ == "__main__":
+    main()
