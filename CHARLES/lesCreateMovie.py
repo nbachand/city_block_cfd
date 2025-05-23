@@ -20,14 +20,31 @@ import glob
 # func definitions
 #---------------------------------------------------------------------------
 
-def create_cbar(data_min, data_max, cm, nticks, title, cb_image_name, cb_w, cb_h, cbar_orient):
-
+def create_cbar(data_min, data_max, cm, nticks, title, cb_image_name, cb_w, cb_h, cbar_orient, 
+                background_color=[73, 175, 205], fontsize=14):
+    """Create a colorbar image
     
-    fig, ax = plt.subplots(figsize=(cb_w,cb_h))
+    Args:
+        data_min: Minimum value for the colorbar
+        data_max: Maximum value for the colorbar
+        cm: Colormap to use
+        nticks: Number of ticks on the colorbar
+        title: Title for the colorbar
+        cb_image_name: Output image filename
+        cb_w: Width of the colorbar in inches
+        cb_h: Height of the colorbar in inches
+        cbar_orient: Orientation of the colorbar ('horizontal' or 'vertical')
+        background_color: RGB background color (default: bahama blue)
+        fontsize: Font size for labels (default: 14)
+    
+    Returns:
+        Path to the created colorbar image
+    """
+    fig, ax = plt.subplots(figsize=(cb_w, cb_h))
     fig.subplots_adjust(bottom=0.3)
 
     fig.patch.set_facecolor((background_color[0]/255, background_color[1]/255, background_color[2]/255))
-    ticks = np.linspace(data_min, data_max, nticks) #.astype(int)
+    ticks = np.linspace(data_min, data_max, nticks)
     if data_max - data_min > 1:
         ticks = np.round(ticks).astype(int)
     else:
@@ -46,9 +63,21 @@ def create_cbar(data_min, data_max, cm, nticks, title, cb_image_name, cb_w, cb_h
 
     return cbar_path
 
-def cbar_padding(cb_loc, img_h, img_w, cb_images, nvar, cbar_orient):
+def cbar_padding(cb_loc, img_h, img_w, cb_images, nvar, cbar_orient, background_color=[73, 175, 205]):
+    """Pad colorbar images to match dimensions
     
-    #cb_h, cb_w, _ = cb_images[0].shape
+    Args:
+        cb_loc: Location of the colorbar
+        img_h: Height of the image
+        img_w: Width of the image
+        cb_images: List of colorbar images
+        nvar: Number of variables
+        cbar_orient: Orientation of colorbars
+        background_color: RGB background color (default: bahama blue)
+    
+    Returns:
+        List of padded colorbar images
+    """
     cb_h_max = max(array.shape[0] for array in cb_images)
     cb_w_max = max(array.shape[1] for array in cb_images)
     
@@ -545,10 +574,7 @@ def print_parameters(params):
 
 def create_video(params):
     """Main function to create the video"""
-    # Define global variables used by other functions
-    global background_color, fontsize
-    
-    dpi = 80
+    # Define parameters that were previously global
     background_color = [73, 175, 205]  # bahama blue rgb
     fontsize = params['fontsize']
     
@@ -571,13 +597,13 @@ def create_video(params):
     for v, var in enumerate(vars_list):
         cbar_path = create_cbar(data_min[v], data_max[v], cmaplist[v], params['nticks'], 
                                titles[v], cb_names[v], cbar_width, cbar_height, 
-                               params['cbar_orient'])
+                               params['cbar_orient'], background_color, fontsize)
         cbar_img.append(cv.imread(cbar_path))
     
     # Prepare final image dimensions
     if params['add_cbar_movie']:
         cb_resized = cbar_padding(None, last_image.shape[0], last_image.shape[1], 
-                                 cbar_img, nvar, params['cbar_orient'])
+                                cbar_img, nvar, params['cbar_orient'], background_color)
         
         if params['cbar_orient'] == 'horizontal':
             if len(cb_resized) == 1:
