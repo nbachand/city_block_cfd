@@ -17,8 +17,7 @@ import os
 
 #%%
 # Define global variables needed by lesCreateMovie functions
-global background_color, fontsize
-
+# Define parameters (no need for globals now)
 background_color = [73, 175, 205]  # bahama blue rgb
 fontsize = 14
 
@@ -60,15 +59,16 @@ image_height = image.shape[0]
 cbar_width = cbar_width_frac * image_width / dpi
 cbar_height = cbar_height_frac * image_height / dpi
 
-# Create colorbar using lesCreateMovie function
+# Create colorbar using lesCreateMovie function - now passing background_color and fontsize
 cbar_path = os.path.join(output_dir, "colorbar.png")
 create_cbar(data_min[0], data_max[0], cmaplist[0], nticks, cbar_title, 
-           cbar_path, cbar_width, cbar_height, cbar_orient)
+           cbar_path, cbar_width, cbar_height, cbar_orient, 
+           background_color, fontsize)
 
-# Load the colorbar and use cbar_padding to create proper layout
+# Load the colorbar and use cbar_padding to create proper layout - now passing background_color
 cbar_img = [cv.imread(cbar_path)]
 cb_resized = cbar_padding(None, image.shape[0], image.shape[1], 
-                         cbar_img, 1, cbar_orient)
+                         cbar_img, 1, cbar_orient, background_color)
 
 # Combine image and colorbar
 if cbar_orient == 'horizontal':
@@ -120,29 +120,7 @@ def create_image_with_colorbar(
     Returns:
         Combined image with colorbar
     """
-    # Since we need to modify lesCreateMovie.py's functions to avoid globals,
-    # we'll create a context manager to temporarily set and restore global variables
-    import contextlib
-    
-    @contextlib.contextmanager
-    def temp_globals():
-        # Store original global values
-        global background_color, fontsize
-        orig_bg = background_color if 'background_color' in globals() else None
-        orig_fs = fontsize if 'fontsize' in globals() else None
-        
-        # Set temporary values
-        background_color = background_color
-        fontsize = fontsize
-        
-        try:
-            yield
-        finally:
-            # Restore original values if they existed
-            if orig_bg is not None:
-                background_color = orig_bg
-            if orig_fs is not None:
-                fontsize = orig_fs
+    # No need for context manager or global variables anymore
     
     # Process the image
     image = process_image(image_path, varlist, cmaplist, data_min, data_max)
@@ -157,16 +135,15 @@ def create_image_with_colorbar(
     # Create temporary colorbar file
     temp_cbar_path = "temp_colorbar.png"
     
-    # Use context manager to temporarily set globals
-    with temp_globals():
-        # Create colorbar
-        create_cbar(data_min[0], data_max[0], cmaplist[0], nticks, cbar_title, 
-                   temp_cbar_path, cbar_width, cbar_height, cbar_orient)
-        
-        # Load and process colorbar
-        cbar_img = [cv.imread(temp_cbar_path)]
-        cb_resized = cbar_padding(None, image.shape[0], image.shape[1], 
-                                 cbar_img, 1, cbar_orient)
+    # Create colorbar - passing parameters explicitly
+    create_cbar(data_min[0], data_max[0], cmaplist[0], nticks, cbar_title, 
+               temp_cbar_path, cbar_width, cbar_height, cbar_orient,
+               background_color, fontsize)
+    
+    # Load and process colorbar - passing parameters explicitly
+    cbar_img = [cv.imread(temp_cbar_path)]
+    cb_resized = cbar_padding(None, image.shape[0], image.shape[1], 
+                             cbar_img, 1, cbar_orient, background_color)
     
     # Combine image and colorbar
     if cbar_orient == 'horizontal':
