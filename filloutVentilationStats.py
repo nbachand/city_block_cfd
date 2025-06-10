@@ -761,3 +761,17 @@ def combine_stats(df, group, index_col = None):
     df[rms_cols] = df[rms_cols] ** 0.5
 
     return df
+
+def replace_sl_with_h(lbl):
+    if type(lbl) == str:
+        return lbl.replace("sl", "h_-1-0")
+    return lbl
+
+def replace_sl_with_h_df(df, level=1):
+    df.rename(index=replace_sl_with_h, level=level, inplace=True)
+    for col in df.columns:
+        if "windowKeys" in col:
+            df[col] = df[col].apply(replace_sl_with_h)
+        if "houseType" in col:
+            df[col] = df[col].apply(lambda s: s.replace("sl", "-1-0"))
+    return df
