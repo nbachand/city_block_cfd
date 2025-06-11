@@ -223,13 +223,14 @@ def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = Non
             (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "B"))
         ), "orientation"] = 270
     
-    EP_mag = []
-    EP_vel_orientation = []
-    EP_normal = []
-    EP_shear = []
-    EPR_mag = []
-    EPR_vel_orientation = []
     if extraProbe is not None:
+        EP_mag = []
+        EP_vel_orientation = []
+        EP_normal = []
+        EP_shear = []
+        EPR_mag = []
+        EPR_vel_orientation = []
+        
         flowStats = pd.concat([flowStats.sort_index(), extraProbe.sort_index()], axis = "columns")
         for window, row in flowStats.iterrows():
             if np.isnan(row["x"]) == False and np.isnan(row["EP_x"]) == False:
@@ -759,4 +760,18 @@ def combine_stats(df, group, index_col = None):
 
     df[rms_cols] = df[rms_cols] ** 0.5
 
+    return df
+
+def replace_sl_with_h(lbl):
+    if type(lbl) == str:
+        return lbl.replace("sl", "h_-1-0")
+    return lbl
+
+def replace_sl_with_h_df(df, level=1):
+    df.rename(index=replace_sl_with_h, level=level, inplace=True)
+    for col in df.columns:
+        if "windowKeys" in col:
+            df[col] = df[col].apply(replace_sl_with_h)
+        if "houseType" in col:
+            df[col] = df[col].apply(lambda s: s.replace("sl", "-1-0"))
     return df
