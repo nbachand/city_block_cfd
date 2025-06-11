@@ -71,6 +71,7 @@ oak_home = os.getenv('OAK_HOME')
 scratch_dir = f'{scratch_home}/Cascade/city_block_cfd'
 home_dir = f'{oak_home}/Cascade/city_block_cfd'
 
+print("sys.argv =", sys.argv)
 category = sys.argv[1]
 R = sys.argv[2]
 windowType = sys.argv[3]
