@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=charlesMake
+#SBATCH --output=make.out
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --time=01:05:00
@@ -7,6 +8,7 @@
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
 
+# can't make from code server
 source ~/.bash_profile
 
 module purge
