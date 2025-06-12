@@ -1,6 +1,6 @@
-RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/config2/9M-mesh.mles #./data/result.00196000.sles
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles #./data/result.00196000.sles
 # INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R55/data/result.00240000.sles
-INIT time = 2200.0 step = 110000 p=0 T=0 D=0 u = 0.001 0.001 0.001
+INIT time = 2200.0 step = 110000 p=0 T=0 D=0 u = 0.00001 0.00001 0.00001
 RESET_ALL
  
 #Equation of state
@@ -12,7 +12,7 @@ HELMHOLTZ_SOS 340.65
 # Time + output setup
 NSTEPS = 240000
 # TIMESTEP DT = .005
-TIMESTEP DT = .5
+TIMESTEP DT = .2
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
@@ -36,12 +36,17 @@ S.SC_T = 0.71
 STATS u mag(u) p rho D S T
 
 #Boundary Conditions (-666 means zero-flux)
-buildings     =          WM_ALG_WALL                          T 0  D 0  S 0
-ground        =          WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
-top           =          SLIP                                 T 0  D 0  S 0
-exterior      =          WM_ALG_WALL                          T 0  D 0  S 0
-interiorWalls =          WM_ALG_WALL T 0     D -666  S 1
-windowsDoorsSkylights =  WM_ALG_WALL T -666  D -666  S -666
+buildings     = WM_ALG_WALL                          T 0  D 0  S 0
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
+top           = SLIP                                 T 0  D 0  S 0
+exterior      =  WM_ALG_WALL                         T 0  D 0  S 0
+ceiling       =  WM_ALG_WALL T 0     D -666  S 1
+floor         =  WM_ALG_WALL T 0     D -666  S 1
+interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
+exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
+windows       =  WM_ALG_WALL T -666  D -666  S -666
+doors         =  WM_ALG_WALL T -666  D -666  S -666 
+skylights     =  WM_ALG_WALL T -666  D -666  S -666 
 
 #################################
 ######### SOLVER SETUP ##########
@@ -75,17 +80,17 @@ DEFINE image_int_avg=10000
 DEFINE image_int=100
 
 #ABL
-WRITE_IMAGE NAME=./Images/u_y1p5            INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y3              INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_y12             INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/nogeom_u_z58      INTERVAL=$(image_int)     TARGET    0 38.5 -58 CAMERA 0 38.5 -57   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -57.5   0 0 -1 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_x58             INTERVAL=$(image_int)     TARGET    58 38.5 0    CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE 58 36 116    -1 0 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_xn58            INTERVAL=$(image_int)     TARGET    -58 38.5 0   CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE -58 36 116   -1 0 0 VAR=mag(u)
-WRITE_IMAGE NAME=./Images/u_xz0             INTERVAL=$(image_int)     TARGET    0 38.5 0     CAMERA -9 38.5 -9  UP 0 1 0     SIZE 1358 320 WIDTH  328  GEOM PLANE 0 36 0      -1 0 -1 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_y1p5            INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_y3              INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_y12             INTERVAL=$(image_int)     TARGET    0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/nogeom_u_z58      INTERVAL=$(image_int)     TARGET    0 38.5 -58 CAMERA 0 38.5 -57   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -57.5   0 0 -1 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_x58             INTERVAL=$(image_int)     TARGET    58 38.5 0    CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE 58 36 116    -1 0 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_xn58            INTERVAL=$(image_int)     TARGET    -58 38.5 0   CAMERA -58 38.5 0  UP 0 1 0     SIZE 960 320 WIDTH   232  GEOM PLANE -58 36 116   -1 0 0 VAR=mag(u)
+# WRITE_IMAGE NAME=./Images/u_xz0             INTERVAL=$(image_int)     TARGET    0 38.5 0     CAMERA -9 38.5 -9  UP 0 1 0     SIZE 1358 320 WIDTH  328  GEOM PLANE 0 36 0      -1 0 -1 VAR=mag(u)
 
-WRITE_IMAGE NAME=./Images/T_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=T
-WRITE_IMAGE NAME=./Images/D_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=D
-WRITE_IMAGE NAME=./Images/S_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=S
+# WRITE_IMAGE NAME=./Images/T_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=T
+# WRITE_IMAGE NAME=./Images/D_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=D
+# WRITE_IMAGE NAME=./Images/S_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=S
               
 WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)_avg
 WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)_avg
