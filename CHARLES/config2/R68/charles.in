@@ -1,7 +1,7 @@
-RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles #./data/result.00196000.sles
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles ./data/result.00151000.sles
 # INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R55/data/result.00240000.sles
-INIT time = 2200.0 step = 110000 p=0 T=0 D=0 u = 0.00001 0.00001 0.00001
-RESET_ALL
+# INIT time = 2399.98  step = 119999 p=0 T=0 D=0 u = 0.001 0.001 0
+# RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -12,7 +12,7 @@ HELMHOLTZ_SOS 340.65
 # Time + output setup
 NSTEPS = 240000
 # TIMESTEP DT = .005
-TIMESTEP DT = .2
+TIMESTEP DT = 0.02
 CHECK_INTERVAL 100
 WRITE_RESULT NAME=data/result INTERVAL=1000
 
