@@ -133,7 +133,7 @@ def findOptimalP0AndC(rho, flowParams, weight=1, disp=False):
 ##############
 
 
-def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}):
+def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"]):
     flowStatsMI = flowStatsMI.copy()
     roomVentilationMI = roomVentilationMI.copy()
 
@@ -159,7 +159,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
         for windowKey in windowKeys:
             for pType, pCol in pTypes.items():
                 flowParams[pType].append(flowStatsMI.loc[(run, windowKey), pCol])
-                
+
             flowParams["C_d"].append(flowStatsMI.loc[(run, windowKey), "C_d"])
             flowParams["A"].append(A)
             flowParams["z"].append(flowStatsMI.loc[(run, windowKey), "y"])  # y is vertical in simulation
@@ -201,9 +201,15 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 flowStatsMI.loc[(run, windowKey), f"{pType}-C_d"] = C_ds[i]
 
             n_rooms = flowParams["rooms"].shape[1]
-            optResults = {"optp0": findOptimalP0(rho, flowParams),
-                            "optp0Cd": findOptimalP0AndC(rho, flowParams, weight=1e-6)}
-            for optType, optResult in optResults.items():
+                    
+            for optType in optTypes:
+                if optType == "optp0":
+                    optResult = findOptimalP0(rho, flowParams)
+                elif optType == "optp0Cd":
+                    optResult = findOptimalP0AndC(rho, flowParams, weight=1e-1)
+                else:
+                    raise ValueError(f"Unknown optimization type: {optType}")
+                
                 flowParamsOpt = flowParams.copy()
                 p0 = optResult.x[0:n_rooms]
                 if optType == "optp0Cd":
