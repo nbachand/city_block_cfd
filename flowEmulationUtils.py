@@ -96,7 +96,7 @@ def matchObjective(x, rho, flowParams, weight):
 
     return f1 + weight * f2
 
-def findOptimalP0AndC(rho, flowParams, weight=1, disp=False):
+def findOptimalP0AndC(rho, flowParams, weight=1e-1, disp=False):
     """
     Minimize matchObjective over p0 (N vars) and Cd (M vars).
     Returns OptimizeResult with .x = [p0*, Cd*].
@@ -160,7 +160,8 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             for pType, pCol in pTypes.items():
                 flowParams[pType].append(flowStatsMI.loc[(run, windowKey), pCol])
 
-            flowParams["C_d"].append(flowStatsMI.loc[(run, windowKey), "C_d"])
+            C_d = flowStatsMI.loc[(run, windowKey), "C_d"]
+            flowParams["C_d"].append(C_d)
             flowParams["A"].append(A)
             flowParams["z"].append(flowStatsMI.loc[(run, windowKey), "y"])  # y is vertical in simulation
             flowParams["delT"].append(row["mean-T-room"])
@@ -206,7 +207,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 if optType == "optp0":
                     optResult = findOptimalP0(rho, flowParams)
                 elif optType == "optp0Cd":
-                    optResult = findOptimalP0AndC(rho, flowParams, weight=1e-1)
+                    optResult = findOptimalP0AndC(rho, flowParams)
                 else:
                     raise ValueError(f"Unknown optimization type: {optType}")
                 
