@@ -6,7 +6,7 @@ from pyCascade import utils
 g = 10
 beta = 0.0034
 rho = 1.225
-# hm = 6
+hm = 6
 # window_dim = hm/2/4
 # A = window_dim ** 2 
 A = 1 # predicting per area flux, so A is already included in flux
@@ -15,6 +15,13 @@ def getWindBuoyantP(rho, flowParams):
     p_w = flowParams["p_w"]
     z = flowParams["z"]
     delT = flowParams["delT"]
+    if len(delT.shape) == 2:
+        n_levels = delT.shape[1]
+        delz = hm / 2 / n_levels
+        z_levels = delz * (np.arange(n_levels) + 0.45)  # vectorized center calculation
+        z_below = (z_levels < z[:, None])
+        # Avoid unnecessary multiplication by using np.where and sum directly
+        delT = np.sum(delT * z_below, axis=1) / np.maximum(np.sum(z_below, axis=1), 1)
     delrho = -rho * beta * delT
     return (delrho * g * z) + p_w # delP is outdoor minus indoor, while p0/rho is indoor minus outdoor, driving positive flow into the room (oppiste textbook)
 
@@ -133,8 +140,16 @@ def findOptimalP0AndC(rho, flowParams, weight=1e-1, disp=False):
 
 ##############
 
+def getRoomTemp(row, tempStack=False):
+    if tempStack:
+        stack = []
+        for i in range(6):
+            stack.append(row[f"mean-T-room{i}"])
+        return stack
+    else:
+        return row["mean-T-room"]
 
-def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"]):
+def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"], tempStack=False):
     flowStatsMI = flowStatsMI.copy()
     roomVentilationMI = roomVentilationMI.copy()
 
@@ -165,7 +180,8 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             flowParams["C_d"].append(C_d)
             flowParams["A"].append(A)
             flowParams["z"].append(flowStatsMI.loc[(run, windowKey), "y"])  # y is vertical in simulation
-            flowParams["delT"].append(row["mean-T-room"])
+            delT = getRoomTemp(row, tempStack=tempStack)
+            flowParams["delT"].append(delT)
             flowParams["q"].append(flowStatsMI.loc[(run, windowKey), "flux"])
             if "dual" in room and useDoors:
                 roomCord = windowKey.split("_")[1]
@@ -186,7 +202,8 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             flowParams["C_d"].append(1)
             flowParams["A"].append(A * 3)
             flowParams["z"].append(H / 2)
-            flowParams["delT"].append(row["mean-T-room"])
+            delT = getRoomTemp(row, tempStack=tempStack)
+            flowParams["delT"].append(delT)
             qRooms = np.matmul(np.array(flowParams["rooms"]).T, np.array(flowParams["q"]))
             flowParams["q"].append(np.diff(qRooms)[0])
             flowParams["rooms"].append([1, -1])
