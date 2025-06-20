@@ -6,9 +6,10 @@ from pyCascade import utils
 g = 10
 beta = 0.0034
 rho = 1.225
-hm = 6
-window_dim = hm/2/4
-A = window_dim ** 2
+# hm = 6
+# window_dim = hm/2/4
+# A = window_dim ** 2 
+A = 1 # predicting per area flux, so A is already included in flux
 
 def getWindBuoyantP(rho, flowParams):
     p_w = flowParams["p_w"]
