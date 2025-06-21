@@ -1,4 +1,12 @@
 #!/bin/bash
+#SBATCH --job-name="copyData"
+#SBATCH --output=copyData.out
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --time=01:30:00
+#SBATCH --mem=32G
+#SBATCH --partition=serc
+#SBATCH --mail-type=ALL
 
 # Source directory where the files are located
 . cd_scratch
@@ -26,6 +34,6 @@ cp "$source_dir/result.00159000.sles" "$destination_dir/"
 
 echo "Copied sles from important run transitions to '$destination_dir'."
 
-cp -r "$locations_dir" "./probes/"
+cp -r "$locations_dir" "./probes/locations/"
 
 echo "Copied locations from '$locations_dir'."

@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 import os
 import warnings
+from collections.abc import Sequence
 
 hm = 6
 window_dim = hm/2/4
@@ -143,6 +144,12 @@ def getRoomOrientations(roomVentilation):
 
     return roomVentilation
 
+# def houseTypeRename(houseType):
+#     if houseType == "-1-0":
+#         return "-1-0"
+#     else:
+#         return "sl"
+
 def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = None):
     windowType = []
     openingType = []
@@ -216,13 +223,14 @@ def addWindowDetails(flowStats, locations = None, areas = None, extraProbe = Non
             (flowStats.windowNumber.apply(lambda str: fnmatch(str, '?-0'))) & (flowStats.blockType == "B"))
         ), "orientation"] = 270
     
-    EP_mag = []
-    EP_vel_orientation = []
-    EP_normal = []
-    EP_shear = []
-    EPR_mag = []
-    EPR_vel_orientation = []
     if extraProbe is not None:
+        EP_mag = []
+        EP_vel_orientation = []
+        EP_normal = []
+        EP_shear = []
+        EPR_mag = []
+        EPR_vel_orientation = []
+        
         flowStats = pd.concat([flowStats.sort_index(), extraProbe.sort_index()], axis = "columns")
         for window, row in flowStats.iterrows():
             if np.isnan(row["x"]) == False and np.isnan(row["EP_x"]) == False:
@@ -481,7 +489,56 @@ def processConnectedRooms(df):
 
     return df, dfDuplicates
 
-def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
+def find_sequence_columns(df):
+    """
+    Return names of all columns in df where every non-null entry
+    is a Sequence (list, tuple, ndarray, etc.), but not a str/bytes.
+    """
+    seq_cols = []
+    for col in df.columns:
+        non_null = df[col].dropna()
+        if non_null.empty:
+            continue
+        if non_null.apply(lambda x: isinstance(x, Sequence) and not isinstance(x, (str, bytes))).all():
+            seq_cols.append(col)
+    return seq_cols
+
+def expand_variable_length_sequences(df, seq_cols=None, fill_value=np.nan):
+    """
+    Expand each list/tuple/array column into multiple new columns,
+    padding shorter sequences up to the column's max length with fill_value.
+
+    Params:
+      df          - the original DataFrame
+      seq_cols    - list of column names to expand; if None, auto-detect
+      fill_value  - value to use to pad shorter sequences (default: np.nan)
+    Returns:
+      A new DataFrame with those columns dropped and their elements unpacked
+      into new columns named <origcol>_0, <origcol>_1, … up to the max length.
+    """
+    df = df.copy()
+    if seq_cols is None:
+        seq_cols = find_sequence_columns(df)
+
+    for col in seq_cols:
+        # turn every entry into a list (so that tuples, arrays, etc. all become lists)
+        sequences = df[col].apply(lambda x: list(x) if isinstance(x, Sequence) and not isinstance(x, (str, bytes)) else [])
+        # figure out the max length
+        max_len = sequences.apply(len).max()
+        # pad each list up to max_len
+        padded = sequences.apply(lambda lst: lst + [fill_value]*(max_len - len(lst)))
+        # build the expanded DataFrame
+        expanded = pd.DataFrame(
+            padded.tolist(),
+            index=df.index,
+            columns=[f"{col}_{i}" for i in range(max_len)]
+        )
+        # drop original & join
+        df = df.drop(columns=[col]).join(expanded)
+
+    return df
+
+def readRunStats(runs, home_dir, scratch_dir, multiRun_dir, readABLFits = True, saveResults = True):
 
     ### get Stat dfs for individual runs
     allFlowStats = {}
@@ -530,10 +587,11 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
                 else:
                     flowStats[k] = v
 
-            # read in ABL Fits
-            flowStats["u10_2"] = None
-            for blockType in flowStats["blockType"].unique():
-                flowStats.loc[flowStats["blockType"] == blockType, "u10_2"] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
+            flowStats["u10_2"] = np.nan
+            if readABLFits:
+                # read in ABL Fits
+                for blockType in flowStats["blockType"].unique():
+                    flowStats.loc[flowStats["blockType"] == blockType, "u10_2"] = blockFitsABL.loc[(runIndex, blockType), "u10_2"]
 
 
             # correct negative values introduced by flipping for window orientations
@@ -630,20 +688,16 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
     roomVentilationMI[f"{calc}-mass_flux-roomCeil-slEx"] = roomVentilationMI[f"{calc}-mass_flux-roomCeil"]
     roomVentilationMI[f"{qoi}-roomCeil-slEx"] = roomVentilationMI[f"{qoi}-roomCeil"]
     for index, row in roomVentilationMI.iterrows():
-        index_split = index[1].split('_')
-        room = index_split[0]
-        house_type = index_split[1]
+        windowKeys = row["windowKeys"]
 
-        if house_type == "sl":
-            skylight_flow = 0
-            skylight_flux = 0
-            for window in connectedWindows[room]:
-                if "skylight" in window:
-                    skylight_index = '_'.join([window, *index_split[1:]])
-                    skylight_flow += flowStatsMI.loc[(index[0], skylight_index), f"{calc}-mass_flux"]
-                    skylight_flux += flowStatsMI.loc[(index[0], skylight_index), qoi]
-            roomVentilationMI.loc[index, f"{calc}-mass_flux-roomCeil-slEx"] += skylight_flow
-            roomVentilationMI.loc[index, f"{qoi}-roomCeil-slEx"] += skylight_flux
+        skylight_flow = 0
+        skylight_flux = 0
+        for window in row["windowKeys"]:
+            if "skylight" in window:
+                skylight_flow += flowStatsMI.loc[(index[0], window), f"{calc}-mass_flux"]
+                skylight_flux += flowStatsMI.loc[(index[0], window), qoi]
+        roomVentilationMI.loc[index, f"{calc}-mass_flux-roomCeil-slEx"] += skylight_flow
+        roomVentilationMI.loc[index, f"{qoi}-roomCeil-slEx"] += skylight_flux
 
     errorCeil = roomVentilationMI[f"{calc}-mass_flux-roomCeil-slEx"] * roomVentilationMI[f"mean-{scalar}-room5"]
     errorFloor = roomVentilationMI[f"{calc}-mass_flux-roomFloor"] * roomVentilationMI[f"mean-{scalar}-room0"]
@@ -659,11 +713,9 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
     roomVentilationMI[f"{qoi}-roomWalls-perA"] = np.nan
 
     for index, row in roomVentilationMI.iterrows():
-        index_split = index[1].split('_')
-        room = index_split[0]
-        house_type = index_split[1]
+        room = row["roomType"]
 
-        if "sl" in house_type:
+        if "sl" in row["houseType"] or row["slAll"]:
             ceilA = room_areas["ceilings"][room]
         else:
             ceilA = room_areas["floors"][room]
@@ -679,8 +731,47 @@ def readRunStats(runs, home_dir, scratch_dir, multiRun_dir):
 
     flowStatsMI = fillInParams(flowStatsMI, velTenMeters)
     roomVentilationMI = fillInParams(roomVentilationMI, velTenMeters)
+    roomVentilationMI = expand_variable_length_sequences(roomVentilationMI)
 
-    flowStatsMI.to_csv(f"{multiRun_dir}/flowStatsMI.csv")
-    roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
+    if saveResults:
+        flowStatsMI.to_csv(f"{multiRun_dir}/flowStatsMI.csv")
+        roomVentilationMI.to_csv(f"{multiRun_dir}/roomVentilationMI.csv")
 
     return flowStatsMI, roomVentilationMI
+
+def combine_stats(df, group, index_col = None):
+    df = df.copy()
+    rms_cols = [col for col in df.columns if "rms" in col]
+    df[rms_cols] = df[rms_cols] ** 2
+    
+    df.index.names = ["run_id", "key"]
+    df = df.reset_index()
+    if index_col is None:
+        index_col = "run_id"
+    else:
+        df[index_col] = df[index_col] * 10 + df["run_id"] % 10
+        
+    string_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
+    group += string_cols
+    print(f"Grouping by {group}")
+    df = df.groupby(group, as_index=False, dropna=False).mean(numeric_only=True)
+    
+    df = df.set_index([index_col, "key"])
+
+    df[rms_cols] = df[rms_cols] ** 0.5
+
+    return df
+
+def replace_sl_with_h(lbl):
+    if type(lbl) == str:
+        return lbl.replace("sl", "h_-1-0")
+    return lbl
+
+def replace_sl_with_h_df(df, level=1):
+    df.rename(index=replace_sl_with_h, level=level, inplace=True)
+    for col in df.columns:
+        if "windowKeys" in col:
+            df[col] = df[col].apply(replace_sl_with_h)
+        if "houseType" in col:
+            df[col] = df[col].apply(lambda s: s.replace("sl", "-1-0"))
+    return df

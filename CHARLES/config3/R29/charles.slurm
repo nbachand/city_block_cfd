@@ -3,10 +3,9 @@
 #SBATCH -N 4
 #SBATCH -n 128
 #SBATCH --time=168:00:00
-#SBATCH --mem 128G
+#SBATCH --mem 196G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
-#SBATCH --constraint="[CLASS:SH3_CBASE|CLASS:SH3_CBASE.1|CPU_GEN:SKX]" 
 export CTI_LICENSE=$HOME/Cascade/license.dat
 
 module purge
