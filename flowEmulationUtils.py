@@ -7,7 +7,8 @@ g = 10
 beta = 0.0034
 rho = 1.225
 hm = 6
-# window_dim = hm/2/4
+hr = hm / 2
+# window_dim = hr/4
 # A = window_dim ** 2 
 A = 1 # predicting per area flux, so A is already included in flux
 
@@ -17,11 +18,14 @@ def getWindBuoyantP(rho, flowParams):
     delT = flowParams["delT"]
     if len(delT.shape) == 2:
         n_levels = delT.shape[1]
-        delz = hm / 2 / n_levels
+        delz = hr / n_levels
         z_levels = delz * (np.arange(n_levels) + 0.45)  # vectorized center calculation
         z_below = (z_levels < z[:, None])
-        # Avoid unnecessary multiplication by using np.where and sum directly
         delT = np.sum(delT * z_below, axis=1) / np.maximum(np.sum(z_below, axis=1), 1)
+        sl_length = z - hr
+        sls = sl_length > 0
+        delT[sls] = hr / z[sls] * delT[sls] + sl_length[sls] / z[sls] * flowParams["delT"][sls,-1]
+
     delrho = -rho * beta * delT
     return (delrho * g * z) + p_w # delP is outdoor minus indoor, while p0/rho is indoor minus outdoor, driving positive flow into the room (oppiste textbook)
 
@@ -149,7 +153,7 @@ def getRoomTemp(row, tempStack=False):
     else:
         return row["mean-T-room"]
 
-def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"], tempStack=False):
+def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"], tempStack=False, doorCd=0.6):
     flowStatsMI = flowStatsMI.copy()
     roomVentilationMI = roomVentilationMI.copy()
 
@@ -199,7 +203,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             H = 3
             for pType in pTypes:
                 flowParams[pType].append(0)
-            flowParams["C_d"].append(1)
+            flowParams["C_d"].append(doorCd)
             flowParams["A"].append(A * 3)
             flowParams["z"].append(H / 2)
             delT = getRoomTemp(row, tempStack=tempStack)
