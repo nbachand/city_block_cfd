@@ -173,7 +173,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             roomVentilationMI.columns.str.contains("windowKeys")
         ].tolist()
         windowKeys = row[windowKeyCols].dropna()
-
+        delT = getRoomTemp(row, tempStack=tempStack)
         for pType in pTypes:
             flowParams[pType] = []
         for windowKey in windowKeys:
@@ -184,7 +184,6 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             flowParams["C_d"].append(C_d)
             flowParams["A"].append(A)
             flowParams["z"].append(flowStatsMI.loc[(run, windowKey), "y"])  # y is vertical in simulation
-            delT = getRoomTemp(row, tempStack=tempStack)
             flowParams["delT"].append(delT)
             flowParams["q"].append(flowStatsMI.loc[(run, windowKey), "flux"])
             if "dual" in room and useDoors:
@@ -200,14 +199,12 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             flowParams["rooms"].append(roomRow)
 
         if "dual" in room and useDoors:
-            H = 3
             for pType in pTypes:
                 flowParams[pType].append(0)
             flowParams["C_d"].append(doorCd)
             flowParams["A"].append(A * 3)
-            flowParams["z"].append(H / 2)
-            delT = getRoomTemp(row, tempStack=tempStack)
-            flowParams["delT"].append(delT)
+            flowParams["z"].append(hr / 2)
+            flowParams["delT"].append(np.zeros_like(delT)) # the temperature is modeled as equal in both rooms
             qRooms = np.matmul(np.array(flowParams["rooms"]).T, np.array(flowParams["q"]))
             flowParams["q"].append(np.diff(qRooms)[0])
             flowParams["rooms"].append([1, -1])
