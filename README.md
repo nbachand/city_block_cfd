@@ -111,19 +111,22 @@ The integrated value of the *qoi* across a window normalized by the window area.
 #### openingType
 
 ##### xwindow
-Window where the plane of the window (not the normal) is along the x-axis
+Window where the window normal is along the x-axis
 
 ##### zwindow
-Window where the plane of the window (not the normal) is along the z-axis
+Window where the window normal is along the z-axis
 
 ##### skylight
 Skylight through the house roof
 
 #### windowNumber
-*i*-*k*, where *i* and *k* are the window indexes with respect to the bottom left corner: CCC Add Image CCC
+*i*-*k*, where *i* and *k* are the window indexes with respect to the bottom left corner
+
+<img width="2809" height="2057" alt="dataWindows" src="https://github.com/user-attachments/assets/9881af46-2f87-4d4f-b5a6-33e1f52f030b" />
 
 #### houseType
-*i*-*k*, where *i* and *k* are the house indexes with respect to the quadrant center: CCC Add Image CCC
+*i*-*k*, where *i* and *k* are the house indexes with respect to the quadrant center
+<img width="3272" height="1760" alt="dataHouses" src="https://github.com/user-attachments/assets/f6de7013-639f-4a43-a231-453a64aa82f5" />
 
 #### blockType
 ##### B
