@@ -23,7 +23,7 @@
         - [Room-Level Aggregations](#room-level-aggregations)
 
 ### Paper
-This guide presents the data used in the paper [Simulating The Urban Canopy's Impact on Wind-Driven Natural Ventilation and Cooling](https://arxiv.org/abs/2508.04091). The two main datasets are:
+This guide presents the data used in the paper [Simulating The Urban Canopy's Impact on Wind-Driven Natural Ventilation](https://arxiv.org/abs/2508.04091). The two main datasets are:
 
 ### GitHub
 These datasets were processed using code in the github repository [city_block_cfd](https://github.com/nbachand/city_block_cfd)
