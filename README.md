@@ -4,7 +4,7 @@
 
 - [Data Guide](#data-guide)
     - [Table of Contents](#table-of-contents)
-    - [Paper Context](#paper-context)
+    - [Paper](#paper)
     - [Datasets](#datasets)
     - [Terminology](#terminology)
         - [Flow Properties](#flow-properties)
@@ -21,8 +21,11 @@
         - [Window Characteristics](#window-characteristics)
         - [Room-Level Aggregations](#room-level-aggregations)
 
-### Paper Context
+### Paper
 This guide presents the data used in the paper [Simulating The Urban Canopy's Impact on Wind-Driven Natural Ventilation and Cooling](https://arxiv.org/abs/2508.04091). The two main datasets are:
+
+### GitHub
+These datasets were processed using code in the github repository [city_block_cfd](https://github.com/nbachand/city_block_cfd)
 
 ### Datasets
 
