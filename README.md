@@ -83,6 +83,9 @@ Whether or not the ventilation scenario is intended to be steady state. When fal
 #### slAll
 Whether or not all houses have skylights. If true, the house has a skylight. If false, the house does not have a skylight unless it is house type *sl*.
 
+#### csID
+Some cases were run multiple times to ensure statistical convergence. This csID is the same for these repeated runs. This matches the first 3 digits of the *run ID* for the original run.
+
 #### Params
 A string list of parameters meant for plotting and differentiating cases which includes [WS](#ws), [Ri](#ri), [delT](#delt), [SS](#ss), and [C](#c).
 
