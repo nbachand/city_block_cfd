@@ -1,0 +1,8 @@
+PART MLES ./9M-mesh.mles
+
+# WRITE_IMAGE NAME=./Images/y1p5    TARGET 0 116 0          CAMERA 0 -116 0              SIZE 4640 4640 WIDTH  232  GEOM PLANE 116 1.5 116     0 -1 0 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
+# WRITE_IMAGE NAME=./Images/y3      TARGET 0 116 0          CAMERA 0 -116 0              SIZE 4640 4640 WIDTH  232  GEOM PLANE 116 3 116       0 -1 0 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
+# WRITE_IMAGE NAME=./Images/y12     TARGET 0 116 0          CAMERA 0 -116 0              SIZE 4640 4640 WIDTH  232  GEOM PLANE 116 12 116      0 -1 0 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
+WRITE_IMAGE NAME=./Images/z58     TARGET 0 38.5 -58.2     CAMERA 0 38.5 -55  UP 0 1 0  SIZE 4640 1546 WIDTH  232  GEOM PLANE 116 36 -58.2    0 0 -1 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
+# WRITE_IMAGE NAME=./Images/h_0-0   TARGET 60.0 1012.0 60.0 CAMERA 60.0 -988.0 60.0      SIZE 4640 4640 WIDTH 16    GEOM PLANE 116.0 1.5 116.0 0 -1 0 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
+# WRITE_IMAGE NAME=./Images/y1p5_B  TARGET 58 116 58        CAMERA 58 -116 58            SIZE 4640 4640 WIDTH 115   GEOM PLANE 116 1.5 116     0 -1 0 VAR=mesh HIDE_ZONES_NAMED ground,top,exterior,ceiling,floor,interiorWalls,exteriorWalls,windows,doors,skylights
