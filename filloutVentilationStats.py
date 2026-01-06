@@ -333,7 +333,9 @@ def fillInParams(df, velTenMeters):
 
     for col in df.columns:
         if fnmatch(col, '*mass_flux*') or fnmatch(col, '*sn_prod(*u*)') or fnmatch(col, 'q-*'):
-            if fnmatch(col, '*sn_prod(u**2)"'):
+            if fnmatch (col, '*mass_flux(p)*'):
+                udim = 3
+            elif fnmatch(col, '*sn_prod(u**2)"'):
                 udim = 2
             else:
                 udim = 1
