@@ -335,14 +335,14 @@ def fillInParams(df, velTenMeters):
         if fnmatch(col, '*mass_flux*') or fnmatch(col, '*sn_prod(*u*)') or fnmatch(col, 'q-*'):
             if fnmatch (col, '*mass_flux(p)*'):
                 udim = 3
-            elif fnmatch(col, '*sn_prod(u**2)"'):
+            elif fnmatch(col, '*sn_prod(u**2)'):
                 udim = 2
             else:
                 udim = 1
-            new_columns[f"{col}-Norm"] = df[col] / (df["WS"] / velTenMeters)**udim
-            new_columns[f"{col}-NormEP"] = df[col] / (df["EP_mag"] / velTenMeters)**udim
+            new_columns[f"{col}-Norm"] =    df[col] / (df["WS"]      / velTenMeters)**udim
+            new_columns[f"{col}-NormEP"] =  df[col] / (df["EP_mag"]  / velTenMeters)**udim
             new_columns[f"{col}-NormEPR"] = df[col] / (df["EPR_mag"] / velTenMeters)**udim
-            new_columns[f"{col}-NormABL"] = df[col] / (df["u10_2"] / velTenMeters)**udim
+            new_columns[f"{col}-NormABL"] = df[col] / (df["u10_2"]   / velTenMeters)**udim
 
     # Combine new columns into a new DataFrame and concatenate with the original DataFrame
     new_df = pd.DataFrame(new_columns, index=df.index)
