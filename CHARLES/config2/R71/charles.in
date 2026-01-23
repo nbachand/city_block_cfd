@@ -1,7 +1,7 @@
-RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles ./result.sles
-# INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R54/data/result.00240000.sles
-# INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 10.0 0.0 0.000001
-# RESET_ALL
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles #./data/result.00187000.sles
+INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R54/data/result.00240000.sles
+INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 10.0 0.0 0.000001
+RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ
@@ -2408,4 +2408,5 @@ PROBE NAME=$(probe_path)/col_0-0_Bz             INTERVAL $(probe_int) GEOM FILE 
 PROBE NAME=$(probe_path)/col_0-n2_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/extraProbe-out         INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe-out.txt        VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg comp(u,0) comp(u,1) comp(u,2) p T D S

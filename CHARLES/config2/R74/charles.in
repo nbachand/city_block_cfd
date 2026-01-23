@@ -2599,4 +2599,5 @@ PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE 
 PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-1_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-1_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/col_0-2_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-2_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+PROBE NAME=$(probe_path)/extraProbe-out         INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe-out.txt        VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg comp(u,0) comp(u,1) comp(u,2) p T D S
 PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg comp(u,0) comp(u,1) comp(u,2) p T D S

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=cc2_R73
 #SBATCH -n 128
-#SBATCH --time=7-00:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH --partition=serc
 #SBATCH --mail-type=ALL
