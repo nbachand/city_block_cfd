@@ -8,8 +8,8 @@ A = 10      # Area (m^2)
 rho = 1.2    # Air density (kg/m^3)
 F1Pressure = True  # Set to True to use pressure-based F1 definition
 F2Pressure = False  # Set to True to use pressure-based F2 definition
-randomPressure = False  # Set to True to sample pressure, False to sample flow
-F1_mean_type='geometric'  # 'harmonic', 'geometric', or 'arithmetic' mean for F1 calculation
+randomPressure = True  # Set to True to sample pressure, False to sample flow
+F1_mean_type='harmonic'  # 'harmonic', 'geometric', or 'arithmetic' mean for F1 calculation
 
 def q_AFN(Delta_p_mean):
     """Airflow network prediction"""
@@ -137,6 +137,7 @@ def analytical_blended(q_afn, F1, F2):
 
 # Simulation parameters
 Delta_p_mean = 10.0  # Mean pressure difference (Pa)
+q_afn_val = q_AFN(Delta_p_mean)
 F2_gen_values = np.linspace(0.01, 4, 40)  # Range of F2 = sqrt(<q'^2>) / q_AFN
 
 # Storage for results
@@ -149,7 +150,7 @@ analytical_AFN = []
 
 print("Running Monte Carlo simulations...")
 print(f"Mean pressure: {Delta_p_mean} Pa")
-print(f"q_AFN: {q_AFN(Delta_p_mean):.4f} m³/s\n")
+print(f"q_AFN: {q_afn_val:.4f} m³/s\n")
 
 F1_values = []
 F2_values = []
@@ -165,8 +166,6 @@ for F2_gen in F2_gen_values:
             Delta_p_mean, Delta_p_std, n_samples=100000
         )
     else:
-        # Calculate q_AFN
-        q_afn_val = q_AFN(Delta_p_mean)
         # From F2 definition and linearization: F2 ≈ sqrt(<q'^2>) / q_AFN
         # So: sqrt(<q'^2>) ≈ F2 * q_AFN
         q_std = F2_gen * q_afn_val
