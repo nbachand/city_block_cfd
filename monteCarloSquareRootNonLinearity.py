@@ -6,7 +6,7 @@ from scipy.stats import norm
 C_d = 0.611  # Discharge coefficient
 A = 10      # Area (m^2)
 rho = 1.2    # Air density (kg/m^3)
-FhPressure = False  # Set to True to use pressure-based Fh definition
+FhPressure = True  # Set to True to use pressure-based Fh definition
 FqPressure = False  # Set to True to use pressure-based Fq definition
 randomPressure = True  # Set to True to sample pressure, False to sample flow
 Fh_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for Fh calculation
@@ -100,28 +100,13 @@ def analytical_fluctuation_dominated(q_afn, Fh):
     """
     return q_afn / (2 * Fh)
 
-def gamma_blend(x):
-    if x <= 1:
-        return 3*x**4 - 2*x**6  # Smooth blending function that transitions from 0 to 1 as x goes from 0 to 1
+def gamma_blend_poly(x, blend_bound=1):
+    if x <= blend_bound:
+        return 3*(x/blend_bound)**4 - 2*(x/blend_bound)**6  # Smooth blending function that transitions from 0 to 1 as x goes from 0 to 1
     else:
         return 1.0
     
-    # # --- First Expression ---
-    # # Active for -0.25 <= x <= 0.25
-    # radicand1 = -4*x**2 + 1
-    # if radicand1 <= 0:
-    #     radicand1 = 0
-
-    # # --- Second Expression ---
-    # # Active for 0.75 <= x <= 1.25
-    # radicand2 = -4*(x - 1)**2 + 1
-    # if radicand2 <= 0:
-    #     radicand2 = 0
-
-    # # Since the active domains do not overlap, one of val1 or val2 will always be 0.
-    # return (1 - np.sqrt(radicand1) + np.sqrt(radicand2)) / 2
-    
-def analytical_blended(q_afn, Fh, Fq):
+def analytical_blended(q_afn, Fh, Fq, blend_bound=1):
     """
     Blended analytical solution from Eq. (blended_model_q)
     q̄ = q_AFN * ([1-γ(Fq)]*sqrt(1-Fq^2) + γ(Fq)/(2*Fh))
@@ -134,7 +119,7 @@ def analytical_blended(q_afn, Fh, Fq):
         term1 = analytical_mean_flow_dominated(q_afn, Fq)
     term2 = analytical_fluctuation_dominated(q_afn, Fh)
 
-    gamma = gamma_blend(Fq)
+    gamma = gamma_blend_poly(Fq, blend_bound)
     
     return ((1-gamma)*term1 + gamma*term2)
 
@@ -150,6 +135,7 @@ analytical_mean_dom = []
 analytical_fluct_dom = []
 analytical_fluct_dom_bound = []
 analytical_blend = []
+analytical_blend_bound = []
 analytical_AFN = []
 
 print("Running Monte Carlo simulations...")
@@ -196,10 +182,12 @@ for Fq_gen in Fq_gen_values:
         Fq = q_prime_rms / np.abs(q_afn_val_mc)
     if FhPressure:
         Fh = Delta_p_prime_Fh_mean / np.sqrt(Delta_p_mean_mc)
-        Fh_bound = 2 * np.sqrt(Delta_p_mean_mc) * Fq
+        Fh_bound = np.sqrt(2 * Fq)
+        blend_bound = 0.93
     else:
         Fh = q_prime_Fh_mean / np.abs(q_afn_val_mc)
-        Fh_bound = q_afn_val_mc * Fq**2
+        Fh_bound = Fq
+        blend_bound = 1/np.sqrt(2)
 
     Fq_values.append(Fq)
     Fh_values.append(Fh)
@@ -212,8 +200,8 @@ for Fq_gen in Fq_gen_values:
     analytical_mean_dom.append(analytical_mean_flow_dominated(q_afn_val_mc, Fq) / q_afn_val_mc)
     analytical_fluct_dom.append(analytical_fluctuation_dominated(q_afn_val_mc, Fh) / q_afn_val_mc)
     analytical_fluct_dom_bound.append(analytical_fluctuation_dominated(q_afn_val_mc, Fh_bound) / q_afn_val_mc)
-    analytical_blend.append(analytical_blended(q_afn_val_mc, Fh, Fq) / q_afn_val_mc)
-    
+    analytical_blend.append(analytical_blended(q_afn_val_mc, Fh, Fq, blend_bound) / q_afn_val_mc)
+    analytical_blend_bound.append(analytical_blended(q_afn_val_mc, Fh_bound, Fq, blend_bound) / q_afn_val_mc)
     if len(mc_q_mean) % 5 == 0:
         print(f"Fq_gen={Fq_gen:.3f}, Fq_computed={Fq:.3f}, Fh={Fh:.3f}, "
               f"Δp_mean={Delta_p_mean_mc:.3f}, q̄/q_AFN (MC)={q_mean_mc/q_afn_val_mc:.4f}, "
@@ -222,14 +210,14 @@ for Fq_gen in Fq_gen_values:
 # plt.figure()
 # plt.plot(Fq_gen_values, Fq_values, 'o-')
 
-plt.figure()
-plt.plot(Fq_values, Fh_values, 'o-')
-plt.ylim([0, 5])
-plt.show()
+# plt.figure()
+# plt.plot(Fq_values, Fh_values, 'o-')
+# plt.ylim([0, 5])
+# plt.show()
 
-plt.figure()
-plt.plot(Fq_gen_values, Fq_values, 'o-')
-plt.show()
+# plt.figure()
+# plt.plot(Fq_gen_values, Fq_values, 'o-')
+# plt.show()
 
 # Plotting
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -241,7 +229,9 @@ ax.plot(Fq_values, analytical_mean_dom, 'b-', label='Mean-flow dominated\n$\\bar
 ax.plot(Fq_values, analytical_fluct_dom, 'r--', label='Fluctuation dominated\n$\\bar{q} = (1/2)q_{AFN}F_1$', linewidth=2)
 ax.plot(Fq_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
 ax.plot(Fq_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
+ax.plot(Fq_values, analytical_blend_bound, 'g--', label='Blended model bound', linewidth=2.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5, label='$F_2=1$ (validity limit)')
+ax.axvline(x=blend_bound, color='lightgray', linestyle=':', linewidth=1.5, label='blend bound')
 ax.set_xlabel('$F_2 = \\sqrt{\\overline{(q\')^2}}/q_{AFN}$', fontsize=12)
 ax.set_ylabel('$\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Normalized Mean Flow vs Fluctuation Ratio', fontsize=13, fontweight='bold')
@@ -276,9 +266,11 @@ ax.grid(True, alpha=0.3, which='both')
 
 # Plot 4: Blending function γ(Fq)
 ax = axes[1, 1]
-gamma_values = [gamma_blend(Fq) for Fq in Fq_values]
+gamma_values = [gamma_blend_poly(Fq, blend_bound=blend_bound) for Fq in Fq_values]
 ax.plot(Fq_values, gamma_values, 'purple', linewidth=2.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
+ax.axvline(x=blend_bound, color='lightgray', linestyle=':', linewidth=1.5, label='blend bound')
+
 ax.set_xlabel('$F_2 = \\sqrt{\\overline{(q\')^2}}/q_{AFN}$', fontsize=12)
 ax.set_ylabel('$\\gamma(F_2)$', fontsize=12)
 ax.set_title('Blending Function (OVL-based)', fontsize=13, fontweight='bold')
@@ -286,7 +278,6 @@ ax.grid(True, alpha=0.3)
 ax.set_ylim([0, 1])
 
 plt.tight_layout()
-plt.savefig('flow_model_validation.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # # Print summary statistics
