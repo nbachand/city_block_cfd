@@ -6,9 +6,9 @@ from scipy.stats import norm
 C_d = 0.611  # Discharge coefficient
 A = 10      # Area (m^2)
 rho = 1.2    # Air density (kg/m^3)
-HPressure = True  # Set to True to use pressure-based H definition
-QPressure = True  # Set to True to use pressure-based Q definition
-randomPressure = True  # Set to True to sample pressure, False to sample flow
+HPressure = False  # Set to True to use pressure-based H definition
+QPressure = False  # Set to True to use pressure-based Q definition
+randomPressure = False  # Set to True to sample pressure, False to sample flow
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 
 def q_AFN(Delta_p_mean):
@@ -173,7 +173,7 @@ for Rq_gen in Rq_gen_values:
     else:
         Rh = np.abs(q_afn_val_mc) / q_prime_H_mean
         Rh_bound = Rq
-        blend_bound = 1/np.sqrt(2)
+        blend_bound = np.sqrt(2)
         tangent_scale = 1
         tangent_bound = blend_bound
 
@@ -228,7 +228,7 @@ ax.plot(Rq_q_values, analytical_mean_dom, 'b-', label='Mean-flow dominated\n$\\b
 ax.plot(Rq_q_values, analytical_fluct_dom, 'r--', label='Fluctuation dominated\n$\\bar{q} = q_{AFN}(2R_H)$', linewidth=2)
 ax.plot(Rq_q_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
 ax.plot(Rq_q_values, analytical_fluct_tan, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
-ax.plot(Rq_q_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
+# ax.plot(Rq_q_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
 ax.plot(Rq_q_values, analytical_blend_tan, 'g--', label='Blended model bound', linewidth=2.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
 ax.axvline(x=tangent_bound, color='lightgray', linestyle=':', linewidth=1.5, label='blend bound')
@@ -242,7 +242,7 @@ ax.set_ylim([0, 1.5])
 # Plot 2: Error between Monte Carlo and analytical
 ax = axes[0, 1]
 error_mean_dom = np.array(mc_q_mean_normalized) - np.array(analytical_mean_dom)
-error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend)
+error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend_tan)
 ax.plot(Rq_q_values, error_mean_dom, 'b-', label='Mean-flow model error', linewidth=2)
 ax.plot(Rq_q_values, error_blend, 'g-', label='Blended model error', linewidth=2)
 ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
