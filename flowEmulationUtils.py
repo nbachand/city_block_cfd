@@ -12,6 +12,53 @@ hr = hm / 2
 # A = window_dim ** 2 
 A = 1 # predicting per area flux, so A is already included in flux
 
+
+def ventilationLowerScaling(Rh):
+    return Rh / 2
+
+def ventilationUpperScaling(Rq):
+    scaling = np.zeros_like(Rq)
+    mask = Rq > 1
+    scaling[mask] = np.sqrt(1 - Rq[mask]**-2)
+    return scaling
+
+def ventilationScalingSwitch(Rh, Rq, Rq_crit):
+    scaling = np.empty_like(Rq)
+    mask = Rq < Rq_crit
+    scaling[mask] = ventilationLowerScaling(Rh[mask])
+    scaling[~mask] = ventilationUpperScaling(Rq[~mask])
+    return scaling
+
+def ventilationBlendedScaling_q(Rq):
+    alpha = 1
+    Rh_bound = Rq
+    Rh_tangent = alpha * Rh_bound
+    Rq_crit = np.sqrt(2)
+    scaling = ventilationScalingSwitch(Rh_tangent, Rq, Rq_crit)
+    return scaling
+
+def ventilationBlendedScaling_p(Rq):
+    alpha = 16 / (3 * np.sqrt(3))  # Scale factor to make the tangent line match the lower bound at the critical point
+    Rh_bound = np.sqrt(Rq / 2)
+    Rh_tangent = np.sqrt(alpha) * Rh_bound
+    Rq_crit = np.sqrt(3)
+    scaling = ventilationScalingSwitch(Rh_tangent, Rq, Rq_crit)
+    return scaling
+
+    
+def ventilationReDecomp_q(u_model, a, u_rms):
+    u_model_scaled = u_model * a
+    Rq = u_model_scaled / u_rms
+    scaling = ventilationBlendedScaling_q(Rq)
+    return u_model_scaled * scaling
+
+def ventilationReDecomp_p(u_model, a, p_rms):
+    k = A * np.sqrt(2 / rho)
+    delP = u_model**2 / k # not u_model_scaled because we want the original delta P
+    Rq = delP / p_rms
+    scaling = ventilationBlendedScaling_p(Rq)
+    return a * u_model * scaling
+
 def getWindBuoyantP(rho, flowParams):
     p_w = flowParams["p_w"]
     z = flowParams["z"]
@@ -33,6 +80,11 @@ def flowFromP(rho, C_d, A, delp):
     delp=np.array(delp)
     S = np.sign(delp)
     return S * C_d * A * np.sqrt(2 * abs(delp) / rho)
+
+def pFromFlow(rho, C_d, A, q):
+    q = np.array(q)
+    S = np.sign(q)
+    return S * (q / (C_d * A))**2 * (rho / 2)
 
 def CFromFlow(rho, q, A, delp):
     delp = np.array(delp, dtype=float)

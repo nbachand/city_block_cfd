@@ -1,27 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+import flowEmulationUtils as feUtils
 
 # Constants
 C_d = 0.611  # Discharge coefficient
 A = 10      # Area (m^2)
-rho = 1.2    # Air density (kg/m^3)
-HPressure = False  # Set to True to use pressure-based H definition
-QPressure = False  # Set to True to use pressure-based Q definition
-randomPressure = False  # Set to True to sample pressure, False to sample flow
+rho = 1.225    # Air density (kg/m^3)
+HPressure = True  # Set to True to use pressure-based H definition
+QPressure = True  # Set to True to use pressure-based Q definition
+randomPressure = True  # Set to True to sample pressure, False to sample flow
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 
 def q_AFN(Delta_p_mean):
     """Airflow network prediction"""
-    return C_d * A * np.sqrt(2 * np.abs(Delta_p_mean) / rho)
-
-def q_instantaneous(Delta_p):
-    """Instantaneous flow from orifice equation"""
-    return np.sign(Delta_p) * C_d * A * np.sqrt(2 * np.abs(Delta_p) / rho)
+    return feUtils.flowFromP(rho, C_d, A, Delta_p_mean)
 
 def p_instantaneous(q):
     """Instantaneous pressure from flow"""
-    return np.sign(q) * (q / (C_d * A))**2 * (rho / 2)
+    return feUtils.pFromFlow(rho, C_d, A, q)
 
 def monte_carlo_average_pressure(Delta_p_mean, Delta_p_std, n_samples=100000):
     """
@@ -39,7 +35,7 @@ def monte_carlo_average_pressure(Delta_p_mean, Delta_p_std, n_samples=100000):
     Delta_p_samples = np.random.normal(Delta_p_mean, Delta_p_std, n_samples)
     
     # Calculate instantaneous flows
-    q_samples = q_instantaneous(Delta_p_samples)
+    q_samples = q_AFN(Delta_p_samples)
     return q_samples, Delta_p_samples
 
 def monte_carlo_average_flow(q_mean, q_std, n_samples=100000):
@@ -84,31 +80,6 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     return q_mean, q_prime_rms, q_prime_H_mean, Delta_p_mean, Delta_p_prime_rms, Delta_p_prime_H_mean
     
 
-def analytical_mean_flow_dominated(q_afn, Rq):
-    if Rq < 1.0:
-        return 0.0
-    return q_afn * np.sqrt(1 - 1/Rq**2)
-
-def analytical_fluctuation_dominated(q_afn, Rh):
-    return q_afn * Rh / 2
-
-def gamma_blend_poly(x, blend_bound=1):
-    if x >= blend_bound:
-        return (3*(x*blend_bound)**-4 - 2*(x*blend_bound)**-6)  # Smooth blending function that transitions from 0 to 1 as x goes from 0 to 1
-    else:
-        return 1.0
-    
-def gamma_cutoff(x, blend_bound=1):
-    return 1.0 if x >= blend_bound else 0.0
-    
-def analytical_blended(q_afn, Rh, Rq, blend_bound=1, f_blend = gamma_blend_poly):
-    term1 = analytical_fluctuation_dominated(q_afn, Rh)
-    term2 = analytical_mean_flow_dominated(q_afn, Rq)
-
-    gamma = f_blend(Rq, blend_bound)
-    
-    return ((1-gamma)*term1 + gamma*term2)
-
 # Simulation parameters
 Delta_p_mean = 10.0  # Mean pressure difference (Pa)
 q_afn_val = q_AFN(Delta_p_mean)
@@ -122,7 +93,7 @@ analytical_fluct_dom = []
 analytical_fluct_dom_bound = []
 analytical_fluct_tan = []
 analytical_blend = []
-analytical_blend_tan = []
+analytical_blend = []
 analytical_AFN = []
 
 print("Running Monte Carlo simulations...")
@@ -166,12 +137,14 @@ for Rq_gen in Rq_gen_values:
         Rq = Rq_q
     if HPressure:
         Rh = np.sqrt(Delta_p_mean_mc) / Delta_p_prime_H_mean
+        blended_func = feUtils.ventilationBlendedScaling_p
         Rh_bound = np.sqrt(Rq / 2)
         blend_bound = 0.93
         tangent_scale = np.sqrt(16 / (3*np.sqrt(3)))
         tangent_bound = np.sqrt(3)
     else:
         Rh = np.abs(q_afn_val_mc) / q_prime_H_mean
+        blended_func = feUtils.ventilationBlendedScaling_q
         Rh_bound = Rq
         blend_bound = np.sqrt(2)
         tangent_scale = 1
@@ -186,16 +159,12 @@ for Rq_gen in Rq_gen_values:
     mc_q_mean_normalized.append(q_mean_mc / q_afn_val_mc)
     
     # Calculate analytical predictions
-    analytical_mean_dom.append(analytical_mean_flow_dominated(q_afn_val_mc, Rq) / q_afn_val_mc)
-    analytical_fluct_dom.append(analytical_fluctuation_dominated(q_afn_val_mc, Rh) / q_afn_val_mc)
-    analytical_fluct_dom_bound.append(analytical_fluctuation_dominated(q_afn_val_mc, Rh_bound) / q_afn_val_mc)
-    analytical_fluct_tan.append(analytical_fluctuation_dominated(q_afn_val_mc, Rh_bound*tangent_scale) / q_afn_val_mc)
-    analytical_blend.append(analytical_blended(q_afn_val_mc, Rh, Rq, blend_bound, f_blend=gamma_cutoff) / q_afn_val_mc)
-    analytical_blend_tan.append(analytical_blended(q_afn_val_mc, 
-                                                   Rh_bound*tangent_scale, 
-                                                   Rq, tangent_bound, 
-                                                   f_blend=gamma_cutoff
-                                                   ) / q_afn_val_mc)
+    analytical_mean_dom.append(feUtils.ventilationUpperScaling(Rq))
+    analytical_fluct_dom.append(feUtils.ventilationLowerScaling(Rh))
+    analytical_fluct_dom_bound.append(feUtils.ventilationLowerScaling(Rh_bound))
+    analytical_fluct_tan.append(feUtils.ventilationLowerScaling(Rh_bound*tangent_scale))
+    analytical_blend.append(blended_func(Rq))
+
     if len(mc_q_mean) % 5 == 0:
         print(f"Rq_gen={Rq_gen:.3f}, Rq_computed={Rq:.3f}, Rh={Rh:.3f}, "
               f"Δp_mean={Delta_p_mean_mc:.3f}, q̄/q_AFN (MC)={q_mean_mc/q_afn_val_mc:.4f}, "
@@ -229,9 +198,8 @@ ax.plot(Rq_q_values, analytical_fluct_dom, 'r--', label='Fluctuation dominated\n
 ax.plot(Rq_q_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
 ax.plot(Rq_q_values, analytical_fluct_tan, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
 # ax.plot(Rq_q_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
-ax.plot(Rq_q_values, analytical_blend_tan, 'g--', label='Blended model bound', linewidth=2.5)
+ax.plot(Rq_q_values, analytical_blend, 'g--', label='Blended model bound', linewidth=2.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
-ax.axvline(x=tangent_bound, color='lightgray', linestyle=':', linewidth=1.5, label='blend bound')
 ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
 ax.set_ylabel('$\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Normalized Mean Flow vs Fluctuation Ratio', fontsize=13, fontweight='bold')
@@ -242,7 +210,7 @@ ax.set_ylim([0, 1.5])
 # Plot 2: Error between Monte Carlo and analytical
 ax = axes[0, 1]
 error_mean_dom = np.array(mc_q_mean_normalized) - np.array(analytical_mean_dom)
-error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend_tan)
+error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend)
 ax.plot(Rq_q_values, error_mean_dom, 'b-', label='Mean-flow model error', linewidth=2)
 ax.plot(Rq_q_values, error_blend, 'g-', label='Blended model error', linewidth=2)
 ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
@@ -266,16 +234,7 @@ ax.grid(True, alpha=0.3, which='both')
 
 # Plot 4: Blending function γ(Rq)
 ax = axes[1, 1]
-gamma_values = [gamma_blend_poly(Rq, blend_bound=blend_bound) for Rq in Rq_values]
-ax.plot(Rq_q_values, gamma_values, 'purple', linewidth=2.5)
-ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
-ax.axvline(x=blend_bound, color='lightgray', linestyle=':', linewidth=1.5, label='blend bound')
 
-ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
-ax.set_ylabel('$\\gamma(R_Q)$', fontsize=12)
-ax.set_title('Blending Function (OVL-based)', fontsize=13, fontweight='bold')
-ax.grid(True, alpha=0.3)
-ax.set_ylim([0, 1])
 
 plt.tight_layout()
 plt.show()
