@@ -20,6 +20,8 @@ def ventilationUpperScaling(Rq):
     scaling = np.zeros_like(Rq)
     mask = Rq > 1
     scaling[mask] = np.sqrt(1 - Rq[mask]**-2)
+    # scaling[mask] = np.sqrt(1 - Rq[mask]**-2)
+    # scaling[mask] = 1 - Rq[mask]**-2 / 2 # Binomial approximation
     return scaling
 
 def ventilationScalingSwitch(Rh, Rq, Rq_crit):

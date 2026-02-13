@@ -6,9 +6,9 @@ import flowEmulationUtils as feUtils
 C_d = 0.611  # Discharge coefficient
 A = 10      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
-HPressure = True  # Set to True to use pressure-based H definition
-QPressure = True  # Set to True to use pressure-based Q definition
-randomPressure = True  # Set to True to sample pressure, False to sample flow
+HPressure = False  # Set to True ts use pressure-based H definition
+QPressure = False  # Set to True to use pressure-based Q definition
+randomPressure = False  # Set to True to sample pressure, False to sample flow
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 
 def q_AFN(Delta_p_mean):
