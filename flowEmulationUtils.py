@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 from tqdm import tqdm
 from pyCascade import utils
+import pyafn
 
 g = 10
 beta = 0.0034
@@ -11,192 +12,6 @@ hr = hm / 2
 # window_dim = hr/4
 # A = window_dim ** 2 
 A = 1 # predicting per area flux, so A is already included in flux
-
-
-def ventilationLowerScaling(Rh):
-    return Rh / 2
-
-def ventilationUpperScaling(Rq):
-    scaling = np.zeros_like(Rq)
-    mask = Rq > 1
-    scaling[mask] = np.sqrt(1 - Rq[mask]**-2)
-    # scaling[mask] = np.sqrt(1 - Rq[mask]**-2)
-    # scaling[mask] = 1 - Rq[mask]**-2 / 2 # Binomial approximation
-    return scaling
-
-def ventilationScalingSwitch(Rh, Rq, Rq_crit):
-    scaling = np.empty_like(Rq)
-    mask = Rq < Rq_crit
-    scaling[mask] = ventilationLowerScaling(Rh[mask])
-    scaling[~mask] = ventilationUpperScaling(Rq[~mask])
-    return scaling
-
-def ventilationBlendedScaling_q(Rq):
-    alpha = 1
-    Rh_bound = Rq
-    Rh_tangent = alpha * Rh_bound
-    Rq_crit = np.sqrt(2)
-    scaling = ventilationScalingSwitch(Rh_tangent, Rq, Rq_crit)
-    return scaling
-
-def ventilationBlendedScaling_p(Rq):
-    alpha = 16 / (3 * np.sqrt(3))  # Scale factor to make the tangent line match the lower bound at the critical point
-    Rh_bound = np.sqrt(Rq / 2)
-    Rh_tangent = np.sqrt(alpha) * Rh_bound
-    Rq_crit = np.sqrt(3)
-    scaling = ventilationScalingSwitch(Rh_tangent, Rq, Rq_crit)
-    return scaling
-
-    
-def ventilationReDecomp_q(u_model, a, u_rms):
-    u_model_scaled = u_model * a
-    Rq = u_model_scaled / u_rms
-    scaling = ventilationBlendedScaling_q(Rq)
-    return u_model_scaled * scaling
-
-def ventilationReDecomp_p(u_model, a, p_rms):
-    k = A * np.sqrt(2 / rho)
-    delP = u_model**2 / k # not u_model_scaled because we want the original delta P
-    Rq = delP / p_rms
-    scaling = ventilationBlendedScaling_p(Rq)
-    return a * u_model * scaling
-
-def getWindBuoyantP(rho, flowParams):
-    p_w = flowParams["p_w"]
-    z = flowParams["z"]
-    delT = flowParams["delT"]
-    if len(delT.shape) == 2:
-        n_levels = delT.shape[1]
-        delz = hr / n_levels
-        z_levels = delz * (np.arange(n_levels) + 0.45)  # vectorized center calculation
-        z_below = (z_levels < z[:, None])
-        delT = np.sum(delT * z_below, axis=1) / np.maximum(np.sum(z_below, axis=1), 1)
-        sl_length = z - hr
-        sls = sl_length > 0
-        delT[sls] = hr / z[sls] * delT[sls] + sl_length[sls] / z[sls] * flowParams["delT"][sls,-1]
-
-    delrho = -rho * beta * delT
-    return (delrho * g * z) + p_w # delP is outdoor minus indoor, while p0/rho is indoor minus outdoor, driving positive flow into the room (oppiste textbook)
-
-def flowFromP(rho, C_d, A, delp):
-    delp=np.array(delp)
-    S = np.sign(delp)
-    return S * C_d * A * np.sqrt(2 * abs(delp) / rho)
-
-def pFromFlow(rho, C_d, A, q):
-    q = np.array(q)
-    S = np.sign(q)
-    return S * (q / (C_d * A))**2 * (rho / 2)
-
-def CFromFlow(rho, q, A, delp):
-    delp = np.array(delp, dtype=float)
-    # prepare output filled with NaNs
-    C = np.full_like(delp, np.nan, dtype=float)
-    # mask non‐NaN, non‐zero delp
-    mask = ~np.isnan(delp) & (delp != 0)
-    S = np.sign(delp[mask])
-    C[mask] = q[mask] / (S * A[mask] * np.sqrt(2 * np.abs(delp[mask]) / rho))
-    return C
-
-def flowField(p_0, rho, flowParams):
-    C_d = flowParams["C_d"]
-    A = flowParams["A"]
-    rooms = flowParams["rooms"]
-    delP = -np.matmul(rooms, p_0) + getWindBuoyantP(rho, flowParams) 
-    return flowFromP(rho, C_d, A, delP)
-
-def getC(p_0, rho, flowParams):
-    A = flowParams["A"]
-    q = flowParams["q"]
-    rooms = flowParams["rooms"]
-    delP = -np.matmul(rooms, p_0) + getWindBuoyantP(rho, flowParams)
-    return CFromFlow(rho, q, A, delP)
-
-def qObjective(p_0, rho, flowParams):
-    qs = flowField(p_0, rho, flowParams)
-    rooms = flowParams["rooms"]
-    qRooms = np.matmul(rooms.T, qs)
-    return np.sum(qRooms**2)
-
-def findOptimalP0(rho, flowParams):
-    bounds = np.array([np.min(getWindBuoyantP(rho, flowParams)), np.max(getWindBuoyantP(rho, flowParams))])
-    x0 = np.mean(bounds)
-    NRooms = flowParams["rooms"].shape[1]
-    bounds = np.tile(bounds, (NRooms, 1))
-    x0 = np.tile(x0, NRooms)
-    return minimize(qObjective, x0=x0, bounds=bounds, args=(rho, flowParams))
-
-
-##############
-
-def matchObjective(x, rho, flowParams, weight):
-    """
-    Objective = 
-      1) sum of squared errors between predicted opening flows and target flows
-      2) + weight × variance(C_d)
-    x = [p0_1 ... p0_N, Cd_1 ... Cd_M]
-    """
-    rooms   = flowParams["rooms"]
-    N       = rooms.shape[1]    # # rooms
-    M       = rooms.shape[0]    # # openings
-
-    # unpack decision vector
-    p_0 = x[:N]
-    Cd = x[N:]
-
-    # compute driving pressures
-    params    = flowParams.copy()
-    params["C_d"] = Cd
-    delP = -np.matmul(rooms, p_0) + getWindBuoyantP(rho, flowParams)
-
-    # 1) predicted opening flows
-    qs_pred = flowFromP(rho, Cd, params["A"], delP)
-
-    # 2) flow-matching error (per opening)
-    q_target = params["q"]
-    f1 = np.sum((qs_pred - q_target)**2)
-
-    # 3) uniform-C penalty (variance)
-    meanCd = np.mean(Cd)
-    f2     = np.sum((Cd - meanCd)**2)
-
-    return f1 + weight * f2
-
-def findOptimalP0AndC(rho, flowParams, weight=1e-1, disp=False):
-    """
-    Minimize matchObjective over p0 (N vars) and Cd (M vars).
-    Returns OptimizeResult with .x = [p0*, Cd*].
-    """
-    rooms = flowParams["rooms"]
-    N     = rooms.shape[1]
-    M     = rooms.shape[0]
-
-    # bounds for p0: between min/max wind-buoyancy pressures
-    WBP      = getWindBuoyantP(rho, flowParams)
-    p_bounds = [(np.min(WBP), np.max(WBP))] * N
-
-    # bounds for Cd: e.g. [1e-3, 5.0]
-    C_bounds = [(1e-3, 5.0)] * M
-    bounds   = p_bounds + C_bounds
-
-    # initial guess: mid-range p0, mean(C_d)
-    x0 = np.concatenate([
-        np.full(N, np.mean(WBP)),
-        np.full(M, np.mean(flowParams["C_d"]))
-    ])
-
-    res = minimize(
-        matchObjective,
-        x0=x0,
-        args=(rho, flowParams, weight),
-        bounds=bounds,
-        method="L-BFGS-B",
-        options={"disp": disp}
-    )
-    return res
-
-
-##############
 
 def getRoomTemp(row, tempStack=False):
     if tempStack:
@@ -222,6 +37,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             "delT": [],
             "q": [],
             "rooms": [],
+            "hr": 3
         }
         windowKeyCols = roomVentilationMI.columns[
             roomVentilationMI.columns.str.contains("windowKeys")
@@ -269,7 +85,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             NRooms = flowParams["rooms"].shape[1]
             flowParams["p_w"] = flowParams[pType]
             p0_meas = [row["mean-p-room"] for i in range(NRooms)]
-            C_ds = getC(np.array(p0_meas), rho, flowParams)
+            C_ds = pyafn.getC(np.array(p0_meas), rho, flowParams)
 
             for i, windowKey in enumerate(windowKeys):
                 flowStatsMI.loc[(run, windowKey), f"{pType}-C_d"] = C_ds[i]
@@ -278,9 +94,9 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                     
             for optType in optTypes:
                 if optType == "optp0":
-                    optResult = findOptimalP0(rho, flowParams)
+                    optResult = pyafn.findOptimalP0(rho, flowParams)
                 elif optType == "optp0Cd":
-                    optResult = findOptimalP0AndC(rho, flowParams)
+                    optResult = pyafn.findOptimalP0AndC(rho, flowParams)
                 else:
                     raise ValueError(f"Unknown optimization type: {optType}")
                 
@@ -292,7 +108,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-p0"] = np.mean(p0)
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-success"] = optResult.success
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-fun"] = optResult.fun
-                qs = flowField(np.array(p0), rho, flowParamsOpt)
+                qs = pyafn.flowField(np.array(p0), rho, flowParamsOpt)
 
                 for i, windowKey in enumerate(windowKeys):
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-q_model"] = qs[i]

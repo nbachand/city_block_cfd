@@ -1,23 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import flowEmulationUtils as feUtils
+import pyafn
 
 # Constants
 C_d = 0.611  # Discharge coefficient
 A = 10      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
-HPressure = False  # Set to True ts use pressure-based H definition
-QPressure = False  # Set to True to use pressure-based Q definition
+HPressure = True  # Set to True ts use pressure-based H definition
+QPressure = True  # Set to True to use pressure-based Q definition
 randomPressure = False  # Set to True to sample pressure, False to sample flow
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 
 def q_AFN(Delta_p_mean):
     """Airflow network prediction"""
-    return feUtils.flowFromP(rho, C_d, A, Delta_p_mean)
+    return pyafn.flowFromP(rho, C_d, A, Delta_p_mean)
 
 def p_instantaneous(q):
     """Instantaneous pressure from flow"""
-    return feUtils.pFromFlow(rho, C_d, A, q)
+    return pyafn.pFromFlow(rho, C_d, A, q)
 
 def monte_carlo_average_pressure(Delta_p_mean, Delta_p_std, n_samples=100000):
     """
@@ -137,14 +137,14 @@ for Rq_gen in Rq_gen_values:
         Rq = Rq_q
     if HPressure:
         Rh = np.sqrt(Delta_p_mean_mc) / Delta_p_prime_H_mean
-        blended_func = feUtils.ventilationBlendedScaling_p
+        blended_func = pyafn.ventilationBlendedScaling_p
         Rh_bound = np.sqrt(Rq / 2)
         blend_bound = 0.93
         tangent_scale = np.sqrt(16 / (3*np.sqrt(3)))
         tangent_bound = np.sqrt(3)
     else:
         Rh = np.abs(q_afn_val_mc) / q_prime_H_mean
-        blended_func = feUtils.ventilationBlendedScaling_q
+        blended_func = pyafn.ventilationBlendedScaling_q
         Rh_bound = Rq
         blend_bound = np.sqrt(2)
         tangent_scale = 1
@@ -159,10 +159,10 @@ for Rq_gen in Rq_gen_values:
     mc_q_mean_normalized.append(q_mean_mc / q_afn_val_mc)
     
     # Calculate analytical predictions
-    analytical_mean_dom.append(feUtils.ventilationUpperScaling(Rq))
-    analytical_fluct_dom.append(feUtils.ventilationLowerScaling(Rh))
-    analytical_fluct_dom_bound.append(feUtils.ventilationLowerScaling(Rh_bound))
-    analytical_fluct_tan.append(feUtils.ventilationLowerScaling(Rh_bound*tangent_scale))
+    analytical_mean_dom.append(pyafn.ventilationUpperScaling(Rq))
+    analytical_fluct_dom.append(pyafn.ventilationLowerScaling(Rh))
+    analytical_fluct_dom_bound.append(pyafn.ventilationLowerScaling(Rh_bound))
+    analytical_fluct_tan.append(pyafn.ventilationLowerScaling(Rh_bound*tangent_scale))
     analytical_blend.append(blended_func(Rq))
 
     if len(mc_q_mean) % 5 == 0:
