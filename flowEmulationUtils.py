@@ -4,9 +4,6 @@ from tqdm import tqdm
 from pyCascade import utils
 import pyafn
 
-g = 10
-beta = 0.0034
-rho = 1.225
 hm = 6
 hr = hm / 2
 # window_dim = hr/4
@@ -85,7 +82,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
             NRooms = flowParams["rooms"].shape[1]
             flowParams["p_w"] = flowParams[pType]
             p0_meas = [row["mean-p-room"] for i in range(NRooms)]
-            C_ds = pyafn.getC(np.array(p0_meas), rho, flowParams)
+            C_ds = pyafn.getC(np.array(p0_meas), flowParams)
 
             for i, windowKey in enumerate(windowKeys):
                 flowStatsMI.loc[(run, windowKey), f"{pType}-C_d"] = C_ds[i]
@@ -94,9 +91,9 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                     
             for optType in optTypes:
                 if optType == "optp0":
-                    optResult = pyafn.findOptimalP0(rho, flowParams)
+                    optResult = pyafn.findOptimalP0(flowParams)
                 elif optType == "optp0Cd":
-                    optResult = pyafn.findOptimalP0AndC(rho, flowParams)
+                    optResult = pyafn.findOptimalP0AndC(flowParams)
                 else:
                     raise ValueError(f"Unknown optimization type: {optType}")
                 
@@ -108,7 +105,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-p0"] = np.mean(p0)
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-success"] = optResult.success
                 roomVentilationMI.loc[(run, room), f"{pType}_{optType}-fun"] = optResult.fun
-                qs = pyafn.flowField(np.array(p0), rho, flowParamsOpt)
+                qs = pyafn.flowField(np.array(p0), flowParamsOpt)
 
                 for i, windowKey in enumerate(windowKeys):
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-q_model"] = qs[i]
