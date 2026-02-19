@@ -13,11 +13,11 @@ H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' 
 
 def q_AFN(Delta_p_mean):
     """Airflow network prediction"""
-    return pyafn.flowFromP(rho, C_d, A, Delta_p_mean)
+    return pyafn.flowFromP(C_d, A, Delta_p_mean)
 
 def p_instantaneous(q):
     """Instantaneous pressure from flow"""
-    return pyafn.pFromFlow(rho, C_d, A, q)
+    return pyafn.pFromFlow(C_d, A, q)
 
 def monte_carlo_average_pressure(Delta_p_mean, Delta_p_std, n_samples=100000):
     """
@@ -232,8 +232,15 @@ ax.set_title('Absolute Model Error', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3, which='both')
 
-# Plot 4: Blending function γ(Rq)
+# Plot 4: Rq vs Rq_gen
 ax = axes[1, 1]
+ax.plot(Rq_q_values, Rq_values, 'g-', label='Rq vs Rq_gen', linewidth=2)
+ax.plot(Rq_q_values, Rq_gen_values, 'g--', label='Rq_q vs Rq_gen', linewidth=2)
+ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
+ax.set_ylabel('$R_Q$', fontsize=12)
+ax.set_title('Rq vs Rq_gen', fontsize=13, fontweight='bold')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
 
 
 plt.tight_layout()
