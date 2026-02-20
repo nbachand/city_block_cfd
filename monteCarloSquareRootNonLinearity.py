@@ -81,9 +81,8 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     
 
 # Simulation parameters
-Delta_p_mean = 10.0  # Mean pressure difference (Pa)
-q_afn_val = q_AFN(Delta_p_mean)
-Rq_gen_values = np.logspace(-2, np.log10(6), 40)  # Range of Rq = sqrt(<q'^2>) / q_AFN
+base_std = 1.0  # Base standard deviation for generating Rq values
+means = np.logspace(-2, np.log10(6), 40)
 
 # Storage for results
 mc_q_mean = []
@@ -97,33 +96,28 @@ analytical_blend = []
 analytical_AFN = []
 
 print("Running Monte Carlo simulations...")
-print(f"Mean pressure: {Delta_p_mean} Pa")
-print(f"q_AFN: {q_afn_val:.4f} m³/s\n")
 
 Rh_values = []
 Rq_values = []
 Rq_q_values = []
-for Rq_gen in Rq_gen_values:
+q_afn_values = []
+for mean in means:
 
     if randomPressure:
-        Delta_p_std = 2 * np.abs(Delta_p_mean) / Rq_gen
-        
         # Monte Carlo simulation
         qs, delPs = monte_carlo_average_pressure(
-            Delta_p_mean, Delta_p_std, n_samples=100000
+            mean, base_std, n_samples=100000
         )
     else:
-        q_std = q_afn_val / Rq_gen
-        
         # Monte Carlo simulation
         qs, delPs = monte_carlo_average_flow(
-            q_afn_val, q_std, n_samples=100000
+            mean, base_std, n_samples=100000
         )
 
     # plt.figure()
     # plt.hist(qs, bins=50, alpha=0.1, label='q')
     # plt.hist(delPs, bins=50, alpha=0.1, label='P')
-    # plt.title(f"Rq_gen={Rq_gen:.3f}", fontsize=12)
+    # plt.title(f"mean={mean:.3f}", fontsize=12)
     # plt.legend()
     # plt.show()
 
@@ -153,6 +147,7 @@ for Rq_gen in Rq_gen_values:
     Rq_values.append(Rq)
     Rh_values.append(Rh)
     Rq_q_values.append(Rq_q)
+    q_afn_values.append(q_afn_val_mc)
     
     # Store Monte Carlo results
     mc_q_mean.append(q_mean_mc)
@@ -166,41 +161,30 @@ for Rq_gen in Rq_gen_values:
     analytical_blend.append(blended_func(Rq))
 
     if len(mc_q_mean) % 5 == 0:
-        print(f"Rq_gen={Rq_gen:.3f}, Rq_computed={Rq:.3f}, Rh={Rh:.3f}, "
+        print(f"Rq_computed={Rq:.3f}, Rh={Rh:.3f}, "
               f"Δp_mean={Delta_p_mean_mc:.3f}, q̄/q_AFN (MC)={q_mean_mc/q_afn_val_mc:.4f}, "
               f"q̄/q_AFN (Blend)={analytical_blend[-1]:.4f}")
 
 Rq_values = np.array(Rq_values)
 Rh_values = np.array(Rh_values)
 Rq_q_values = np.array(Rq_q_values)
+q_afn_val_mc = np.array(q_afn_values)
 
-
-# plt.figure()
-# plt.plot(Rq_gen_values, Rq_gen_values, 'o-')
-
-# plt.figure()
-# plt.plot(1/Rq_q_values, Rh_values, 'o-')
-# plt.ylim([0, 5])
-# plt.show()
-
-# plt.figure()
-# plt.plot(Rq_gen_values, Rq_gen_values, 'o-')
-# plt.show()
 
 # Plotting
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
 # Plot 1: Normalized mean flow vs Rq
 ax = axes[0, 0]
-ax.plot(Rq_q_values, mc_q_mean_normalized, 'ko', label='Monte Carlo', markersize=6, alpha=0.6)
-ax.plot(Rq_q_values, analytical_mean_dom, 'b-', label='Mean-flow dominated\n$\\bar{q} = q_{AFN}\\sqrt{1-1/(R_Q^2)}$', linewidth=2)
-ax.plot(Rq_q_values, analytical_fluct_dom, 'r--', label='Fluctuation dominated\n$\\bar{q} = q_{AFN}(2R_H)$', linewidth=2)
-ax.plot(Rq_q_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
-ax.plot(Rq_q_values, analytical_fluct_tan, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
-# ax.plot(Rq_q_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
-ax.plot(Rq_q_values, analytical_blend, 'g--', label='Blended model bound', linewidth=2.5)
+ax.plot(q_afn_values, mc_q_mean_normalized, 'ko', label='Monte Carlo', markersize=6, alpha=0.6)
+ax.plot(q_afn_values, analytical_mean_dom, 'b-', label='Mean-flow dominated\n$\\bar{q} = q_{AFN}\\sqrt{1-1/(R_Q^2)}$', linewidth=2)
+ax.plot(q_afn_values, analytical_fluct_dom, 'r--', label='Fluctuation dominated\n$\\bar{q} = q_{AFN}(2R_H)$', linewidth=2)
+ax.plot(q_afn_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
+ax.plot(q_afn_values, analytical_fluct_tan, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
+# ax.plot(q_afn_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
+ax.plot(q_afn_values, analytical_blend, 'g--', label='Blended model bound', linewidth=2.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
-ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
+ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('$\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Normalized Mean Flow vs Fluctuation Ratio', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
@@ -211,11 +195,11 @@ ax.set_ylim([0, 1.5])
 ax = axes[0, 1]
 error_mean_dom = np.array(mc_q_mean_normalized) - np.array(analytical_mean_dom)
 error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend)
-ax.plot(Rq_q_values, error_mean_dom, 'b-', label='Mean-flow model error', linewidth=2)
-ax.plot(Rq_q_values, error_blend, 'g-', label='Blended model error', linewidth=2)
+ax.plot(q_afn_values, error_mean_dom, 'b-', label='Mean-flow model error', linewidth=2)
+ax.plot(q_afn_values, error_blend, 'g-', label='Blended model error', linewidth=2)
 ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
-ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
+ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('Error in $\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Model Error vs Monte Carlo', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
@@ -223,22 +207,21 @@ ax.grid(True, alpha=0.3)
 
 # Plot 3: Absolute error (log scale)
 ax = axes[1, 0]
-ax.semilogy(Rq_gen_values, np.abs(error_mean_dom), 'b-', label='Mean-flow model', linewidth=2)
-ax.semilogy(Rq_gen_values, np.abs(error_blend), 'g-', label='Blended model', linewidth=2)
+ax.semilogy(Rq_q_values, np.abs(error_mean_dom), 'b-', label='Mean-flow model', linewidth=2)
+ax.semilogy(Rq_q_values, np.abs(error_blend), 'g-', label='Blended model', linewidth=2)
 ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
-ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
+ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('Absolute Error (log scale)', fontsize=12)
 ax.set_title('Absolute Model Error', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3, which='both')
 
-# Plot 4: Rq vs Rq_gen
 ax = axes[1, 1]
-ax.plot(Rq_q_values, Rq_values, 'g-', label='Rq vs Rq_gen', linewidth=2)
-ax.plot(Rq_q_values, Rq_gen_values, 'g--', label='Rq_q vs Rq_gen', linewidth=2)
-ax.set_xlabel('$R_Q = q_{AFN}/\\sqrt{\\overline{(q\')^2}}$', fontsize=12)
+ax.plot(q_afn_values, Rq_values, 'g-', label='$Rq$', linewidth=2)
+ax.plot(q_afn_values, Rq_q_values, 'm--', label='$Rq_q$', linewidth=2)
+ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('$R_Q$', fontsize=12)
-ax.set_title('Rq vs Rq_gen', fontsize=13, fontweight='bold')
+ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3)
 
