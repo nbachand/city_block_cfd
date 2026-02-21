@@ -4,11 +4,11 @@ import pyafn
 
 # Constants
 C_d = 0.611  # Discharge coefficient
-A = 10      # Area (m^2)
+A = 1      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
 HPressure = True  # Set to True ts use pressure-based H definition
 QPressure = True  # Set to True to use pressure-based Q definition
-randomPressure = False  # Set to True to sample pressure, False to sample flow
+randomPressure = True  # Set to True to sample pressure, False to sample flow
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 
 def q_AFN(Delta_p_mean):
@@ -81,8 +81,17 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     
 
 # Simulation parameters
-base_std = 1.0  # Base standard deviation for generating Rq values
-means = np.logspace(-2, np.log10(6), 40)
+q_std = 1.0  # Base standard deviation for generating Rq values
+max_value = 6.0
+
+if randomPressure:
+    max_value = p_instantaneous(max_value)  # Convert max flow to max pressure for sampling
+    min_value = p_instantaneous(0.1)  # Convert min flow to min pressure for sampling
+    base_std = 2 * p_instantaneous(q_std)  # Set base std to the pressure corresponding to q_AFN=1
+else:
+    min_value = 0.01  # Minimum flow for sampling
+    base_std = q_std  # Set base std to the flow corresponding to q_AFN=1
+means = np.logspace(np.log10(min_value), np.log10(max_value), 40)
 
 # Storage for results
 mc_q_mean = []
@@ -97,9 +106,11 @@ analytical_AFN = []
 
 print("Running Monte Carlo simulations...")
 
-Rh_values = []
 Rq_values = []
 Rq_q_values = []
+Rh_values = []
+Rh_bound_values = []
+Rh_tangent_values = []
 q_afn_values = []
 for mean in means:
 
@@ -133,20 +144,18 @@ for mean in means:
         Rh = np.sqrt(Delta_p_mean_mc) / Delta_p_prime_H_mean
         blended_func = pyafn.ventilationBlendedScaling_p
         Rh_bound = np.sqrt(Rq / 2)
-        blend_bound = 0.93
-        tangent_scale = np.sqrt(16 / (3*np.sqrt(3)))
-        tangent_bound = np.sqrt(3)
+        Rh_tangent = np.sqrt(16 / (3 * np.sqrt(3))) * Rh_bound
     else:
         Rh = np.abs(q_afn_val_mc) / q_prime_H_mean
         blended_func = pyafn.ventilationBlendedScaling_q
         Rh_bound = Rq
-        blend_bound = np.sqrt(2)
-        tangent_scale = 1
-        tangent_bound = blend_bound
-
+        Rh_tangent = Rh_bound
+    
     Rq_values.append(Rq)
     Rh_values.append(Rh)
-    Rq_q_values.append(Rq_q)
+    Rq_q_values.append(Rq_q)    
+    Rh_bound_values.append(Rh_bound)
+    Rh_tangent_values.append(Rh_tangent)
     q_afn_values.append(q_afn_val_mc)
     
     # Store Monte Carlo results
@@ -157,7 +166,7 @@ for mean in means:
     analytical_mean_dom.append(pyafn.ventilationUpperScaling(Rq))
     analytical_fluct_dom.append(pyafn.ventilationLowerScaling(Rh))
     analytical_fluct_dom_bound.append(pyafn.ventilationLowerScaling(Rh_bound))
-    analytical_fluct_tan.append(pyafn.ventilationLowerScaling(Rh_bound*tangent_scale))
+    analytical_fluct_tan.append(pyafn.ventilationLowerScaling(Rh_tangent))
     analytical_blend.append(blended_func(Rq))
 
     if len(mc_q_mean) % 5 == 0:
@@ -183,45 +192,49 @@ ax.plot(q_afn_values, analytical_fluct_dom_bound, 'r:', label='Fluctuation domin
 ax.plot(q_afn_values, analytical_fluct_tan, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
 # ax.plot(q_afn_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
 ax.plot(q_afn_values, analytical_blend, 'g--', label='Blended model bound', linewidth=2.5)
-ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
+ax.axvline(x=q_std, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
 ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('$\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Normalized Mean Flow vs Fluctuation Ratio', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3)
-ax.set_ylim([0, 1.5])
+ax.set_ylim([0, 1.2])
 
 # Plot 2: Error between Monte Carlo and analytical
 ax = axes[0, 1]
 error_mean_dom = np.array(mc_q_mean_normalized) - np.array(analytical_mean_dom)
+error_fluct_tan = np.array(mc_q_mean_normalized) - np.array(analytical_fluct_tan)
 error_blend = np.array(mc_q_mean_normalized) - np.array(analytical_blend)
 ax.plot(q_afn_values, error_mean_dom, 'b-', label='Mean-flow model error', linewidth=2)
+ax.plot(q_afn_values, error_fluct_tan, 'r-', label='Fluctuation tangent error', linewidth=2)
 ax.plot(q_afn_values, error_blend, 'g-', label='Blended model error', linewidth=2)
 ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
-ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
+ax.axvline(x=q_std, color='gray', linestyle=':', linewidth=1.5)
 ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('Error in $\\bar{q}/q_{AFN}$', fontsize=12)
 ax.set_title('Model Error vs Monte Carlo', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3)
+ax.set_ylim([-0.6, 0.6])
 
-# Plot 3: Absolute error (log scale)
+# Plot 3: Rq values vs q_AFN
 ax = axes[1, 0]
-ax.semilogy(Rq_q_values, np.abs(error_mean_dom), 'b-', label='Mean-flow model', linewidth=2)
-ax.semilogy(Rq_q_values, np.abs(error_blend), 'g-', label='Blended model', linewidth=2)
-ax.axvline(x=1.0, color='gray', linestyle=':', linewidth=1.5)
-ax.set_xlabel('$q_{AFN}$', fontsize=12)
-ax.set_ylabel('Absolute Error (log scale)', fontsize=12)
-ax.set_title('Absolute Model Error', fontsize=13, fontweight='bold')
-ax.legend(fontsize=10)
-ax.grid(True, alpha=0.3, which='both')
-
-ax = axes[1, 1]
 ax.plot(q_afn_values, Rq_values, 'g-', label='$Rq$', linewidth=2)
 ax.plot(q_afn_values, Rq_q_values, 'm--', label='$Rq_q$', linewidth=2)
 ax.set_xlabel('$q_{AFN}$', fontsize=12)
 ax.set_ylabel('$R_Q$', fontsize=12)
 ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+# Plot 4: Rh values vs q_AFN
+ax = axes[1, 1]
+ax.plot(q_afn_values, Rh_values, 'r-', label='$R_H$', linewidth=2)
+ax.plot(q_afn_values, Rh_bound_values, 'b--', label='$R_H$ bound', linewidth=2)
+ax.plot(q_afn_values, Rh_tangent_values, 'm-.', label='$R_H$ tangent', linewidth=2)
+ax.set_xlabel('$q_{AFN}$', fontsize=12)
+ax.set_ylabel('$R_H$', fontsize=12)
+ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3)
 
