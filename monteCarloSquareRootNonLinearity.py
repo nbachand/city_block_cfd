@@ -135,8 +135,8 @@ for mean in means:
 
     q_mean_mc, q_prime_rms, q_prime_H_mean, Delta_p_mean_mc, Delta_p_prime_rms, Delta_p_prime_H_mean = calculate_statistics(qs, delPs, H_mean_type=H_mean_type)
     q_afn_val_mc = q_AFN(Delta_p_mean_mc)
-    Rq_q =  np.abs(q_afn_val_mc) / q_prime_rms
-    Rq_p = 2 * np.abs(Delta_p_mean_mc) / Delta_p_prime_rms
+    Rq_q =  pyafn.getRq_q(q_afn_val_mc, 1, q_prime_rms)
+    Rq_p = pyafn.getRq_p(Delta_p_mean_mc, Delta_p_prime_rms)
 
     if QPressure:
         Rq = Rq_p 
