@@ -76,7 +76,7 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     
     return q_mean, q_prime_rms, q_prime_H_mean, Delta_p_mean, Delta_p_prime_rms, Delta_p_prime_H_mean
     
-fig, axes = plt.subplots(3, 2, figsize=(14, 10), sharex=True)
+fig, axes = plt.subplots(3, 2, figsize=(10, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1, 1]})
 for i, usePressure in enumerate([False, True]):
     HPressure = usePressure  # Set to True ts use pressure-based H definition
     QPressure = usePressure  # Set to True to use pressure-based Q definition
@@ -121,12 +121,12 @@ for i, usePressure in enumerate([False, True]):
         if randomPressure:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_pressure(
-                mean, base_std, n_samples=100000
+                mean, base_std, n_samples=1000000
             )
         else:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_flow(
-                mean, base_std, n_samples=100000
+                mean, base_std, n_samples=1000000
             )
 
         # plt.figure()
@@ -190,24 +190,27 @@ for i, usePressure in enumerate([False, True]):
     if QPressure:
         x_vals = np.sqrt(Rq_values)  # Plot against sqrt(Rq) for pressure-based definition for scaling with q_AFN
         x_label = '$\\sqrt{R_Q(p)}$'
+        title = 'Pressure-based; $p \\sim \\mathcal{N}(\\overline{p}, \\sigma_p^2)$'
     else:
+        title = 'Flow-based; $q \\sim \\mathcal{N}(\\overline{q}, \\sigma_q^2)$'
         x_vals = Rq_values
         x_label = '$R_Q(q)$'
     
     # Plot 1: Normalized mean flow vs Rq
     ax = axes[0, i]
-    ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'ko', label='Monte Carlo', markersize=6, alpha=0.6)
-    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, 'b-', label='Mean-flow dominated\n$\\bar{q} = q_{AFN}\\sqrt{1-1/(R_Q^2)}$', linewidth=2)
-    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, 'r--', label='Fluctuation dominated\n$\\bar{q} = q_{AFN}(2R_H)$', linewidth=2)
-    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, 'r:', label='Fluctuation dominated lower bound', linewidth=2)
-    ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, 'r-.', label='Fluctuation dominated tangent', linewidth=2)
-    # ax.plot(q_afn_values, analytical_blend, 'g-', label='Blended model', linewidth=2.5)
-    ax.plot(x_vals, analytical_blend*q_afn_val_mc, 'g--', label='Blended model bound', linewidth=2.5)
-    ax.axvline(x=q_std, color='gray', linestyle=':', linewidth=1.5, label='$R_Q=1$ (validity limit)')
+    ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
+    ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{PS}$', linewidth=1)
+    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-1/R_Q^2}$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}(2R_H)$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}(2R_{H,\\mathrm{L}})$', linewidth=2)
+    ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2\\alpha R_{H,\\mathrm{L}})$', linewidth=2)
+    # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
+    ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=12)
-    ax.set_ylabel('$\\bar{q}/q_{AFN}$', fontsize=12)
-    ax.set_title('Normalized Mean Flow vs Fluctuation Ratio', fontsize=13, fontweight='bold')
-    ax.legend(fontsize=10)
+    ax.set_ylabel('$\\overline{q}$', fontsize=12)
+    ax.set_title(title, fontsize=13, fontweight='normal')
+    if i == 0:
+        ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.set_ylim([0, 1.1*max_q])
 
@@ -222,7 +225,7 @@ for i, usePressure in enumerate([False, True]):
     # ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
     # ax.axvline(x=q_std, color='gray', linestyle=':', linewidth=1.5)
     # ax.set_xlabel(x_label, fontsize=12)
-    # ax.set_ylabel('Error in $\\bar{q}/q_{AFN}$', fontsize=12)
+    # ax.set_ylabel('Error in $\\overline{q}$', fontsize=12)
     # ax.set_title('Model Error vs Monte Carlo', fontsize=13, fontweight='bold')
     # ax.legend(fontsize=10)
     # ax.grid(True, alpha=0.3)
@@ -230,24 +233,27 @@ for i, usePressure in enumerate([False, True]):
 
     # Plot 3: Rq values vs q_AFN
     ax = axes[1, i]
-    ax.plot(x_vals, Rq_p_values, 'b-', label='$R_Q(p)$', linewidth=2)
-    ax.plot(x_vals, Rq_q_values, 'm-', label='$R_Q(q)$', linewidth=2)
+    ax.plot(x_vals, Rq_p_values, color='#0072B2', linestyle='-', label='$R_Q(p)$', linewidth=2)
+    ax.plot(x_vals, Rq_q_values, color='#D55E00', linestyle='-', label='$R_Q(q)$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=12)
-    ax.set_ylabel('$R_Q( )$', fontsize=12)
-    ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
-    ax.legend(fontsize=10)
+    ax.set_ylabel('$R_Q$', fontsize=12)
+    # ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
+    if i == 0:
+        ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
 
     # Plot 4: Rh values vs q_AFN
     ax = axes[2, i]
-    ax.plot(x_vals, Rh_values, 'r-', label='$R_H$', linewidth=2)
-    ax.plot(x_vals, Rh_bound_values, 'b--', label='$R_H$ lower bound', linewidth=2)
-    ax.plot(x_vals, Rh_tangent_values, 'm-.', label='$R_H$ tangent', linewidth=2)
+    ax.plot(x_vals, Rh_values, color='#D55E00', linestyle='-', label='$R_H$', linewidth=2)
+    ax.plot(x_vals, Rh_bound_values, color='#0072B2', linestyle=':', label='$R_{H,\\mathrm{L}}$', linewidth=2)
+    ax.plot(x_vals, Rh_tangent_values, color='#009E73', linestyle='-.', label='$\\alpha R_{H,\\mathrm{L}}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=12)
     ax.set_ylabel('$R_H$', fontsize=12)
-    ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
-    ax.legend(fontsize=10)
+    # ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
+    if i == 0:
+        ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
+    ax.set_ylim([0, 1.1*max_q])
 
     # # Print summary statistics
     # print("\n" + "="*60)
