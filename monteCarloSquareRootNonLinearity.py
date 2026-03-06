@@ -267,4 +267,6 @@ for i, usePressure in enumerate([False, True]):
     # print(f"  Mean absolute error: {mean_error_blend:.6f}")
 
 plt.tight_layout()
-plt.show()
+# plt.show()
+
+plt.savefig('monte_carlo_square_root_non_linearity.png', dpi=300)
