@@ -132,7 +132,7 @@ for i, usePressure in enumerate([False, True]):
         # plt.figure()
         # plt.hist(qs, bins=50, alpha=0.1, label='q')
         # plt.hist(delPs, bins=50, alpha=0.1, label='P')
-        # plt.title(f"mean={mean:.3f}", fontsize=12)
+        # plt.title(f"mean={mean:.3f}", fontsize=14)
         # plt.legend()
         # plt.show()
 
@@ -206,11 +206,11 @@ for i, usePressure in enumerate([False, True]):
     # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2\\alpha R_{H,\\mathrm{L}})$', linewidth=2)
     # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
     # ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
-    ax.set_xlabel(x_label, fontsize=12)
-    ax.set_ylabel('$\\overline{q}$', fontsize=12)
-    ax.set_title(title, fontsize=13, fontweight='normal')
-    if i == 0:
-        ax.legend(fontsize=10)
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel('$\\overline{q}$', fontsize=14)
+    ax.set_title(title, fontsize=16, fontweight='normal')
+    if i == 1:
+        ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     ax.set_ylim([0, 1.1*max_q])
 
@@ -224,8 +224,8 @@ for i, usePressure in enumerate([False, True]):
     # ax.plot(x_vals, error_blend, 'g-', label='Blended model error', linewidth=2)
     # ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
     # ax.axvline(x=q_std, color='gray', linestyle=':', linewidth=1.5)
-    # ax.set_xlabel(x_label, fontsize=12)
-    # ax.set_ylabel('Error in $\\overline{q}$', fontsize=12)
+    # ax.set_xlabel(x_label, fontsize=14)
+    # ax.set_ylabel('Error in $\\overline{q}$', fontsize=14)
     # ax.set_title('Model Error vs Monte Carlo', fontsize=13, fontweight='bold')
     # ax.legend(fontsize=10)
     # ax.grid(True, alpha=0.3)
@@ -235,11 +235,11 @@ for i, usePressure in enumerate([False, True]):
     ax = axes[1, i]
     ax.plot(x_vals, Rq_p_values, color='#0072B2', linestyle='-', label='$R_Q(p)$', linewidth=2)
     ax.plot(x_vals, Rq_q_values, color='#D55E00', linestyle='-', label='$R_Q(q)$', linewidth=2)
-    ax.set_xlabel(x_label, fontsize=12)
-    ax.set_ylabel('$R_Q$', fontsize=12)
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel('$R_Q$', fontsize=14)
     # ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
-    if i == 0:
-        ax.legend(fontsize=10)
+    if i == 1:
+        ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
 
     # Plot 4: Rh values vs q_AFN
@@ -247,11 +247,11 @@ for i, usePressure in enumerate([False, True]):
     ax.plot(x_vals, Rh_values, color='#D55E00', linestyle='-', label='$R_H$', linewidth=2)
     ax.plot(x_vals, Rh_bound_values, color='#0072B2', linestyle=':', label='$R_{H,\\mathrm{L}}$', linewidth=2)
     # ax.plot(x_vals, Rh_tangent_values, color='#009E73', linestyle='-.', label='$\\alpha R_{H,\\mathrm{L}}$', linewidth=2)
-    ax.set_xlabel(x_label, fontsize=12)
-    ax.set_ylabel('$R_H$', fontsize=12)
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel('$R_H$', fontsize=14)
     # ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
-    if i == 0:
-        ax.legend(fontsize=10)
+    if i == 1:
+        ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     ax.set_ylim([0, 1.1*max_q])
 
