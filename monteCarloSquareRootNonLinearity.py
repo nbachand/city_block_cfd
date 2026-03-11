@@ -209,8 +209,8 @@ for i, usePressure in enumerate([False, True]):
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel('$\\overline{q}$', fontsize=14)
     ax.set_title(title, fontsize=16, fontweight='normal')
-    if i == 1:
-        ax.legend(fontsize=11)
+    if i == 0:
+        ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
     ax.set_ylim([0, 1.1*max_q])
 
@@ -238,8 +238,8 @@ for i, usePressure in enumerate([False, True]):
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel('$R_Q$', fontsize=14)
     # ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
-    if i == 1:
-        ax.legend(fontsize=11)
+    if i == 0:
+        ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
 
     # Plot 4: Rh values vs q_AFN
@@ -250,8 +250,8 @@ for i, usePressure in enumerate([False, True]):
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel('$R_H$', fontsize=14)
     # ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
-    if i == 1:
-        ax.legend(fontsize=11)
+    if i == 0:
+        ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
     ax.set_ylim([0, 1.1*max_q])
 
