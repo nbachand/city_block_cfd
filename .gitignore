@@ -19,6 +19,7 @@
 !*.m
 !*.dat
 !CHARLES/multiRuns/*.csv
+!*ASHRAE.csv
 
 # ...even if they are in subdirectories
 !*/
