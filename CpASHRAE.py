@@ -195,5 +195,5 @@ dfRooms ["roomA"] = angles
 dfWindows ["roomA"] = angles
 dfRooms = dfRooms.melt(id_vars=["roomA"], var_name="roomType", value_name="ventilationRate")
 dfWindows = dfWindows.melt(id_vars=["roomA"], var_name="windowType", value_name="ventilationRate")
-dfRooms.to_csv("roomASHRAE.csv", index=True)
-dfWindows.to_csv("windowASHRAE.csv", index=True)
+dfRooms.to_csv("roomASHRAE.csv", index=False)
+dfWindows.to_csv("windowASHRAE.csv", index=False)
