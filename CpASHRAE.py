@@ -111,9 +111,17 @@ rooms = {
         # "rooms": [[1], [1], [1]],
         # "A": [1, 1, 1]
     },
-    # "Single-Sided": {
-    #     ("large_face_AB", 270),
-    # ],
+    "single": {
+        "windows": [
+            ("large_face_AB", 270)
+        ],
+        "window_equivalent":
+        [
+            "zwindow_1-0"
+        ],
+        "rooms": [[1]],
+        "A": [1]
+    }
 }
 
 vent_rooms = {room_name: [] for room_name in rooms}
@@ -126,7 +134,7 @@ for room_name, room_dict in rooms.items():
     for wind_angle in angles:
         p_w = []
         for window, angle in room_dict["windows"]:
-            effective_angle = (wind_angle + angle) % 360
+            effective_angle = (angle - wind_angle) % 360
             Cp = windows[window][effective_angle]
             p_w.append(Cp * 0.5 * rho * (1 ** 2))
 
@@ -157,7 +165,7 @@ for room_name, room_dict in rooms.items():
         for i, flow in enumerate(flows):
             vent_windows[room_dict["window_equivalent"][i]].append(flow)
 
-fig, axes = plt.subplots(3, 1, subplot_kw=dict(projection="polar"), figsize=(2, 6), dpi=160)
+fig, axes = plt.subplots(4, 1, subplot_kw=dict(projection="polar"), figsize=(2, 6), dpi=160)
 for ax, (room_name, rates) in zip(axes.flat, vent_rooms.items()):
     theta = np.deg2rad(angles)
     # Close the polar curve
@@ -167,13 +175,13 @@ for ax, (room_name, rates) in zip(axes.flat, vent_rooms.items()):
     ax.plot(theta_closed, rates_closed)
     ax.set_title(room_name, pad=15)
     ax.set_theta_zero_location("W")
-    ax.set_theta_direction(-1)
+    # ax.set_theta_direction(-1)
     ax.set_xlabel("Total Ventilation Rate (m³/s)")
 
 plt.tight_layout()
 # plt.show()
 
-fig, axes = plt.subplots(1, 7, subplot_kw=dict(projection="polar"), figsize=(6, 2), dpi=160)
+fig, axes = plt.subplots(1, 8, subplot_kw=dict(projection="polar"), figsize=(6, 2), dpi=160)
 for ax, (window_name, rates) in zip(axes.flat, vent_windows.items()):
     theta = np.deg2rad(angles)
     # Close the polar curve
@@ -183,7 +191,7 @@ for ax, (window_name, rates) in zip(axes.flat, vent_windows.items()):
     ax.plot(theta_closed, rates_closed)
     ax.set_title(window_name, pad=15)
     ax.set_theta_zero_location("W")
-    ax.set_theta_direction(-1)
+    # ax.set_theta_direction(-1)
     ax.set_xlabel("Total Ventilation Rate (m³/s)")
 
 plt.tight_layout()
@@ -191,9 +199,9 @@ plt.tight_layout()
 
 dfRooms = pd.DataFrame(vent_rooms)
 dfWindows = pd.DataFrame(vent_windows)
-dfRooms ["roomA"] = angles
+dfRooms ["AofA"] = angles
 dfWindows ["roomA"] = angles
-dfRooms = dfRooms.melt(id_vars=["roomA"], var_name="roomType", value_name="ventilationRate")
+dfRooms = dfRooms.melt(id_vars=["AofA"], var_name="roomType", value_name="ventilationRate")
 dfWindows = dfWindows.melt(id_vars=["roomA"], var_name="windowType", value_name="ventilationRate")
 dfRooms.to_csv("roomASHRAE.csv", index=False)
 dfWindows.to_csv("windowASHRAE.csv", index=False)
