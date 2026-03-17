@@ -2,6 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyafn
 
+
+def _as_scalar(x):
+    """Call array-oriented pyafn scaling functions with scalar values safely."""
+    return np.asarray(x).reshape(-1)[0]
+
+
+def _scale_scalar(func, x):
+    return _as_scalar(func(np.array([x], dtype=float)))
+
 # Constants
 C_d = 0.611  # Discharge coefficient
 A = 1      # Area (m^2)
@@ -83,7 +92,7 @@ for i, usePressure in enumerate([False, True]):
     randomPressure = usePressure  # Set to True to sample pressure, False to sample flow
 
     # Simulation parameters
-    q_std = 1.0  # Base standard deviation for generating Rq values
+    q_std = 1.0  # Base standard deviation for generating I values
     max_q = 3.0
 
     if randomPressure:
@@ -109,12 +118,12 @@ for i, usePressure in enumerate([False, True]):
 
     print("Running Monte Carlo simulations...")
 
-    Rq_values = []
-    Rq_q_values = []
-    Rq_p_values = []
-    Rh_values = []
-    Rh_bound_values = []
-    Rh_tangent_values = []
+    I_values = []
+    I_q_values = []
+    I_p_values = []
+    R_values = []
+    R_bound_values = []
+    R_tangent_values = []
     q_afn_values = []
     for mean in means:
 
@@ -138,30 +147,30 @@ for i, usePressure in enumerate([False, True]):
 
         q_mean_mc, q_prime_rms, q_prime_H_mean, Delta_p_mean_mc, Delta_p_prime_rms, Delta_p_prime_H_mean = calculate_statistics(qs, delPs, H_mean_type=H_mean_type)
         q_afn_val_mc = q_AFN(Delta_p_mean_mc)
-        Rq_q =  pyafn.getRq_q(q_afn_val_mc, q_prime_rms)
-        Rq_p = pyafn.getRq_p(Delta_p_mean_mc, Delta_p_prime_rms)
+        I_q = q_prime_rms / np.abs(q_afn_val_mc)
+        I_p = Delta_p_prime_rms / (2 * np.abs(Delta_p_mean_mc))
 
         if QPressure:
-            Rq = Rq_p 
+            I = I_p
         else:
-            Rq = Rq_q
+            I = I_q
         if HPressure:
-            Rh = np.sqrt(Delta_p_mean_mc) / Delta_p_prime_H_mean
+            R = Delta_p_prime_H_mean / np.sqrt(np.abs(Delta_p_mean_mc))
             blended_func = pyafn.ventilationBlendedScaling_p
-            Rh_bound = np.sqrt(Rq / 2)
-            Rh_tangent = np.sqrt(16 / (3 * np.sqrt(3))) * Rh_bound
+            R_bound = np.sqrt(2 * I)
+            R_tangent = np.sqrt(3 * np.sqrt(3) / 8 * I)
         else:
-            Rh = np.abs(q_afn_val_mc) / q_prime_H_mean
+            R = q_prime_H_mean / np.abs(q_afn_val_mc)
             blended_func = pyafn.ventilationBlendedScaling_q
-            Rh_bound = Rq
-            Rh_tangent = Rh_bound
+            R_bound = I
+            R_tangent = I
     
-        Rq_values.append(Rq)
-        Rh_values.append(Rh)
-        Rq_q_values.append(Rq_q)
-        Rq_p_values.append(Rq_p)
-        Rh_bound_values.append(Rh_bound)
-        Rh_tangent_values.append(Rh_tangent)
+        I_values.append(I)
+        R_values.append(R)
+        I_q_values.append(I_q)
+        I_p_values.append(I_p)
+        R_bound_values.append(R_bound)
+        R_tangent_values.append(R_tangent)
         q_afn_values.append(q_afn_val_mc)
     
         # Store Monte Carlo results
@@ -169,40 +178,43 @@ for i, usePressure in enumerate([False, True]):
         mc_q_mean_normalized.append(q_mean_mc / q_afn_val_mc)
     
         # Calculate analytical predictions
-        analytical_mean_dom.append(pyafn.ventilationUpperScaling(Rq))
-        analytical_fluct_dom.append(pyafn.ventilationLowerScaling(Rh))
-        analytical_fluct_dom_bound.append(pyafn.ventilationLowerScaling(Rh_bound))
-        analytical_fluct_tan.append(pyafn.ventilationLowerScaling(Rh_tangent))
-        analytical_blend.append(blended_func(Rq))
+        analytical_mean_dom.append(_scale_scalar(pyafn.ventilationUpperScaling, I))
+        analytical_fluct_dom.append(_scale_scalar(pyafn.ventilationLowerScaling, R))
+        analytical_fluct_dom_bound.append(_scale_scalar(pyafn.ventilationLowerScaling, R_bound))
+        analytical_fluct_tan.append(_scale_scalar(pyafn.ventilationLowerScaling, R_tangent))
+        analytical_blend.append(_scale_scalar(blended_func, I))
 
         if len(mc_q_mean) % 5 == 0:
-            print(f"Rq_computed={Rq:.3f}, Rh={Rh:.3f}, "
+            print(f"I_computed={I:.3f}, R={R:.3f}, "
                 f"Δp_mean={Delta_p_mean_mc:.3f}, q̄/q_AFN (MC)={q_mean_mc/q_afn_val_mc:.4f}, "
                 f"q̄/q_AFN (Blend)={analytical_blend[-1]:.4f}")
 
-    Rq_values = np.array(Rq_values)
-    Rh_values = np.array(Rh_values)
-    Rq_q_values = np.array(Rq_q_values)
+    I_values = np.array(I_values)
+    R_values = np.array(R_values)
+    I_q_values = np.array(I_q_values)
+    I_p_values = np.array(I_p_values)
+    R_bound_values = np.array(R_bound_values)
+    R_tangent_values = np.array(R_tangent_values)
     q_afn_val_mc = np.array(q_afn_values)
 
 
     # Plotting
     if QPressure:
-        x_vals = np.sqrt(Rq_values)  # Plot against sqrt(Rq) for pressure-based definition for scaling with q_AFN
-        x_label = '$\\sqrt{R_Q(p)}$'
+        x_vals = 1 / np.sqrt(I_values)  # Pressure-based intensity scales as q_AFN^2
+        x_label = '$I(p)^{-0.5}$'
         title = 'Pressure-based; $p \\sim \\mathcal{N}(\\overline{p}, \\sigma_p^2)$'
     else:
         title = 'Flow-based; $q \\sim \\mathcal{N}(\\overline{q}, \\sigma_q^2)$'
-        x_vals = Rq_values
-        x_label = '$R_Q(q)$'
+        x_vals = 1 / I_values
+        x_label = '$I(q)^{-1}$'
     
-    # Plot 1: Normalized mean flow vs Rq
+    # Plot 1: Mean flow vs transformed intensity
     ax = axes[0, i]
     ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
     ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{PS}$', linewidth=1)
-    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-1/R_Q^2}$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}(2R_H)$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}(2R_{H,\\mathrm{L}})$', linewidth=2)
+    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-I^2}$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}/(2R)$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}/(2R_{\\mathrm{U}})$', linewidth=2)
     # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2R_{H,\\mathrm{T}})$', linewidth=2)
     # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
     ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
@@ -231,25 +243,25 @@ for i, usePressure in enumerate([False, True]):
     # ax.grid(True, alpha=0.3)
     # ax.set_ylim([-0.6, 0.6])
 
-    # Plot 3: Rq values vs q_AFN
+    # Plot 3: Intensity values
     ax = axes[1, i]
-    ax.plot(x_vals, Rq_p_values, color='#0072B2', linestyle='-', label='$R_Q(p)$', linewidth=2)
-    ax.plot(x_vals, Rq_q_values, color='#D55E00', linestyle='-', label='$R_Q(q)$', linewidth=2)
+    ax.plot(x_vals, 1/I_p_values, color='#0072B2', linestyle='-', label='$1/I(p)$', linewidth=2)
+    ax.plot(x_vals, 1/I_q_values, color='#D55E00', linestyle='-', label='$1/I(q)$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
-    ax.set_ylabel('$R_Q$', fontsize=14)
-    # ax.set_title('Rq vs q_AFN', fontsize=13, fontweight='bold')
+    ax.set_ylabel('$I^{-1}$', fontsize=14)
+    # ax.set_title('I vs q_AFN', fontsize=13, fontweight='bold')
     if i == 0:
         ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
 
-    # Plot 4: Rh values vs q_AFN
+    # Plot 4: Fluctuation residence values
     ax = axes[2, i]
-    ax.plot(x_vals, Rh_values, color='#D55E00', linestyle='-', label='$R_H$', linewidth=2)
-    ax.plot(x_vals, Rh_bound_values, color='#0072B2', linestyle=':', label='$R_{H,\\mathrm{L}}$', linewidth=2)
-    ax.plot(x_vals, Rh_tangent_values, color='#009E73', linestyle='--', label='$R_{H,\\mathrm{T}}$', linewidth=2)
+    ax.plot(x_vals, 1/R_values, color='#D55E00', linestyle='-', label='$1/R$', linewidth=2)
+    ax.plot(x_vals, 1/R_bound_values, color='#0072B2', linestyle=':', label='$1/R_{\\mathrm{U}}$', linewidth=2)
+    ax.plot(x_vals, 1/R_tangent_values, color='#009E73', linestyle='--', label='$1/R_{\\mathrm{T}}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
-    ax.set_ylabel('$R_H$', fontsize=14)
-    # ax.set_title('Rh Values vs q_AFN', fontsize=13, fontweight='bold')
+    ax.set_ylabel('$R^{-1}$', fontsize=14)
+    # ax.set_title('R values vs q_AFN', fontsize=13, fontweight='bold')
     if i == 0:
         ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
@@ -259,14 +271,14 @@ for i, usePressure in enumerate([False, True]):
     # print("\n" + "="*60)
     # print("SUMMARY STATISTICS")
     # print("="*60)
-    # valid_regime = Rq_values < 1.0
+    # valid_regime = I_values < 1.0
     # max_error_blend = np.max(np.abs(error_blend[valid_regime]))
     # mean_error_blend = np.mean(np.abs(error_blend[valid_regime]))
-    # print(f"Blended model (Rq < 1.0):")
+    # print(f"Blended model (I < 1.0):")
     # print(f"  Max absolute error: {max_error_blend:.6f}")
     # print(f"  Mean absolute error: {mean_error_blend:.6f}")
 
 plt.tight_layout()
-# plt.show()
+plt.show()
 
 plt.savefig('monte_carlo_square_root_non_linearity.png', dpi=300)
