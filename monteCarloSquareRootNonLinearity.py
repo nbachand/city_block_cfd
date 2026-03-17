@@ -121,9 +121,9 @@ for i, usePressure in enumerate([False, True]):
     I_values = []
     I_q_values = []
     I_p_values = []
-    R_values = []
-    R_bound_values = []
-    R_tangent_values = []
+    H_values = []
+    H_bound_values = []
+    H_tangent_values = []
     q_afn_values = []
     for mean in means:
 
@@ -157,20 +157,20 @@ for i, usePressure in enumerate([False, True]):
         if HPressure:
             R = Delta_p_prime_H_mean / np.sqrt(np.abs(Delta_p_mean_mc))
             blended_func = pyafn.ventilationBlendedScaling_p
-            R_bound = np.sqrt(2 * I)
-            R_tangent = np.sqrt(3 * np.sqrt(3) / 8 * I)
+            H_bound = np.sqrt(2 * I)
+            H_tangent = np.sqrt(3 * np.sqrt(3) / 8 * I)
         else:
             R = q_prime_H_mean / np.abs(q_afn_val_mc)
             blended_func = pyafn.ventilationBlendedScaling_q
-            R_bound = I
-            R_tangent = I
+            H_bound = I
+            H_tangent = I
     
         I_values.append(I)
-        R_values.append(R)
+        H_values.append(R)
         I_q_values.append(I_q)
         I_p_values.append(I_p)
-        R_bound_values.append(R_bound)
-        R_tangent_values.append(R_tangent)
+        H_bound_values.append(H_bound)
+        H_tangent_values.append(H_tangent)
         q_afn_values.append(q_afn_val_mc)
     
         # Store Monte Carlo results
@@ -180,8 +180,8 @@ for i, usePressure in enumerate([False, True]):
         # Calculate analytical predictions
         analytical_mean_dom.append(_scale_scalar(pyafn.ventilationUpperScaling, I))
         analytical_fluct_dom.append(_scale_scalar(pyafn.ventilationLowerScaling, R))
-        analytical_fluct_dom_bound.append(_scale_scalar(pyafn.ventilationLowerScaling, R_bound))
-        analytical_fluct_tan.append(_scale_scalar(pyafn.ventilationLowerScaling, R_tangent))
+        analytical_fluct_dom_bound.append(_scale_scalar(pyafn.ventilationLowerScaling, H_bound))
+        analytical_fluct_tan.append(_scale_scalar(pyafn.ventilationLowerScaling, H_tangent))
         analytical_blend.append(_scale_scalar(blended_func, I))
 
         if len(mc_q_mean) % 5 == 0:
@@ -190,11 +190,11 @@ for i, usePressure in enumerate([False, True]):
                 f"q̄/q_AFN (Blend)={analytical_blend[-1]:.4f}")
 
     I_values = np.array(I_values)
-    R_values = np.array(R_values)
+    H_values = np.array(H_values)
     I_q_values = np.array(I_q_values)
     I_p_values = np.array(I_p_values)
-    R_bound_values = np.array(R_bound_values)
-    R_tangent_values = np.array(R_tangent_values)
+    H_bound_values = np.array(H_bound_values)
+    H_tangent_values = np.array(H_tangent_values)
     q_afn_val_mc = np.array(q_afn_values)
 
 
@@ -214,8 +214,8 @@ for i, usePressure in enumerate([False, True]):
     ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{PS}$', linewidth=1)
     ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-I^2}$', linewidth=1.5)
     ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}/(2R)$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}/(2R_{\\mathrm{U}})$', linewidth=2)
-    # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2R_{H,\\mathrm{T}})$', linewidth=2)
+    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}/(2H_{\\mathrm{U}})$', linewidth=2)
+    # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2H_{H,\\mathrm{T}})$', linewidth=2)
     # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
     ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
@@ -245,8 +245,8 @@ for i, usePressure in enumerate([False, True]):
 
     # Plot 3: Intensity values
     ax = axes[1, i]
-    ax.plot(x_vals, 1/I_p_values, color='#0072B2', linestyle='-', label='$1/I(p)$', linewidth=2)
-    ax.plot(x_vals, 1/I_q_values, color='#D55E00', linestyle='-', label='$1/I(q)$', linewidth=2)
+    ax.plot(x_vals, 1/I_p_values, color='#0072B2', linestyle='-', label='$I(p)^{-1}$', linewidth=2)
+    ax.plot(x_vals, 1/I_q_values, color='#D55E00', linestyle='-', label='$I(q)^{-1}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel('$I^{-1}$', fontsize=14)
     # ax.set_title('I vs q_AFN', fontsize=13, fontweight='bold')
@@ -256,11 +256,11 @@ for i, usePressure in enumerate([False, True]):
 
     # Plot 4: Fluctuation residence values
     ax = axes[2, i]
-    ax.plot(x_vals, 1/R_values, color='#D55E00', linestyle='-', label='$1/R$', linewidth=2)
-    ax.plot(x_vals, 1/R_bound_values, color='#0072B2', linestyle=':', label='$1/R_{\\mathrm{U}}$', linewidth=2)
-    ax.plot(x_vals, 1/R_tangent_values, color='#009E73', linestyle='--', label='$1/R_{\\mathrm{T}}$', linewidth=2)
+    ax.plot(x_vals, 1/H_values, color='#D55E00', linestyle='-', label='$H^{-1}$', linewidth=2)
+    ax.plot(x_vals, 1/H_bound_values, color='#0072B2', linestyle=':', label='$H_{\\mathrm{U}}^{-1}$', linewidth=2)
+    ax.plot(x_vals, 1/H_tangent_values, color='#009E73', linestyle='--', label='$H_{\\mathrm{T}}^{-1}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
-    ax.set_ylabel('$R^{-1}$', fontsize=14)
+    ax.set_ylabel('$H^{-1}$', fontsize=14)
     # ax.set_title('R values vs q_AFN', fontsize=13, fontweight='bold')
     if i == 0:
         ax.legend(fontsize=11, loc='lower right')
