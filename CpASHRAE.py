@@ -6,6 +6,20 @@ import pandas as pd
 
 angles = np.arange(0, 360, 45)  # Angles from 0 to 360 degrees in 1-degree increments
 
+shelter_class = {
+    "small_face_A" : 5,
+    "large_face_B" : 4,
+    "large_face_AB" : 4,
+}
+
+shelter_factor = {
+    1: 1.00,
+    2: 0.90,
+    3: 0.70,
+    4: 0.50,
+    5: 0.30,
+}
+
 windows = {
     "small_face_A" : {
         0: 0.7,
@@ -124,84 +138,115 @@ rooms = {
     }
 }
 
-vent_rooms = {room_name: [] for room_name in rooms}
-vent_windows = {}
+U_10 = 1  # m/s
+k = 0.41
+y0 = 0.3  # m, roughness length for urban terrain
+Ustar = U_10 * k / np.log(10 / y0)  # Assuming z0 = 0.1 m
+H = 3  # Building height in meters
+U_H = Ustar / k * np.log(3 / y0)  # Wind speed at building height (1.5 m)
+print(f"Calculated wind speed at building height: {U_H:.2f} m/s")
 
-for room_name, room_dict in rooms.items():
-    for window_equivalent in room_dict["window_equivalent"]:
-        if "door" not in window_equivalent: 
-            vent_windows[window_equivalent] = []
-    for wind_angle in angles:
-        p_w = []
-        for window, angle in room_dict["windows"]:
-            effective_angle = (angle - wind_angle) % 360
-            Cp = windows[window][effective_angle]
-            p_w.append(Cp * 0.5 * rho * (1 ** 2))
+Cs = [2, 3]  # Shelter class adjustments
+dfRooms = []
+dfWindows = []
+for C in Cs:
+    vent_rooms = {room_name: [] for room_name in rooms}
+    vent_windows = {}
 
-        N = len(p_w)
+    for room_name, room_dict in rooms.items():
+        for window_equivalent in room_dict["window_equivalent"]:
+            if "door" not in window_equivalent: 
+                vent_windows[window_equivalent] = []
+        for wind_angle in angles:
+            p_w = []
+            Cp_max = -999
+            shelter_factor_value = 0
+            for window, angle in room_dict["windows"]:
+                effective_angle = (angle - wind_angle) % 360
+                Cp = windows[window][effective_angle]
+                Cp_max = max(Cp_max, Cp)
+                if Cp == Cp_max and "door" not in window:
+                    shelter_class_value = shelter_class[window]
+                    if C == 3:
+                        shelter_class_value -= 1
+                    # if shelter_class_value == 5 and effective_angle != 0:
+                    #     shelter_class_value = 4 # Lower class 5 shelter class for angled wind to class 4
+                    shelter_factor_value = shelter_factor[shelter_class_value]
 
-        flowParams = pyafn.createFlowParams(
-            C_d=[Cd for _ in range(N)],
-            A=room_dict["A"],
-            p_w=p_w,
-            z=[1.5 for _ in range(N)],
-            delT=[0 for _ in range(N)],
-            rooms=room_dict["rooms"],
-            hr=3
-        )
+                p_w.append(Cp * 0.5 * rho * (1 ** 2))
 
-        optResults = pyafn.findOptimalP0(flowParams)
-        p_0s = optResults.x
+            N = len(p_w)
 
-        print(f"\nOptimization Status: {optResults.message}")
-        print(f"Success: {optResults.success}")
-        print(f"\nOptimal indoor pressure: {p_0s[0]:.4f} Pa")
-        print(f"Final objective value: {optResults.fun:.6e}")
+            flowParams = pyafn.createFlowParams(
+                C_d=[Cd for _ in range(N)],
+                A=room_dict["A"],
+                p_w=p_w,
+                z=[1.5 for _ in range(N)],
+                delT=[0 for _ in range(N)],
+                rooms=room_dict["rooms"],
+                hr=3
+            )
 
-        flows = pyafn.flowField(p_0s, flowParams)
-        if "dual" in room_name:
-            flows = flows[0:-1]  # Exclude the door flow for dual-room
-        vent_rooms[room_name].append(np.sum(np.abs(flows)) / 2)
-        for i, flow in enumerate(flows):
-            vent_windows[room_dict["window_equivalent"][i]].append(flow)
+            optResults = pyafn.findOptimalP0(flowParams)
+            p_0s = optResults.x
 
-fig, axes = plt.subplots(4, 1, subplot_kw=dict(projection="polar"), figsize=(2, 6), dpi=160)
-for ax, (room_name, rates) in zip(axes.flat, vent_rooms.items()):
-    theta = np.deg2rad(angles)
-    # Close the polar curve
-    theta_closed = np.append(theta, theta[0])
-    rates_closed = np.append(rates, rates[0])
+            print(f"\nOptimization Status: {optResults.message}")
+            print(f"Success: {optResults.success}")
+            print(f"\nOptimal indoor pressure: {p_0s[0]:.4f} Pa")
+            print(f"Final objective value: {optResults.fun:.6e}")
 
-    ax.plot(theta_closed, rates_closed)
-    ax.set_title(room_name, pad=15)
-    ax.set_theta_zero_location("W")
-    # ax.set_theta_direction(-1)
-    ax.set_xlabel("Total Ventilation Rate (m³/s)")
+            flows = pyafn.flowField(p_0s, flowParams)
+            flows = flows * U_H * shelter_factor_value
+            if "dual" in room_name:
+                flows = flows[0:-1]  # Exclude the door flow for dual-room
+            vent_rooms[room_name].append(np.sum(np.abs(flows)) / 2)
+            for i, flow in enumerate(flows):
+                vent_windows[room_dict["window_equivalent"][i]].append(flow)
 
-plt.tight_layout()
-# plt.show()
+    fig, axes = plt.subplots(4, 1, subplot_kw=dict(projection="polar"), figsize=(2, 6), dpi=160)
+    for ax, (room_name, rates) in zip(axes.flat, vent_rooms.items()):
+        theta = np.deg2rad(angles)
+        # Close the polar curve
+        theta_closed = np.append(theta, theta[0])
+        rates_closed = np.append(rates, rates[0])
 
-fig, axes = plt.subplots(1, 8, subplot_kw=dict(projection="polar"), figsize=(6, 2), dpi=160)
-for ax, (window_name, rates) in zip(axes.flat, vent_windows.items()):
-    theta = np.deg2rad(angles)
-    # Close the polar curve
-    theta_closed = np.append(theta, theta[0])
-    rates_closed = np.append(rates, rates[0])
+        ax.plot(theta_closed, rates_closed)
+        ax.set_title(room_name, pad=15)
+        ax.set_theta_zero_location("W")
+        # ax.set_theta_direction(-1)
+        ax.set_xlabel("Total Ventilation Rate (m³/s)")
 
-    ax.plot(theta_closed, rates_closed)
-    ax.set_title(window_name, pad=15)
-    ax.set_theta_zero_location("W")
-    # ax.set_theta_direction(-1)
-    ax.set_xlabel("Total Ventilation Rate (m³/s)")
+    plt.tight_layout()
+    # plt.show()
 
-plt.tight_layout()
-# plt.show()
+    fig, axes = plt.subplots(1, 8, subplot_kw=dict(projection="polar"), figsize=(12, 4), dpi=160)
+    for ax, (window_name, rates) in zip(axes.flat, vent_windows.items()):
+        theta = np.deg2rad(angles)
+        # Close the polar curve
+        theta_closed = np.append(theta, theta[0])
+        rates_closed = np.append(rates, rates[0])
 
-dfRooms = pd.DataFrame(vent_rooms)
-dfWindows = pd.DataFrame(vent_windows)
-dfRooms ["AofA"] = angles
-dfWindows ["roomA"] = angles
-dfRooms = dfRooms.melt(id_vars=["AofA"], var_name="roomType", value_name="ventilationRate")
-dfWindows = dfWindows.melt(id_vars=["roomA"], var_name="windowType", value_name="ventilationRate")
+        ax.plot(theta_closed, rates_closed)
+        ax.set_title(window_name, pad=15)
+        ax.set_theta_zero_location("W")
+        # ax.set_theta_direction(-1)
+        ax.set_xlabel("Total Ventilation Rate (m³/s)")
+
+    plt.tight_layout()
+    # plt.show()
+
+    dfRoomsC = pd.DataFrame(vent_rooms)
+    dfWindowsC = pd.DataFrame(vent_windows)
+    dfRoomsC["AofA"] = angles
+    dfWindowsC["roomA"] = angles
+    dfRoomsC["C"] = C
+    dfWindowsC["C"] = C
+    dfRoomsC = dfRoomsC.melt(id_vars=["AofA", "C"], var_name="roomType", value_name="ventilationRate")
+    dfWindowsC = dfWindowsC.melt(id_vars=["roomA", "C"], var_name="windowType", value_name="ventilationRate")
+    dfRooms.append(dfRoomsC)
+    dfWindows.append(dfWindowsC)
+dfRooms = pd.concat(dfRooms, axis=0)
+dfWindows = pd.concat(dfWindows, axis=0)
 dfRooms.to_csv("roomASHRAE.csv", index=False)
 dfWindows.to_csv("windowASHRAE.csv", index=False)
+plt.show()
