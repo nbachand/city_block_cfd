@@ -120,7 +120,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 qs = pyafn.flowField(np.array(p0), flowParamsOpt)
                 Cd = flowParamsOpt["C_d"]
                 Cd_col = f"{pType}_{optType}-C_d"
-                if len(Cd.shape) == 2 and Cd_col not in flowStatsMI.columns:
+                if len(Cd.shape) == 2:# and Cd_col not in flowStatsMI.columns:
                     flowStatsMI[Cd_col] = None
                     flowStatsMI[Cd_col] = flowStatsMI[Cd_col].astype(object)
 
@@ -128,7 +128,7 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
                 for i, windowKey in enumerate(windowKeys):
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-q_model"] = qs[i]
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-netq_model"] = abs(qs[i])
-                    flowStatsMI.at[(run, windowKey), f"{pType}_{optType}-C_d"] = Cd[i]
+                    flowStatsMI.at[(run, windowKey), Cd_col] = Cd[i]
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-p0"] = np.mean(p0)
                     flowStatsMI.loc[(run, windowKey), f"{pType}_{optType}-success"] = optResult.success
                     flowStatsMI.loc[(run, windowKey), f"p0meas"] = np.mean(p0_meas)
