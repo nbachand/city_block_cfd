@@ -7,6 +7,18 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import pyafn
 from matplotlib import pyplot as plt
+import pytensor.tensor as pt
+from pytensor.compile.ops import wrap_py
+
+
+
+@wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
+def ventilation_redecomp_p_op(u_model, a, p_rms):
+    """PyTensor wrapper around pyafn.ventilationReDecomp_p for PyMC models."""
+    return np.asarray(
+        pyafn.ventilationReDecomp_p(np.asarray(u_model, dtype=float), float(a), float(p_rms)),
+        dtype=float,
+    )
 
 def readEmulationMI(home_dir="./"):
 
