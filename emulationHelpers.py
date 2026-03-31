@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit
-from scipy.special import logsumexp
 import seaborn as sns
-import numpy as np
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import pyafn
@@ -21,18 +19,6 @@ def ventilation_redecomp_p_op(u_model, a, p_rms):
         dtype=float,
     )
 
-
-@wrap_py(itypes=[pt.dvector, pt.dvector, pt.dvector], otypes=[pt.dvector])
-def ventilation_redecomp_p_vector_op(u_model, a, p_rms):
-    """PyTensor wrapper around pyafn.ventilationReDecomp_p for per-sample random parameters."""
-    return np.asarray(
-        pyafn.ventilationReDecomp_p(
-            np.asarray(u_model, dtype=float),
-            np.asarray(a, dtype=float),
-            np.asarray(p_rms, dtype=float),
-        ),
-        dtype=float,
-    )
 
 def readEmulationMI(home_dir="./"):
 
@@ -134,22 +120,6 @@ def prepare_bayesian_ventilation_subgroup(data, y_var, x_var, skylight, sdelp):
     }
 
 
-def _lognormal_mean(mu, sigma):
-    return np.exp(mu + 0.5 * sigma**2)
-
-
-def _lognormal_sd(mu, sigma):
-    return np.sqrt((np.exp(sigma**2) - 1.0) * np.exp(2.0 * mu + sigma**2))
-
-
-def _gamma_alpha_beta(mean, sd):
-    mean = np.maximum(np.asarray(mean, dtype=float), 1e-8)
-    sd = np.maximum(np.asarray(sd, dtype=float), 1e-8)
-    alpha = (mean / sd) ** 2
-    beta = mean / (sd**2)
-    return alpha, beta
-
-
 def _summarize_parameter_draws(parameter_draws):
     summary = parameter_draws.describe(percentiles=[0.03, 0.5, 0.97]).T
     summary = summary.rename(
@@ -163,107 +133,19 @@ def _summarize_parameter_draws(parameter_draws):
     return summary[["mean", "sd", "hdi_3%", "median", "hdi_97%"]]
 
 
-_population_normal_cache = {}
-
-
-def _get_standard_normal_pairs(mc_draws, random_seed):
-    key = (int(mc_draws), int(random_seed))
-    if key not in _population_normal_cache:
-        rng = np.random.default_rng(int(random_seed))
-        _population_normal_cache[key] = (
-            rng.standard_normal(int(mc_draws)),
-            rng.standard_normal(int(mc_draws)),
-        )
-    return _population_normal_cache[key]
-
-
-def _population_mixture_loglike_from_samples(u_model, y_obs, a_samples, p_rms_samples, sigma_obs):
-    u_model = np.asarray(u_model, dtype=float)
-    y_obs = np.asarray(y_obs, dtype=float)
-    a_samples = np.asarray(a_samples, dtype=float)
-    p_rms_samples = np.asarray(p_rms_samples, dtype=float)
-    sigma_obs = max(float(sigma_obs), 1e-8)
-
-    target_shape = (len(a_samples), len(u_model))
-    u_eval = np.broadcast_to(u_model[np.newaxis, :], target_shape)
-    a_eval = np.broadcast_to(a_samples[:, np.newaxis], target_shape)
-    p_eval = np.broadcast_to(p_rms_samples[:, np.newaxis], target_shape)
-    y_model_draws = np.asarray(
-        pyafn.ventilationReDecomp_p(u_eval, a_eval, p_eval),
-        dtype=float,
-    )
-    if y_model_draws.ndim == 1:
-        y_model_draws = y_model_draws[np.newaxis, :]
-
-    residual = (y_obs[np.newaxis, :] - y_model_draws) / sigma_obs
-    logpdf = -0.5 * residual**2 - np.log(sigma_obs) - 0.5 * np.log(2.0 * np.pi)
-    per_obs = logsumexp(logpdf, axis=0) - np.log(y_model_draws.shape[0])
-    return np.array(float(np.sum(per_obs)), dtype=float)
-
-
-@wrap_py(
-    itypes=[pt.dvector, pt.dvector, pt.dscalar, pt.dscalar, pt.dscalar, pt.dscalar, pt.dscalar, pt.lscalar, pt.lscalar],
-    otypes=[pt.dscalar],
-)
-def ventilation_redecomp_p_lognormal_population_loglike_op(
-    u_model,
-    y_obs,
-    mu_log_a,
-    sigma_log_a,
-    mu_log_p_rms,
-    sigma_log_p_rms,
-    sigma_obs,
-    mc_draws,
-    random_seed,
-):
-    z_a, z_p = _get_standard_normal_pairs(mc_draws, random_seed)
-    sigma_log_a = max(float(sigma_log_a), 1e-8)
-    sigma_log_p_rms = max(float(sigma_log_p_rms), 1e-8)
-    a_samples = np.exp(float(mu_log_a) + sigma_log_a * z_a)
-    p_rms_samples = np.exp(float(mu_log_p_rms) + sigma_log_p_rms * z_p)
-    return _population_mixture_loglike_from_samples(u_model, y_obs, a_samples, p_rms_samples, sigma_obs)
-
-
-@wrap_py(
-    itypes=[pt.dvector, pt.dvector, pt.dscalar, pt.dscalar, pt.dscalar, pt.dscalar, pt.dscalar, pt.lscalar, pt.lscalar],
-    otypes=[pt.dscalar],
-)
-def ventilation_redecomp_p_gamma_population_loglike_op(
-    u_model,
-    y_obs,
-    a_dist_mean,
-    a_dist_sd,
-    p_rms_dist_mean,
-    p_rms_dist_sd,
-    sigma_obs,
-    mc_draws,
-    random_seed,
-):
-    a_alpha, a_beta = _gamma_alpha_beta(a_dist_mean, a_dist_sd)
-    p_alpha, p_beta = _gamma_alpha_beta(p_rms_dist_mean, p_rms_dist_sd)
-    rng = np.random.default_rng(int(random_seed))
-    a_samples = rng.gamma(shape=float(a_alpha), scale=1.0 / float(a_beta), size=int(mc_draws))
-    p_rms_samples = rng.gamma(shape=float(p_alpha), scale=1.0 / float(p_beta), size=int(mc_draws))
-    return _population_mixture_loglike_from_samples(u_model, y_obs, a_samples, p_rms_samples, sigma_obs)
-
 
 def fit_bayesian_pressure_subgroup(
     u_model,
     y_obs,
     *,
-    parameter_family="lognormal",
-    family_kwargs=None,
+    a_sigma=0.5,
+    p_rms_sigma=0.1,
     obs_sigma=0.1,
-    mc_draws=128,
-    likelihood_seed=42,
     random_seed=42,
     sample_kwargs=None,
 ):
-    """Fit subgroup-level parameter distributions to one ventilation subgroup with PyMC."""
+    """Fit one a/p_rms/sigma_obs posterior for a single subgroup."""
     import pymc as pm
-
-    family = str(parameter_family).lower()
-    family_kwargs = dict(family_kwargs or {})
 
     u_model = np.asarray(u_model, dtype=float)
     y_obs = np.asarray(y_obs, dtype=float)
@@ -278,64 +160,12 @@ def fit_bayesian_pressure_subgroup(
 
     with pm.Model():
         u_model_data = pm.Data("u_model", u_model)
-        y_obs_data = pm.Data("y_obs", y_obs)
-        mc_draws_data = pt.as_tensor_variable(np.int64(mc_draws))
-        likelihood_seed_data = pt.as_tensor_variable(np.int64(likelihood_seed))
+        # LogNormal(mu=0) has median 1, which matches alpha's expected scale better.
+        a = pm.LogNormal("a", mu=0.0, sigma=a_sigma)
+        p_rms = pm.HalfNormal("p_rms", sigma=p_rms_sigma)
         sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
-
-        if family == "lognormal":
-            mu_log_a_sigma = family_kwargs.get("mu_log_a_sigma", 1.0)
-            sigma_log_a_sigma = family_kwargs.get("sigma_log_a_sigma", 1.0)
-            mu_log_p_rms_center = family_kwargs.get("mu_log_p_rms_center", np.log(0.05))
-            mu_log_p_rms_sigma = family_kwargs.get("mu_log_p_rms_sigma", 1.5)
-            sigma_log_p_rms_sigma = family_kwargs.get("sigma_log_p_rms_sigma", 1.0)
-
-            mu_log_a = pm.Normal("mu_log_a", mu=0.0, sigma=mu_log_a_sigma)
-            sigma_log_a = pm.HalfNormal("sigma_log_a", sigma=sigma_log_a_sigma)
-            mu_log_p_rms = pm.Normal("mu_log_p_rms", mu=mu_log_p_rms_center, sigma=mu_log_p_rms_sigma)
-            sigma_log_p_rms = pm.HalfNormal("sigma_log_p_rms", sigma=sigma_log_p_rms_sigma)
-
-            pm.Potential(
-                "population_loglike",
-                ventilation_redecomp_p_lognormal_population_loglike_op(
-                    u_model_data,
-                    y_obs_data,
-                    mu_log_a,
-                    sigma_log_a,
-                    mu_log_p_rms,
-                    sigma_log_p_rms,
-                    sigma_obs,
-                    mc_draws_data,
-                    likelihood_seed_data,
-                ),
-            )
-        elif family == "gamma":
-            a_mean_sigma = family_kwargs.get("a_mean_sigma", 2.0)
-            a_sd_sigma = family_kwargs.get("a_sd_sigma", 1.0)
-            p_rms_mean_sigma = family_kwargs.get("p_rms_mean_sigma", 0.1)
-            p_rms_sd_sigma = family_kwargs.get("p_rms_sd_sigma", 0.1)
-
-            a_dist_mean = pm.HalfNormal("a_dist_mean", sigma=a_mean_sigma)
-            a_dist_sd = pm.HalfNormal("a_dist_sd", sigma=a_sd_sigma)
-            p_rms_dist_mean = pm.HalfNormal("p_rms_dist_mean", sigma=p_rms_mean_sigma)
-            p_rms_dist_sd = pm.HalfNormal("p_rms_dist_sd", sigma=p_rms_sd_sigma)
-
-            pm.Potential(
-                "population_loglike",
-                ventilation_redecomp_p_gamma_population_loglike_op(
-                    u_model_data,
-                    y_obs_data,
-                    a_dist_mean,
-                    a_dist_sd,
-                    p_rms_dist_mean,
-                    p_rms_dist_sd,
-                    sigma_obs,
-                    mc_draws_data,
-                    likelihood_seed_data,
-                ),
-            )
-        else:
-            raise ValueError("parameter_family must be 'lognormal' or 'gamma'.")
+        mu = ventilation_redecomp_p_op(u_model_data, a, p_rms)
+        pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
 
         sample_kwargs_local.setdefault("draws", 1000)
         sample_kwargs_local.setdefault("tune", 1000)
@@ -347,102 +177,38 @@ def fit_bayesian_pressure_subgroup(
 
         idata = pm.sample(**sample_kwargs_local)
 
-    posterior = idata.posterior
-    sigma_obs_vals = np.asarray(posterior["sigma_obs"].values).reshape(-1)
-
-    if family == "lognormal":
-        mu_log_a_vals = np.asarray(posterior["mu_log_a"].values).reshape(-1)
-        sigma_log_a_vals = np.asarray(posterior["sigma_log_a"].values).reshape(-1)
-        mu_log_p_vals = np.asarray(posterior["mu_log_p_rms"].values).reshape(-1)
-        sigma_log_p_vals = np.asarray(posterior["sigma_log_p_rms"].values).reshape(-1)
-        parameter_draws = pd.DataFrame(
-            {
-                "a_dist_mean": _lognormal_mean(mu_log_a_vals, sigma_log_a_vals),
-                "a_dist_sd": _lognormal_sd(mu_log_a_vals, sigma_log_a_vals),
-                "p_rms_dist_mean": _lognormal_mean(mu_log_p_vals, sigma_log_p_vals),
-                "p_rms_dist_sd": _lognormal_sd(mu_log_p_vals, sigma_log_p_vals),
-                "sigma_obs": sigma_obs_vals,
-                "mu_log_a": mu_log_a_vals,
-                "sigma_log_a": sigma_log_a_vals,
-                "mu_log_p_rms": mu_log_p_vals,
-                "sigma_log_p_rms": sigma_log_p_vals,
-            }
-        )
-    else:
-        parameter_draws = pd.DataFrame(
-            {
-                "a_dist_mean": np.asarray(posterior["a_dist_mean"].values).reshape(-1),
-                "a_dist_sd": np.asarray(posterior["a_dist_sd"].values).reshape(-1),
-                "p_rms_dist_mean": np.asarray(posterior["p_rms_dist_mean"].values).reshape(-1),
-                "p_rms_dist_sd": np.asarray(posterior["p_rms_dist_sd"].values).reshape(-1),
-                "sigma_obs": sigma_obs_vals,
-            }
-        )
-
+    parameter_draws = _parameter_draws_from_idata(idata)
     summary = _summarize_parameter_draws(parameter_draws)
-    distribution_median = {
-        "a_dist_mean": float(np.median(parameter_draws["a_dist_mean"])),
-        "a_dist_sd": float(np.median(parameter_draws["a_dist_sd"])),
-        "p_rms_dist_mean": float(np.median(parameter_draws["p_rms_dist_mean"])),
-        "p_rms_dist_sd": float(np.median(parameter_draws["p_rms_dist_sd"])),
-        "sigma_obs": float(np.median(parameter_draws["sigma_obs"])),
-    }
 
     return {
         "idata": idata,
         "summary": summary,
         "parameter_draws": parameter_draws,
-        "distribution_median": distribution_median,
-        "parameter_family": family,
-        "family_kwargs": family_kwargs,
-        "mc_draws": int(mc_draws),
-        "likelihood_seed": int(likelihood_seed),
+        "posterior_median": _posterior_median_from_parameter_draws(parameter_draws),
         "n_obs": len(u_model),
     }
 
 
-def _parameter_draws_from_idata(idata, family):
+
+def _parameter_draws_from_idata(idata):
     posterior = idata.posterior
-    sigma_obs_vals = np.asarray(posterior["sigma_obs"].values).reshape(-1)
-
-    if family == "lognormal":
-        mu_log_a_vals = np.asarray(posterior["mu_log_a"].values).reshape(-1)
-        sigma_log_a_vals = np.asarray(posterior["sigma_log_a"].values).reshape(-1)
-        mu_log_p_vals = np.asarray(posterior["mu_log_p_rms"].values).reshape(-1)
-        sigma_log_p_vals = np.asarray(posterior["sigma_log_p_rms"].values).reshape(-1)
-        return pd.DataFrame(
-            {
-                "a_dist_mean": _lognormal_mean(mu_log_a_vals, sigma_log_a_vals),
-                "a_dist_sd": _lognormal_sd(mu_log_a_vals, sigma_log_a_vals),
-                "p_rms_dist_mean": _lognormal_mean(mu_log_p_vals, sigma_log_p_vals),
-                "p_rms_dist_sd": _lognormal_sd(mu_log_p_vals, sigma_log_p_vals),
-                "sigma_obs": sigma_obs_vals,
-                "mu_log_a": mu_log_a_vals,
-                "sigma_log_a": sigma_log_a_vals,
-                "mu_log_p_rms": mu_log_p_vals,
-                "sigma_log_p_rms": sigma_log_p_vals,
-            }
-        )
-
     return pd.DataFrame(
         {
-            "a_dist_mean": np.asarray(posterior["a_dist_mean"].values).reshape(-1),
-            "a_dist_sd": np.asarray(posterior["a_dist_sd"].values).reshape(-1),
-            "p_rms_dist_mean": np.asarray(posterior["p_rms_dist_mean"].values).reshape(-1),
-            "p_rms_dist_sd": np.asarray(posterior["p_rms_dist_sd"].values).reshape(-1),
-            "sigma_obs": sigma_obs_vals,
+            "a": np.asarray(posterior["a"].values).reshape(-1),
+            "p_rms": np.asarray(posterior["p_rms"].values).reshape(-1),
+            "sigma_obs": np.asarray(posterior["sigma_obs"].values).reshape(-1),
         }
     )
 
 
-def _distribution_median_from_parameter_draws(parameter_draws):
+
+def _posterior_median_from_parameter_draws(parameter_draws):
     return {
-        "a_dist_mean": float(np.median(parameter_draws["a_dist_mean"])),
-        "a_dist_sd": float(np.median(parameter_draws["a_dist_sd"])),
-        "p_rms_dist_mean": float(np.median(parameter_draws["p_rms_dist_mean"])),
-        "p_rms_dist_sd": float(np.median(parameter_draws["p_rms_dist_sd"])),
+        "a": float(np.median(parameter_draws["a"])),
+        "p_rms": float(np.median(parameter_draws["p_rms"])),
         "sigma_obs": float(np.median(parameter_draws["sigma_obs"])),
     }
+
 
 
 def posterior_predict_bayesian_pressure_curve(
@@ -452,11 +218,10 @@ def posterior_predict_bayesian_pressure_curve(
     sign=1,
     credible_interval=0.95,
     posterior_draws_for_curves=300,
-    latent_draws_per_posterior=50,
     include_obs_noise=True,
     random_seed=42,
 ):
-    """Generate output or posterior-predictive bands from Bayesian ventilation fits."""
+    """Generate posterior output bands from direct a/p_rms subgroup fits."""
     x_grid = np.asarray(x_grid, dtype=float)
     if x_grid.ndim != 1:
         raise ValueError("x_grid must be a 1D array.")
@@ -468,37 +233,21 @@ def posterior_predict_bayesian_pressure_curve(
         idx = np.linspace(0, len(parameter_draws) - 1, posterior_draws_for_curves, dtype=int)
         parameter_draws = parameter_draws.iloc[idx].reset_index(drop=True)
 
-    rng = np.random.default_rng(random_seed)
-    y_draws = []
-    family = fit_result["parameter_family"]
-    for row in parameter_draws.itertuples(index=False):
-        if family == "lognormal":
-            a_draws = rng.lognormal(mean=row.mu_log_a, sigma=row.sigma_log_a, size=latent_draws_per_posterior)
-            p_draws = rng.lognormal(mean=row.mu_log_p_rms, sigma=row.sigma_log_p_rms, size=latent_draws_per_posterior)
-        else:
-            a_alpha, a_beta = _gamma_alpha_beta(row.a_dist_mean, row.a_dist_sd)
-            p_alpha, p_beta = _gamma_alpha_beta(row.p_rms_dist_mean, row.p_rms_dist_sd)
-            a_draws = rng.gamma(shape=a_alpha, scale=1.0 / a_beta, size=latent_draws_per_posterior)
-            p_draws = rng.gamma(shape=p_alpha, scale=1.0 / p_beta, size=latent_draws_per_posterior)
+    a_vals = parameter_draws["a"].to_numpy(dtype=float)
+    p_vals = parameter_draws["p_rms"].to_numpy(dtype=float)
+    sigma_vals = np.maximum(parameter_draws["sigma_obs"].to_numpy(dtype=float), 1e-8)
 
-        target_shape = (len(a_draws), len(x_grid))
-        x_eval = np.broadcast_to(x_grid[np.newaxis, :], target_shape)
-        a_eval = np.broadcast_to(np.asarray(a_draws)[:, np.newaxis], target_shape)
-        p_eval = np.broadcast_to(np.asarray(p_draws)[:, np.newaxis], target_shape)
-        y_draw_block = np.asarray(
-            pyafn.ventilationReDecomp_p(x_eval, a_eval, p_eval),
-            dtype=float,
-        )
-        if include_obs_noise:
-            sigma_obs = max(float(row.sigma_obs), 1e-8)
-            y_draw_block = y_draw_block + rng.normal(
-                loc=0.0,
-                scale=sigma_obs,
-                size=y_draw_block.shape,
-            )
-        y_draws.append(y_draw_block)
+    target_shape = (len(parameter_draws), len(x_grid))
+    x_eval = np.broadcast_to(x_grid[np.newaxis, :], target_shape)
+    a_eval = np.broadcast_to(a_vals[:, np.newaxis], target_shape)
+    p_eval = np.broadcast_to(p_vals[:, np.newaxis], target_shape)
+    y_draws = np.asarray(pyafn.ventilationReDecomp_p(x_eval, a_eval, p_eval), dtype=float)
 
-    y_draws = sign * np.vstack(y_draws)
+    if include_obs_noise:
+        rng = np.random.default_rng(random_seed)
+        y_draws = y_draws + rng.normal(loc=0.0, scale=sigma_vals[:, np.newaxis], size=y_draws.shape)
+
+    y_draws = sign * y_draws
     if sign < 0:
         x_plot = -x_grid[::-1]
         y_draws = y_draws[:, ::-1]
@@ -514,6 +263,7 @@ def posterior_predict_bayesian_pressure_curve(
     }
 
 
+
 def summarize_bayesian_ventilation_fits(fit_results):
     """Combine subgroup summaries from Bayesian ventilation subgroup fits."""
     rows = []
@@ -521,15 +271,110 @@ def summarize_bayesian_ventilation_fits(fit_results):
         summary = result["summary"].copy().reset_index()
         first_col = summary.columns[0]
         summary = summary.rename(columns={first_col: "parameter"})
-        summary.insert(0, "family", result.get("parameter_family", "unknown"))
-        summary.insert(1, "n_obs", result.get("n_obs", np.nan))
-        summary.insert(2, "direction", direction)
-        summary.insert(2, "panel", title)
+        summary.insert(0, "n_obs", result.get("n_obs", np.nan))
+        summary.insert(1, "direction", direction)
+        summary.insert(1, "panel", title)
         rows.append(summary)
 
     if not rows:
-        return pd.DataFrame(columns=["panel", "direction", "family", "n_obs", "parameter"])
+        return pd.DataFrame(columns=["panel", "direction", "n_obs", "parameter"])
     return pd.concat(rows, ignore_index=True)
+
+
+
+def plot_bayesian_ventilation_parameter_posteriors(
+    fit_results,
+    *,
+    columns=None,
+    labels=None,
+    bins=40,
+    kde=True,
+    figsize=None,
+    axes=None,
+):
+    """Plot posterior parameter distributions for each fitted ventilation subgroup."""
+    if columns is None:
+        columns = ["a", "p_rms", "sigma_obs"]
+    columns = list(columns)
+    if len(columns) == 0:
+        raise ValueError("columns must contain at least one parameter name.")
+
+    default_labels = {
+        "a": "alpha",
+        "p_rms": "p_rms",
+        "sigma_obs": "sigma",
+    }
+    label_map = dict(default_labels)
+    if labels is not None:
+        label_map.update(labels)
+
+    preferred_order = [
+        ("Window", "Flow Entering"),
+        ("Window", "Flow Exiting"),
+        ("Skylight", "Flow Entering"),
+        ("Skylight", "Flow Exiting"),
+    ]
+    fit_keys = [key for key in preferred_order if key in fit_results]
+    fit_keys.extend([key for key in fit_results if key not in fit_keys])
+    if len(fit_keys) == 0:
+        raise ValueError("fit_results is empty.")
+
+    n_rows = len(fit_keys)
+    n_cols = len(columns)
+    if axes is None:
+        if figsize is None:
+            figsize = (4.0 * n_cols, 2.8 * n_rows)
+        fig, axs = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=figsize,
+            dpi=140,
+            squeeze=False,
+            sharex="col",
+        )
+    else:
+        axs = np.asarray(axes, dtype=object)
+        if axs.ndim == 1:
+            axs = axs.reshape(n_rows, n_cols)
+        if axs.shape != (n_rows, n_cols):
+            raise ValueError(f"axes must have shape {(n_rows, n_cols)}.")
+        fig = axs.flat[0].figure
+
+    for row_idx, key in enumerate(fit_keys):
+        title, direction = key
+        draws = fit_results[key]["parameter_draws"]
+        for col_idx, column in enumerate(columns):
+            ax = axs[row_idx, col_idx]
+            if column not in draws.columns:
+                raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
+            vals = pd.to_numeric(draws[column], errors="coerce")
+            vals = vals[np.isfinite(vals)]
+            if len(vals) == 0:
+                raise ValueError(f"Posterior column '{column}' has no finite values.")
+
+            sns.histplot(vals, bins=bins, kde=kde, stat="density", ax=ax, color="0.45")
+            median = float(np.median(vals))
+            lower = float(np.quantile(vals, 0.03))
+            upper = float(np.quantile(vals, 0.97))
+            ax.axvline(median, color="k", linewidth=2)
+            ax.axvspan(lower, upper, color="0.7", alpha=0.25)
+            ax.grid(True, alpha=0.25)
+            ax.tick_params(labelsize=11)
+
+            if row_idx == 0:
+                ax.set_title(label_map.get(column, column), fontsize=14)
+            if col_idx == 0:
+                ax.set_ylabel(f"{title}\n{direction}", fontsize=12)
+            else:
+                ax.set_ylabel("")
+            if row_idx == n_rows - 1:
+                ax.set_xlabel(label_map.get(column, column), fontsize=12)
+            else:
+                ax.set_xlabel("")
+
+    fig.tight_layout()
+    return fig, axs
+
 
 
 def save_bayesian_ventilation_fit_results(fit_results, output_dir):
@@ -540,7 +385,7 @@ def save_bayesian_ventilation_fit_results(fit_results, output_dir):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    metadata = {"format_version": 1, "entries": []}
+    metadata = {"format_version": 2, "entries": []}
     for (title, direction), result in fit_results.items():
         slug = f"{title.lower().replace(' ', '_')}__{direction.lower().replace(' ', '_')}"
         idata_file = f"{slug}.nc"
@@ -553,10 +398,6 @@ def save_bayesian_ventilation_fit_results(fit_results, output_dir):
                 "panel": title,
                 "direction": direction,
                 "idata_file": idata_file,
-                "parameter_family": result.get("parameter_family", "unknown"),
-                "family_kwargs": result.get("family_kwargs", {}),
-                "mc_draws": int(result.get("mc_draws", 0)),
-                "likelihood_seed": int(result.get("likelihood_seed", 0)),
                 "n_obs": int(result.get("n_obs", 0)),
                 "sign": int(result.get("sign", 1)),
                 "subgroup": {
@@ -575,6 +416,7 @@ def save_bayesian_ventilation_fit_results(fit_results, output_dir):
     return output_dir
 
 
+
 def load_bayesian_ventilation_fit_results(output_dir):
     """Load saved Bayesian subgroup MCMC results from NetCDF plus JSON metadata."""
     import json
@@ -588,9 +430,8 @@ def load_bayesian_ventilation_fit_results(output_dir):
     for entry in metadata.get("entries", []):
         title = entry["panel"]
         direction = entry["direction"]
-        family = entry.get("parameter_family", "unknown")
         idata = az.from_netcdf(output_dir / entry["idata_file"])
-        parameter_draws = _parameter_draws_from_idata(idata, family)
+        parameter_draws = _parameter_draws_from_idata(idata)
         subgroup_meta = entry.get("subgroup", {})
         subgroup = {
             "title": subgroup_meta.get("title", title),
@@ -604,11 +445,7 @@ def load_bayesian_ventilation_fit_results(output_dir):
             "idata": idata,
             "summary": _summarize_parameter_draws(parameter_draws),
             "parameter_draws": parameter_draws,
-            "distribution_median": _distribution_median_from_parameter_draws(parameter_draws),
-            "parameter_family": family,
-            "family_kwargs": entry.get("family_kwargs", {}),
-            "mc_draws": int(entry.get("mc_draws", 0)),
-            "likelihood_seed": int(entry.get("likelihood_seed", 0)),
+            "posterior_median": _posterior_median_from_parameter_draws(parameter_draws),
             "n_obs": int(entry.get("n_obs", len(subgroup["u_model"]))),
             "sign": int(entry.get("sign", 1)),
             "subgroup": subgroup,
@@ -617,20 +454,19 @@ def load_bayesian_ventilation_fit_results(output_dir):
     return fit_results
 
 
+
 def fit_bayesian_ventilation_p_subgroups(
     data,
     y_var,
     x_var,
     *,
-    parameter_family="lognormal",
-    family_kwargs=None,
+    a_sigma=0.5,
+    p_rms_sigma=0.1,
     obs_sigma=0.1,
-    mc_draws=128,
-    likelihood_seed=42,
     sample_kwargs=None,
     random_seed=42,
 ):
-    """Fit all Window/Skylight and Entering/Exiting Bayesian subgroups without plotting."""
+    """Fit one a/p_rms/sigma_obs posterior per Window/Skylight and Entering/Exiting subgroup."""
     fit_results = {}
     for i in range(2):
         sl_val = bool(i)
@@ -645,11 +481,9 @@ def fit_bayesian_ventilation_p_subgroups(
             fit_result = fit_bayesian_pressure_subgroup(
                 subgroup["u_model"],
                 subgroup["y_obs"],
-                parameter_family=parameter_family,
-                family_kwargs=family_kwargs,
+                a_sigma=a_sigma,
+                p_rms_sigma=p_rms_sigma,
                 obs_sigma=obs_sigma,
-                mc_draws=mc_draws,
-                likelihood_seed=likelihood_seed + i * 10 + j,
                 random_seed=random_seed + i * 10 + j,
                 sample_kwargs=sample_kwargs,
             )
@@ -658,15 +492,14 @@ def fit_bayesian_ventilation_p_subgroups(
             fit_result["sign"] = s
             fit_results[(title, lbl)] = fit_result
 
-            dist = fit_result["distribution_median"]
+            med = fit_result["posterior_median"]
             print(
-                f"Bayesian distribution fit {title}, {lbl} ({parameter_family}): "
-                f"a_mean={dist['a_dist_mean']:.4f}, a_sd={dist['a_dist_sd']:.4f}, "
-                f"p_rms_mean={dist['p_rms_dist_mean']:.4f}, p_rms_sd={dist['p_rms_dist_sd']:.4f}, "
-                f"sigma_obs={dist['sigma_obs']:.4f}"
+                f"Bayesian fit {title}, {lbl}: "
+                f"a={med['a']:.4f}, p_rms={med['p_rms']:.4f}, sigma_obs={med['sigma_obs']:.4f}"
             )
 
     return fit_results
+
 
 
 def plot_bayesian_ventilation_p_fit_results(
@@ -680,7 +513,6 @@ def plot_bayesian_ventilation_p_fit_results(
     model_name="Bayesian Pressure Ventilation Model",
     credible_interval=0.95,
     posterior_draws_for_curves=300,
-    latent_draws_per_posterior=50,
     include_obs_noise=True,
     curve_points=200,
     random_seed=42,
@@ -771,15 +603,14 @@ def plot_bayesian_ventilation_p_fit_results(
                 sign=s,
                 credible_interval=credible_interval,
                 posterior_draws_for_curves=posterior_draws_for_curves,
-                latent_draws_per_posterior=latent_draws_per_posterior,
                 include_obs_noise=include_obs_noise,
                 random_seed=random_seed + 1000 + i * 10 + j,
             )
             fit_result["curve"] = curve
 
-            band_name = "Posterior Predictive Band" if include_obs_noise else "Output Band"
+            band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
-            line_label = f"Output Median ({fit_result.get('parameter_family', 'unknown')})" if s > 0 else None
+            line_label = "Posterior Median Model" if s > 0 else None
             axs[i].fill_between(
                 curve["x"],
                 curve["lower"],
@@ -858,15 +689,14 @@ def plot_bayesian_ventilation_p_fit_results(
         cbar.set_label(hue, fontsize=20)
         cbar.ax.tick_params(labelsize=20)
 
-    families = sorted({result.get("parameter_family", "unknown") for result in fit_results.values()})
     if figure_suptitle:
-        family_label = ", ".join(f.title() for f in families) if families else "Unknown"
-        fig.suptitle(f"{model_name}: Output Distribution Bands from {family_label} Parameters", fontsize=20)
+        fig.suptitle(f"{model_name}: Direct Posterior Bands", fontsize=20)
 
     if not using_external_axes:
         plt.tight_layout(rect=[0, 0, 0.92, 0.95])
 
     return fig, axs
+
 
 
 def plot_bayesian_ventilation_p_fit(
@@ -876,16 +706,13 @@ def plot_bayesian_ventilation_p_fit(
     hue="roomType",
     style="slAll",
     model_name="Bayesian Pressure Ventilation Model",
-    parameter_family="lognormal",
-    family_kwargs=None,
     credible_interval=0.95,
+    a_sigma=0.5,
+    p_rms_sigma=0.1,
     obs_sigma=0.1,
-    mc_draws=128,
-    likelihood_seed=42,
     sample_kwargs=None,
     random_seed=42,
     posterior_draws_for_curves=300,
-    latent_draws_per_posterior=50,
     include_obs_noise=True,
     curve_points=200,
     axes=None,
@@ -907,16 +734,14 @@ def plot_bayesian_ventilation_p_fit(
     scatter_zorder=3,
     return_fits=False,
 ):
-    """Fit Bayesian ventilation subgroups and plot the resulting output bands."""
+    """Fit Bayesian ventilation subgroups and plot the resulting direct-parameter bands."""
     fit_results = fit_bayesian_ventilation_p_subgroups(
         data,
         y_var,
         x_var,
-        parameter_family=parameter_family,
-        family_kwargs=family_kwargs,
+        a_sigma=a_sigma,
+        p_rms_sigma=p_rms_sigma,
         obs_sigma=obs_sigma,
-        mc_draws=mc_draws,
-        likelihood_seed=likelihood_seed,
         sample_kwargs=sample_kwargs,
         random_seed=random_seed,
     )
@@ -930,7 +755,6 @@ def plot_bayesian_ventilation_p_fit(
         model_name=model_name,
         credible_interval=credible_interval,
         posterior_draws_for_curves=posterior_draws_for_curves,
-        latent_draws_per_posterior=latent_draws_per_posterior,
         include_obs_noise=include_obs_noise,
         curve_points=curve_points,
         random_seed=random_seed,
