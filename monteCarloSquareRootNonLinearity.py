@@ -213,7 +213,7 @@ for i, usePressure in enumerate([False, True]):
     ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
     ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{PS}$', linewidth=1)
     ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-I^2}$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}/(2R)$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}/(2H)$', linewidth=1.5)
     ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}/(2H_{\\mathrm{U}})$', linewidth=2)
     # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2H_{H,\\mathrm{T}})$', linewidth=2)
     # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
