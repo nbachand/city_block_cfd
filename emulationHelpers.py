@@ -8,6 +8,7 @@ import pyafn
 from matplotlib import pyplot as plt
 import pytensor.tensor as pt
 from pytensor.compile.ops import wrap_py
+from pyafn import rho, Cd
 
 
 
@@ -961,6 +962,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             
             popt = curve_fit(model_func, X_fit, regdf_abs[y_var], p0=fit_p0, bounds=fit_bounds)[0]
             print(f"Fitted parameters for {title}, {lbl}: popt={popt}")
+            print(f"$C_d$ is {Cd * popt[0]:.2f}, $\sigma$ is {popt[1]:.2f}")
             fitted_params[(title, lbl)] = popt
             
             mask = plotdf["Sdelp"] == s
