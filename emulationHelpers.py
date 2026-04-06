@@ -563,6 +563,7 @@ def plot_bayesian_ventilation_p_fit_results(
             ax.set_ylim(*ylim)
 
     hue_is_numeric = pd.api.types.is_numeric_dtype(data[hue])
+    room_type_hue_order = ["cross", "corner", "dual", "single"] if hue == "roomType" else None
     if hue_is_numeric and hue_norm is None:
         finite_vals = pd.to_numeric(data[hue], errors="coerce")
         finite_vals = finite_vals[np.isfinite(finite_vals)]
@@ -647,6 +648,7 @@ def plot_bayesian_ventilation_p_fit_results(
                 ax=axs[i],
                 palette=palette_numeric if hue_is_numeric else "colorblind",
                 hue_norm=hue_norm if hue_is_numeric else None,
+                hue_order=None if hue_is_numeric else room_type_hue_order,
                 legend=legend_mode,
                 zorder=scatter_zorder,
             )
@@ -887,6 +889,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         axs[i].set_ylim(-0.6, 0.6)
     
     hue_is_numeric = pd.api.types.is_numeric_dtype(data[hue])
+    room_type_hue_order = ["cross", "corner", "dual", "single"] if hue == "roomType" else None
     if hue_is_numeric and hue_norm is None:
         finite_vals = pd.to_numeric(data[hue], errors="coerce")
         finite_vals = finite_vals[np.isfinite(finite_vals)]
@@ -1046,6 +1049,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             alpha=0.6, s=20, ax=axs[i],
             palette=palette_numeric if hue_is_numeric else "colorblind",
             hue_norm=hue_norm if hue_is_numeric else None,
+            hue_order=None if hue_is_numeric else room_type_hue_order,
             legend=legend_mode
         )
         if hue_is_numeric and len(scatter_ax.collections) > 0:
