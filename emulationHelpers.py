@@ -791,7 +791,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                                 show_figure_legend=True, add_numeric_colorbar=False,
                                 hue_norm=None, palette_numeric="viridis", figure_suptitle=True,
                                 colorbar_rect=None, colorbar_orientation="horizontal", return_data=False,
-                                return_params=False):
+                                return_params=False, return_metrics=False):
     """
     Plot ventilation model fits comparing modeled vs LES flux velocities.
     
@@ -850,6 +850,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         If True, return a dict of fitted parameters keyed by (title, lbl), e.g.
         ("Window", "Flow Entering"), ("Window", "Flow Exiting"),
         ("Skylight", "Flow Entering"), ("Skylight", "Flow Exiting").
+    return_metrics : bool
+        If True, return a tidy dataframe with subgroup- and opening-level error metrics.
     
     Returns:
     --------
@@ -896,6 +898,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
     asymptote_legend_labels = None
     scatter_collection_for_cbar = None
     fitted_params = {}
+    metrics_rows = []
 
     # Plot for each skylight condition
     for i in range(2):
@@ -1012,6 +1015,25 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             
             error = y_pred_model - y_obs_model
             print(f"Bias: {np.mean(error):.4f}, Error STD: {np.std(error):.4f}")
+            metrics_rows.append(
+                {
+                    "model_name": model_name,
+                    "scope": "subgroup",
+                    "opening_group": title,
+                    "direction": lbl,
+                    "split": f"{title}, {lbl}",
+                    "adjusted": adjustData,
+                    "x_label": x_var,
+                    "y_label": y_var,
+                    "cd": Cd * popt[0],
+                    "sigma": popt[1] if len(popt) > 1 else np.nan,
+                    "rmse": rmse,
+                    "nrmse": nrmse,
+                    "bias": np.mean(error),
+                    "std": np.std(error),
+                    "n": len(y_obs_model),
+                }
+            )
 
         
         # Scatter plot
@@ -1036,6 +1058,26 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         if adjustData:
             rmse, nrmse = calculate_normalized_rmse(plotdf[x_var], plotdf[y_var], normalization='std')
             print(f"For skylight={sl_val}, NRMSE: {nrmse:.4f}, RMSE: {rmse:.4f}")
+            opening_error = plotdf[x_var] - plotdf[y_var]
+            metrics_rows.append(
+                {
+                    "model_name": model_name,
+                    "scope": "opening_total",
+                    "opening_group": title,
+                    "direction": "All",
+                    "split": f"{title}, All",
+                    "adjusted": adjustData,
+                    "x_label": x_var,
+                    "y_label": y_var,
+                    "cd": np.nan,
+                    "sigma": np.nan,
+                    "rmse": rmse,
+                    "nrmse": nrmse,
+                    "bias": np.mean(opening_error),
+                    "std": np.std(opening_error),
+                    "n": len(plotdf[[x_var, y_var]].dropna()),
+                }
+            )
 
         if return_data:
             data.loc[data["skylight"] == sl_val, x_var] = plotdf.loc[:, x_var]
@@ -1086,13 +1128,23 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
     
     if not using_external_axes:
         plt.tight_layout(rect=[0, 0, 0.92, 0.95])
+
+    metrics_df = pd.DataFrame(metrics_rows)
     
+    if return_data and return_params and return_metrics:
+        return fig, axs, data[x_var], fitted_params, metrics_df
     if return_data and return_params:
         return fig, axs, data[x_var], fitted_params
+    if return_data and return_metrics:
+        return fig, axs, data[x_var], metrics_df
+    if return_params and return_metrics:
+        return fig, axs, fitted_params, metrics_df
     if return_data:
         return fig, axs, data[x_var]
     if return_params:
         return fig, axs, fitted_params
+    if return_metrics:
+        return fig, axs, metrics_df
     return fig, axs
 
 def calculate_normalized_rmse(y, y_pred, normalization='std'):
