@@ -17,9 +17,9 @@ Those subgroup fits are orchestrated in [emulationHelpers.py](/oak/stanford/grou
 
 For one observation, the deterministic forward model is
 
-\[
+$$
 \mu_i = f(u_i; a, p_{\mathrm{rms}}) = \mathrm{ventilationReDecomp\_p}(u_i, a, p_{\mathrm{rms}})
-\]
+$$
 
 where:
 
@@ -36,15 +36,15 @@ The underlying `pyafn` implementation is in [/home/groups/gorle/codes/pyAFN/pyaf
 
 The key returned quantity is
 
-\[
+$$
 f(u_i; a, p_{\mathrm{rms}}) = a \, u_i \, s(I_i)
-\]
+$$
 
 with
 
-\[
+$$
 I_i = \mathrm{uModelToI\_p}(u_i, p_{\mathrm{rms}})
-\]
+$$
 
 and `s(I_i)` the pressure-based blended scaling.
 
@@ -52,9 +52,9 @@ and `s(I_i)` the pressure-based blended scaling.
 
 For each subgroup, the observed LES flux is modeled as
 
-\[
+$$
 y_i \sim \mathcal{N}(\mu_i, \sigma_{\mathrm{obs}})
-\]
+$$
 
 where:
 
@@ -67,17 +67,17 @@ This is implemented in [emulationHelpers.py#L161](/oak/stanford/groups/gorle/nba
 
 The current priors are:
 
-\[
+$$
 a \sim \mathrm{LogNormal}(0, \sigma_a)
-\]
+$$
 
-\[
+$$
 p_{\mathrm{rms}} \sim \mathrm{HalfNormal}(\sigma_p)
-\]
+$$
 
-\[
+$$
 \sigma_{\mathrm{obs}} \sim \mathrm{HalfNormal}(\sigma_\epsilon)
-\]
+$$
 
 Important interpretation:
 
@@ -99,7 +99,7 @@ See [emulationHelpers.py#L141](/oak/stanford/groups/gorle/nbachand/Cascade/city_
 
 For one subgroup, the posterior is
 
-\[
+$$
 p(a, p_{\mathrm{rms}}, \sigma_{\mathrm{obs}} \mid y, u)
 \propto
 p(y \mid a, p_{\mathrm{rms}}, \sigma_{\mathrm{obs}}, u)
@@ -109,7 +109,7 @@ p(a)
 p(p_{\mathrm{rms}})
 \,
 p(\sigma_{\mathrm{obs}})
-\]
+$$
 
 This is the main object inferred by PyMC in `fit_bayesian_pressure_subgroup(...)`; see [emulationHelpers.py#L137](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L137).
 
@@ -117,9 +117,9 @@ This is the main object inferred by PyMC in `fit_bayesian_pressure_subgroup(...)
 
 Sampling uses PyMC's slice sampler:
 
-\[
+$$
 (a, p_{\mathrm{rms}}, \sigma_{\mathrm{obs}})^{(t)} \rightarrow (a, p_{\mathrm{rms}}, \sigma_{\mathrm{obs}})^{(t+1)}
-\]
+$$
 
 through `pm.Slice()`.
 
@@ -155,15 +155,15 @@ To draw the fitted bands shown on the plots:
 
 Mathematically, for a plotting location `x`:
 
-\[
+$$
 \tilde{y}(x) = f(x; a^{(m)}, p_{\mathrm{rms}}^{(m)}) + \epsilon^{(m)}
-\]
+$$
 
 with
 
-\[
+$$
 \epsilon^{(m)} \sim \mathcal{N}(0, \sigma_{\mathrm{obs}}^{(m)})
-\]
+$$
 
 and the plotted band is the empirical quantile interval over `m`.
 
