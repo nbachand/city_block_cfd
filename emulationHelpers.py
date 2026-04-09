@@ -527,6 +527,7 @@ def plot_bayesian_ventilation_p_fit_results(
     figure_suptitle=True,
     colorbar_rect=None,
     colorbar_orientation="horizontal",
+    colorbar_label=None,
     xlim=(-0.6, 0.6),
     ylim=(-0.6, 0.6),
     show_scatter=True,
@@ -689,7 +690,7 @@ def plot_bayesian_ventilation_p_fit_results(
         cbar_mappable = ScalarMappable(norm=cbar_norm, cmap=palette_numeric)
         cbar_mappable.set_array([])
         cbar = fig.colorbar(cbar_mappable, cax=cbar_ax, orientation=colorbar_orientation)
-        cbar.set_label(hue, fontsize=20)
+        cbar.set_label(colorbar_label or hue, fontsize=20)
         cbar.ax.tick_params(labelsize=20)
 
     if figure_suptitle:
@@ -728,6 +729,7 @@ def plot_bayesian_ventilation_p_fit(
     figure_suptitle=True,
     colorbar_rect=None,
     colorbar_orientation="horizontal",
+    colorbar_label=None,
     xlim=(-0.6, 0.6),
     ylim=(-0.6, 0.6),
     band_alpha=0.3,
@@ -771,6 +773,7 @@ def plot_bayesian_ventilation_p_fit(
         figure_suptitle=figure_suptitle,
         colorbar_rect=colorbar_rect,
         colorbar_orientation=colorbar_orientation,
+        colorbar_label=colorbar_label,
         xlim=xlim,
         ylim=ylim,
         band_alpha=band_alpha,
@@ -792,7 +795,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                                 axes=None, show_row_titles=True, set_axis_labels=True,
                                 show_figure_legend=True, add_numeric_colorbar=False,
                                 hue_norm=None, palette_numeric="viridis", figure_suptitle=True,
-                                colorbar_rect=None, colorbar_orientation="horizontal", return_data=False,
+                                colorbar_rect=None, colorbar_orientation="horizontal", colorbar_label=None, return_data=False,
                                 return_params=False, return_metrics=False):
     """
     Plot ventilation model fits comparing modeled vs LES flux velocities.
@@ -846,6 +849,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         If True, add a figure-level super title
     colorbar_orientation : str
         "horizontal" or "vertical" numeric colorbar orientation
+    colorbar_label : str, optional
+        Label for the numeric colorbar. Defaults to the hue column name.
     return_data : bool
         If True, return the (possibly adjusted) x_var series as a third return value
     return_params : bool
@@ -1124,7 +1129,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         cbar_mappable = ScalarMappable(norm=cbar_norm, cmap=palette_numeric)
         cbar_mappable.set_array([])
         cbar = fig.colorbar(cbar_mappable, cax=cbar_ax, orientation=colorbar_orientation)
-        cbar.set_label(hue, fontsize=20)
+        cbar.set_label(colorbar_label or hue, fontsize=20)
         cbar.ax.tick_params(labelsize=20)
     
     if figure_suptitle:
