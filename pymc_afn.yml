@@ -1,0 +1,9 @@
+name: pymc_afn
+channels:
+  - defaults
+dependencies:
+  - pymc[version='>=5']
+  - ipykernel
+  - seaborn
+  - ipywidgets
+prefix: /home/groups/gorle/codes/miniconda3/envs/pymc_afn

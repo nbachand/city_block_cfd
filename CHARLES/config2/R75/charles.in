@@ -1,0 +1,478 @@
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/7M-mesh-noInteriors.mles #./data/result.00004000.sles
+INTERP_FROM_RESTART /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES/config2/R54/data/result.00240000.sles
+INIT time = 0.0 step = 0 p=0 T=0 D=0 #u = 10.0 0.0 0.000001
+RESET_ALL
+ 
+#Equation of state
+EOS HELMHOLTZ
+RHO = 1.225
+MU = 1.7894e-5
+HELMHOLTZ_SOS 340.65
+
+# Time + output setup
+NSTEPS = 120000
+# TIMESTEP DT = .005
+TIMESTEP DT = .01
+CHECK_INTERVAL 100
+WRITE_RESULT NAME=data/result INTERVAL=1000
+
+# RESET_STATS TIME = 800
+
+# subgrid model 
+SGS_MODEL VREMAN
+
+#Temp Boundaries
+REGISTER_SCALAR D S T # pretty sure these register in alphabetical order, note for custom implementations for buoyancy
+
+T.SC_LAM = 0.71
+T.SC_T = 0.71
+
+D.SC_LAM = 0.71
+D.SC_T = 0.71
+
+S.SC_LAM = 0.71
+S.SC_T = 0.71
+
+STATS u mag(u) p rho D S T
+
+#Boundary Conditions (-666 means zero-flux)
+buildings     = WM_ALG_WALL                          T 0  D 0  S 0
+ground        = WM_ALG_WALL ROUGHNESS_HEIGHT 0.0032  T 0  D 0  S 0
+top           = SLIP                                 T 0  D 0  S 0
+interior      =  WM_ALG_WALL                         T 0  D 0  S 0
+# ceiling       =  WM_ALG_WALL T 0     D -666  S 1
+# floor         =  WM_ALG_WALL T 0     D -666  S 1
+# interiorWalls =  WM_ALG_WALL T 0     D -666  S 1
+# exteriorWalls =  WM_ALG_WALL T 0     D -666  S 1
+# windows       =  WM_ALG_WALL T -666  D -666  S -666
+# doors         =  WM_ALG_WALL T -666  D -666  S -666 
+# skylights     =  WM_ALG_WALL T -666  D -666  S -666 
+
+#################################
+######### SOLVER SETUP ##########
+#################################
+
+# advanced multigrid solver options
+MG_AGGLOMERATION_FACTOR 64
+MG_SPLIT_ORPHANED_COLORS true
+# Momentum equation
+# MOMENTUM_MG_NLEVEL 2 # coarse grids + 1 fine grid
+MOMENTUM_MG_NSMOOTH 10,10 # first is fine grid
+MOMENTUM_MG_SMOOTHER 2,2 # 0 Jacobi, 1 GS, 2 Patr
+MOMENTUM_RELAX 1.0 # Jacobi and GS might need < 1.0
+MOMENTUM_MAXITER 100 
+MOMENTUM_ZERO 1e-6
+# Pressure equation
+PRESSURE_MG_NLEVEL 2 # coarse grids + 1 fine grid
+PRESSURE_MG_NSMOOTH 20,20 # first is fine grid  #if smoother=1, half this 5,5
+PRESSURE_MG_SMOOTHER 3,3 # 0 Jacobi, 1 GS, 2 Patr, 3 CG 
+PRESSURE_RELAX 1.0 # Jacobi and GS might need < 1.0
+PRESSURE_MAXITER 100 
+PRESSURE_ZERO 1e-6
+
+ #################################
+ ###########  Images  ###########
+ #################################
+
+FLUSH_IMAGES 100
+#Define variables for images
+DEFINE image_int_avg=10000
+DEFINE image_int=100
+
+#ABL
+WRITE_IMAGE NAME=./Images/u_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y3             INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_y12            INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)
+WRITE_IMAGE NAME=./Images/u_z58            INTERVAL=$(image_int) TARGET       0 38.5 -58 CAMERA 0 38.5 58   UP 0 1 0   SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)
+
+WRITE_IMAGE NAME=./Images/T_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=T
+WRITE_IMAGE NAME=./Images/D_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=D
+WRITE_IMAGE NAME=./Images/S_y1p5           INTERVAL=$(image_int) TARGET       0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=S
+              
+WRITE_IMAGE NAME=./Images/mean_u_y1p5_old  INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u_avg)
+WRITE_IMAGE NAME=./Images/mean_u_y1p5      INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_y3        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_y12       INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)_avg
+WRITE_IMAGE NAME=./Images/mean_u_z58       INTERVAL=$(image_int_avg) TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)_avg
+                                                        
+WRITE_IMAGE NAME=./Images/rms_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_y3         INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_y12        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=mag(u)_rms
+WRITE_IMAGE NAME=./Images/rms_u_z58        INTERVAL=$(image_int_avg) TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=mag(u)_rms
+                                                        
+WRITE_IMAGE NAME=./Images/tke_u_y1p5       INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y3         INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_y12        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+WRITE_IMAGE NAME=./Images/tke_u_z58        INTERVAL=$(image_int_avg) TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=0.5*(comp(u_rms,0)*comp(u_rms,0)+comp(u_rms,1)*comp(u_rms,1)+comp(u_rms,2)*comp(u_rms,2))
+
+WRITE_IMAGE NAME=./Images/mean_p_y1p5      INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=p_avg
+WRITE_IMAGE NAME=./Images/mean_p_y3        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   348  GEOM PLANE 116 3 116    0 -1 0 VAR=p_avg
+WRITE_IMAGE NAME=./Images/mean_p_y12       INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=p_avg
+WRITE_IMAGE NAME=./Images/mean_p_z58       INTERVAL=$(image_int_avg) TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=p_avg
+                                                                                                                                               
+WRITE_IMAGE NAME=./Images/rms_p_y1p5       INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 1.5 116  0 -1 0 VAR=p_rms
+WRITE_IMAGE NAME=./Images/rms_p_y3         INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 3 116    0 -1 0 VAR=p_rms
+WRITE_IMAGE NAME=./Images/rms_p_y12        INTERVAL=$(image_int_avg) TARGET   0 116 0    CAMERA 0 -116 0               SIZE 480 480 WIDTH   232  GEOM PLANE 116 12 116   0 -1 0 VAR=p_rms
+WRITE_IMAGE NAME=./Images/rms_p_z58        INTERVAL=$(image_int_avg) TARGET   0 38.5 -58 CAMERA 0 38.5 58  UP 0 1 0    SIZE 960 320 WIDTH   232  GEOM PLANE 116 36 -58   0 0 -1 VAR=p_rms
+
+DEFINE flush_probes=100
+DEFINE probe_path=probes/probesOut/pointCloud
+DEFINE location_path=probes/locations
+FLUSH_PROBES $(flush_probes)
+DEFINE probe_int=1
+
+# For momentum source
+VOLUMETRIC_PROBE NAME=probes/VolProbe90X   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 12.000000 77.333333 -116.000000 116.000000   VARS=comp(u,0)
+VOLUMETRIC_PROBE NAME=probes/VolProbe90Z   INTERVAL=$(flush_probes) GEOM BOX -116.000000 116.000000 12.000000 77.333333 -116.000000 116.000000   VARS=comp(u,2)
+
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_-1-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_-1-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_-1-0        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_-1-0.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--2        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--2.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--1        INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--1.txt       VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-0          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-0.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-0         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-0.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-1          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-1.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-1         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-1.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-2          INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-2.txt         VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2         INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-2.txt        VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_-1-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_-1-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_-1-0_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_-1-0_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--2_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--2_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--1_Bx     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--1_Bx.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-0_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-0_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-0_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-0_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-1_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-1_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-1_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-1_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-2_Bx       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-2_Bx.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2_Bx      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-2_Bx.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_-1-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_-1-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_-1-0_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_-1-0_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--2_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--2_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--1_Bz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--1_Bz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-0_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-0_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-0_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-0_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-1_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-1_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-1_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-1_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-2_Bz       INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-2_Bz.txt      VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2_Bz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-2_Bz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_-1-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_-1-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_-1-0_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_-1-0_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--2_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--2_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0--1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0--1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0--1_Bxz    INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0--1_Bxz.txt   VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-0_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-0_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-0_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-0_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-1_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-1_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-1_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-1_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-0_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-0_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-0_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-0_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/xwindow_0-1_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/xwindow_0-1_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_0-1_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_0-1_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-0_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-0_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_1-1_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_1-1_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-0_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-0_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/zwindow_2-1_h_0-2_Bxz      INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/zwindow_2-1_h_0-2_Bxz.txt     VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-0_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-0_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_0-1_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_0-1_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-0_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-0_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_1-1_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_1-1_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-0_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-0_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+POINTCLOUD_PROBE NAME=$(probe_path)/skylight_2-1_h_0-2_Bxz     INTERVAL $(probe_int) PRECISION FLOAT GEOM FILE $(location_path)/skylight_2-1_h_0-2_Bxz.txt    VARS p comp(u,0) comp(u,1) comp(u,2)
+
+# # For output Probe files
+# PROBE NAME=$(probe_path)/col_0-n2               INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2.txt              VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n1               INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1.txt              VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-0                INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0.txt               VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n2_Bx            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bx.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n1_Bx            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bx.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-0_Bx             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bx.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n2_Bz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n1_Bz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-0_Bz             INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bz.txt            VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n2_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n2_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-n1_Bxz           INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-n1_Bxz.txt          VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/col_0-0_Bxz            INTERVAL $(probe_int) GEOM FILE $(location_path)/col_0-0_Bxz.txt           VARS comp(u,0) comp(u,1) comp(u,2) p T D S
+# PROBE NAME=$(probe_path)/extraProbe             INTERVAL $(probe_int) GEOM FILE $(location_path)/extraProbe.txt            VARS mag(u)_avg comp(u_avg,0) comp(u_avg,1) comp(u_avg,2) p_avg T_avg D_avg S_avg
