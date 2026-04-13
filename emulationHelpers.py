@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.stats import norm
 import seaborn as sns
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
@@ -281,6 +282,69 @@ def summarize_bayesian_ventilation_fits(fit_results):
         return pd.DataFrame(columns=["panel", "direction", "n_obs", "parameter"])
     return pd.concat(rows, ignore_index=True)
 
+
+
+def plot_empirical_model_error_distribution(
+    data,
+    y_var,
+    x_var,
+    *,
+    ax=None,
+    bins=40,
+    density=True,
+    color="0.55",
+    hist_alpha=0.7,
+    line_color="k",
+    title="Empirical Model Error Distribution",
+):
+    """Plot the empirical error y_var - x_var and overlay a fitted normal density."""
+    error = pd.to_numeric(data[y_var], errors="coerce") - pd.to_numeric(data[x_var], errors="coerce")
+    error = error[np.isfinite(error)].to_numpy(dtype=float)
+    if len(error) == 0:
+        raise ValueError("No finite model-error values were found.")
+
+    mu_hat, sigma_hat = norm.fit(error)
+    sigma_hat = max(float(sigma_hat), 1e-12)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(7, 4.5), dpi=140)
+    else:
+        fig = ax.figure
+
+    sns.histplot(
+        error,
+        bins=bins,
+        stat="density" if density else "count",
+        color=color,
+        alpha=hist_alpha,
+        edgecolor="white",
+        ax=ax,
+    )
+
+    x_grid = np.linspace(error.min(), error.max(), 400)
+    if density:
+        ax.plot(
+            x_grid,
+            norm.pdf(x_grid, loc=mu_hat, scale=sigma_hat),
+            color=line_color,
+            linewidth=2.5,
+            label=f"Normal fit: mu={mu_hat:.3f}, sigma={sigma_hat:.3f}",
+        )
+
+    ax.axvline(0.0, color="tab:red", linestyle="--", linewidth=1.5, label="Zero error")
+    ax.axvline(mu_hat, color=line_color, linestyle="-", linewidth=1.5)
+    ax.set_title(title, fontsize=16)
+    ax.set_xlabel(f"Error = {y_var} - {x_var}", fontsize=13)
+    ax.set_ylabel("Density" if density else "Count", fontsize=13)
+    ax.grid(True, alpha=0.25)
+    ax.legend(frameon=False)
+
+    return fig, ax, {
+        "error": error,
+        "mu_hat": float(mu_hat),
+        "sigma_hat": float(sigma_hat),
+        "n": int(len(error)),
+    }
 
 
 def plot_bayesian_ventilation_parameter_posteriors(
