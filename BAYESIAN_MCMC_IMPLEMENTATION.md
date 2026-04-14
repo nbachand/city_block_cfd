@@ -68,11 +68,11 @@ This is implemented in [emulationHelpers.py#L161](/oak/stanford/groups/gorle/nba
 The current priors are:
 
 $$
-a \sim \mathrm{LogNormal}(0, \sigma_a)
+a \sim \mathcal{N}(\mu_a, \sigma_a)
 $$
 
 $$
-p_{\mathrm{rms}} \sim \mathrm{HalfNormal}(\sigma_p)
+p_{\mathrm{rms}} \sim \mathrm{TruncatedNormal}(\mu_p, \sigma_p; \text{lower}=0)
 $$
 
 $$
@@ -81,17 +81,19 @@ $$
 
 Important interpretation:
 
-- `a` uses a lognormal prior with `mu = 0`, so its prior median is `exp(0) = 1`
-- `p_rms` remains positive via a half-normal prior
+- `a` now uses a normal prior centered at 1
+- `p_rms` uses a truncated normal prior centered at the measured subgroup mean of `p_rms-noInt-Norm`
+- the `p_rms` prior standard deviation is the measured subgroup standard deviation of `p_rms-noInt-Norm`
 - `sigma_obs` remains positive via a half-normal prior
 
 These priors are defined in [emulationHelpers.py#L163](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L163) to [emulationHelpers.py#L166](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L166).
 
 Default prior scales are currently:
 
-- `a_sigma = 0.5`
-- `p_rms_sigma = 0.1`
-- `obs_sigma = 0.1`
+- `a_mu = 1.0`
+- `a_sigma = 0.1`
+- `p_rms_var = "p_rms-noInt-Norm"`
+- `obs_sigma = 0.01`
 
 See [emulationHelpers.py#L141](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L141) to [emulationHelpers.py#L143](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L143).
 
@@ -199,9 +201,10 @@ The notebook currently uses a cache directory named:
 
 The notebook cell that launches or reloads the scalar-posterior workflow lives in [emulationMCMC.ipynb](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationMCMC.ipynb). The important settings are:
 
-- `a_sigma = 0.5`
-- `p_rms_sigma = 0.1`
-- `obs_sigma = 0.1`
+- `a_mu = 1.0`
+- `a_sigma = 0.1`
+- `p_rms_var = "p_rms-noInt-Norm"`
+- `obs_sigma = 0.01`
 - cached save/load behavior through `save_bayesian_ventilation_fit_results(...)` and `load_bayesian_ventilation_fit_results(...)`
 
 ## Conceptual Summary

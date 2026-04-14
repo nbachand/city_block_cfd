@@ -22,6 +22,15 @@ def ventilation_redecomp_p_op(u_model, a, p_rms):
     )
 
 
+@wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
+def ventilation_redecomp_q_op(u_model, a, q_rms):
+    """PyTensor wrapper around pyafn.ventilationReDecomp_q for scalar subgroup parameters."""
+    return np.asarray(
+        pyafn.ventilationReDecomp_q(np.asarray(u_model, dtype=float), float(a), float(q_rms)),
+        dtype=float,
+    )
+
+
 def readEmulationMI(home_dir="./"):
 
     ############### Read #########
@@ -123,16 +132,16 @@ def prepare_bayesian_ventilation_subgroup(data, y_var, x_var, skylight, sdelp):
 
 
 def _summarize_parameter_draws(parameter_draws):
-    summary = parameter_draws.describe(percentiles=[0.03, 0.5, 0.97]).T
+    summary = parameter_draws.describe(percentiles=[0.025, 0.5, 0.975]).T
     summary = summary.rename(
         columns={
             "50%": "median",
             "std": "sd",
-            "3%": "hdi_3%",
-            "97%": "hdi_97%",
+            "2.5%": "hdi_2.5%",
+            "97.5%": "hdi_97.5%",
         }
     )
-    return summary[["mean", "sd", "hdi_3%", "median", "hdi_97%"]]
+    return summary[["mean", "sd", "hdi_2.5%", "median", "hdi_97.5%"]]
 
 
 
@@ -140,9 +149,11 @@ def fit_bayesian_pressure_subgroup(
     u_model,
     y_obs,
     *,
-    a_sigma=0.5,
-    p_rms_sigma=0.1,
-    obs_sigma=0.1,
+    a_mu=1.0,
+    a_sigma=0.1,
+    p_rms_mu=0.05,
+    p_rms_sigma=0.005,
+    obs_sigma=0.01,
     random_seed=42,
     sample_kwargs=None,
 ):
@@ -162,9 +173,8 @@ def fit_bayesian_pressure_subgroup(
 
     with pm.Model():
         u_model_data = pm.Data("u_model", u_model)
-        # LogNormal(mu=0) has median 1, which matches alpha's expected scale better.
-        a = pm.LogNormal("a", mu=0.0, sigma=a_sigma)
-        p_rms = pm.HalfNormal("p_rms", sigma=p_rms_sigma)
+        a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
+        p_rms = pm.TruncatedNormal("p_rms", mu=p_rms_mu, sigma=p_rms_sigma, lower=0.0)
         sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
         mu = ventilation_redecomp_p_op(u_model_data, a, p_rms)
         pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
@@ -203,12 +213,83 @@ def _parameter_draws_from_idata(idata):
     )
 
 
+def _parameter_draws_q_from_idata(idata):
+    posterior = idata.posterior
+    return pd.DataFrame(
+        {
+            "a": np.asarray(posterior["a"].values).reshape(-1),
+            "q_rms": np.asarray(posterior["q_rms"].values).reshape(-1),
+            "sigma_obs": np.asarray(posterior["sigma_obs"].values).reshape(-1),
+        }
+    )
+
+
+
+def _posterior_median_from_parameter_draws_generic(parameter_draws, columns):
+    return {column: float(np.median(parameter_draws[column])) for column in columns}
+
 
 def _posterior_median_from_parameter_draws(parameter_draws):
+    return _posterior_median_from_parameter_draws_generic(parameter_draws, ["a", "p_rms", "sigma_obs"])
+
+
+def _posterior_median_from_parameter_draws_q(parameter_draws):
+    return _posterior_median_from_parameter_draws_generic(parameter_draws, ["a", "q_rms", "sigma_obs"])
+
+
+def fit_bayesian_q_subgroup(
+    u_model,
+    y_obs,
+    *,
+    a_mu=1.0,
+    a_sigma=0.1,
+    q_rms_mu=0.12,
+    q_rms_sigma=0.012,
+    obs_sigma=0.01,
+    random_seed=42,
+    sample_kwargs=None,
+):
+    """Fit one a/q_rms/sigma_obs posterior for a single subgroup."""
+    import pymc as pm
+
+    u_model = np.asarray(u_model, dtype=float)
+    y_obs = np.asarray(y_obs, dtype=float)
+    if u_model.ndim != 1 or y_obs.ndim != 1:
+        raise ValueError("u_model and y_obs must be 1D arrays.")
+    if len(u_model) != len(y_obs):
+        raise ValueError("u_model and y_obs must have the same length.")
+    if len(u_model) == 0:
+        raise ValueError("Cannot fit a subgroup with zero samples.")
+
+    sample_kwargs_local = dict(sample_kwargs or {})
+
+    with pm.Model():
+        u_model_data = pm.Data("u_model", u_model)
+        a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
+        q_rms = pm.TruncatedNormal("q_rms", mu=q_rms_mu, sigma=q_rms_sigma, lower=0.0)
+        sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
+        mu = ventilation_redecomp_q_op(u_model_data, a, q_rms)
+        pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
+
+        sample_kwargs_local.setdefault("draws", 1000)
+        sample_kwargs_local.setdefault("tune", 1000)
+        sample_kwargs_local.setdefault("chains", 4)
+        sample_kwargs_local.setdefault("cores", 4)
+        sample_kwargs_local.setdefault("progressbar", True)
+        sample_kwargs_local.setdefault("step", pm.Slice())
+        sample_kwargs_local.setdefault("random_seed", random_seed)
+
+        idata = pm.sample(**sample_kwargs_local)
+
+    parameter_draws = _parameter_draws_q_from_idata(idata)
+    summary = _summarize_parameter_draws(parameter_draws)
+
     return {
-        "a": float(np.median(parameter_draws["a"])),
-        "p_rms": float(np.median(parameter_draws["p_rms"])),
-        "sigma_obs": float(np.median(parameter_draws["sigma_obs"])),
+        "idata": idata,
+        "summary": summary,
+        "parameter_draws": parameter_draws,
+        "posterior_median": _posterior_median_from_parameter_draws_q(parameter_draws),
+        "n_obs": len(u_model),
     }
 
 
@@ -265,6 +346,58 @@ def posterior_predict_bayesian_pressure_curve(
     }
 
 
+def posterior_predict_bayesian_q_curve(
+    fit_result,
+    x_grid,
+    *,
+    sign=1,
+    credible_interval=0.95,
+    posterior_draws_for_curves=300,
+    include_obs_noise=True,
+    random_seed=42,
+):
+    """Generate posterior output bands from direct a/q_rms subgroup fits."""
+    x_grid = np.asarray(x_grid, dtype=float)
+    if x_grid.ndim != 1:
+        raise ValueError("x_grid must be a 1D array.")
+    if len(x_grid) == 0:
+        raise ValueError("x_grid must contain at least one point.")
+
+    parameter_draws = fit_result["parameter_draws"].reset_index(drop=True)
+    if posterior_draws_for_curves is not None and len(parameter_draws) > posterior_draws_for_curves:
+        idx = np.linspace(0, len(parameter_draws) - 1, posterior_draws_for_curves, dtype=int)
+        parameter_draws = parameter_draws.iloc[idx].reset_index(drop=True)
+
+    a_vals = parameter_draws["a"].to_numpy(dtype=float)
+    q_vals = parameter_draws["q_rms"].to_numpy(dtype=float)
+    sigma_vals = np.maximum(parameter_draws["sigma_obs"].to_numpy(dtype=float), 1e-8)
+
+    target_shape = (len(parameter_draws), len(x_grid))
+    x_eval = np.broadcast_to(x_grid[np.newaxis, :], target_shape)
+    a_eval = np.broadcast_to(a_vals[:, np.newaxis], target_shape)
+    q_eval = np.broadcast_to(q_vals[:, np.newaxis], target_shape)
+    y_draws = np.asarray(pyafn.ventilationReDecomp_q(x_eval, a_eval, q_eval), dtype=float)
+
+    if include_obs_noise:
+        rng = np.random.default_rng(random_seed)
+        y_draws = y_draws + rng.normal(loc=0.0, scale=sigma_vals[:, np.newaxis], size=y_draws.shape)
+
+    y_draws = sign * y_draws
+    if sign < 0:
+        x_plot = -x_grid[::-1]
+        y_draws = y_draws[:, ::-1]
+    else:
+        x_plot = x_grid
+
+    alpha = (1.0 - credible_interval) / 2.0
+    return {
+        "x": x_plot,
+        "median": np.quantile(y_draws, 0.5, axis=0),
+        "lower": np.quantile(y_draws, alpha, axis=0),
+        "upper": np.quantile(y_draws, 1.0 - alpha, axis=0),
+    }
+
+
 
 def summarize_bayesian_ventilation_fits(fit_results):
     """Combine subgroup summaries from Bayesian ventilation subgroup fits."""
@@ -290,61 +423,357 @@ def plot_empirical_model_error_distribution(
     x_var,
     *,
     ax=None,
+    plot_mode="hist1d",
+    split_by_subgroup=False,
+    show_split_marginals=False,
     bins=40,
     density=True,
     color="0.55",
     hist_alpha=0.7,
     line_color="k",
+    cmap="magma",
+    colorbar=True,
+    colorbar_max=50,
+    positive_hist_color="tab:blue",
+    negative_hist_color="tab:orange",
+    error_xlabel=None,
+    ventilation_ylabel=None,
+    positive_ylabel="Flow Entering",
+    negative_ylabel="Flow Exiting",
+    print_counts=False,
     title="Empirical Model Error Distribution",
 ):
-    """Plot the empirical error y_var - x_var and overlay a fitted normal density."""
-    error = pd.to_numeric(data[y_var], errors="coerce") - pd.to_numeric(data[x_var], errors="coerce")
-    error = error[np.isfinite(error)].to_numpy(dtype=float)
-    if len(error) == 0:
-        raise ValueError("No finite model-error values were found.")
+    """Plot empirical model error diagnostics in 1D or 2D."""
+    panel_title_fontsize = 24
+    axis_label_fontsize = 24
+    marginal_label_fontsize = 20
+    tick_label_fontsize = 16
+    colorbar_label_fontsize = 16
 
-    mu_hat, sigma_hat = norm.fit(error)
-    sigma_hat = max(float(sigma_hat), 1e-12)
+    def _compute_error_stats(df):
+        y_vals = pd.to_numeric(df[y_var], errors="coerce").to_numpy(dtype=float)
+        x_vals = pd.to_numeric(df[x_var], errors="coerce").to_numpy(dtype=float)
+        valid = np.isfinite(y_vals) & np.isfinite(x_vals)
+        error_vals = y_vals[valid] - x_vals[valid]
+        ventilation_vals = y_vals[valid]
+        if len(error_vals) == 0:
+            return None
+        mu_local, sigma_local = norm.fit(error_vals)
+        sigma_local = max(float(sigma_local), 1e-12)
+        return {
+            "error": error_vals,
+            "ventilation": ventilation_vals,
+            "mu_hat": float(mu_local),
+            "sigma_hat": float(sigma_local),
+            "n": int(len(error_vals)),
+        }
 
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 4.5), dpi=140)
-    else:
-        fig = ax.figure
-
-    sns.histplot(
-        error,
-        bins=bins,
-        stat="density" if density else "count",
-        color=color,
-        alpha=hist_alpha,
-        edgecolor="white",
-        ax=ax,
-    )
-
-    x_grid = np.linspace(error.min(), error.max(), 400)
-    if density:
-        ax.plot(
-            x_grid,
-            norm.pdf(x_grid, loc=mu_hat, scale=sigma_hat),
-            color=line_color,
-            linewidth=2.5,
-            label=f"Normal fit: mu={mu_hat:.3f}, sigma={sigma_hat:.3f}",
+    def _draw_hist(axis, stats, panel_title):
+        error_vals = stats["error"]
+        sns.histplot(
+            error_vals,
+            bins=bins,
+            stat="density" if density else "count",
+            color=color,
+            alpha=hist_alpha,
+            edgecolor="white",
+            ax=axis,
         )
 
-    ax.axvline(0.0, color="tab:red", linestyle="--", linewidth=1.5, label="Zero error")
-    ax.axvline(mu_hat, color=line_color, linestyle="-", linewidth=1.5)
-    ax.set_title(title, fontsize=16)
-    ax.set_xlabel(f"Error = {y_var} - {x_var}", fontsize=13)
-    ax.set_ylabel("Density" if density else "Count", fontsize=13)
-    ax.grid(True, alpha=0.25)
-    ax.legend(frameon=False)
+        axis.axvline(stats["mu_hat"], color="black", linestyle="--", linewidth=1.8)
+        axis.set_title(panel_title, fontsize=panel_title_fontsize)
+        axis.set_xlabel(error_xlabel or f"Error = {y_var} - {x_var}", fontsize=axis_label_fontsize)
+        axis.set_ylabel("Density" if density else "Count", fontsize=axis_label_fontsize)
+        axis.tick_params(axis="both", labelsize=tick_label_fontsize)
+        axis.grid(True, alpha=0.25)
 
-    return fig, ax, {
-        "error": error,
-        "mu_hat": float(mu_hat),
-        "sigma_hat": float(sigma_hat),
-        "n": int(len(error)),
-    }
+    def _draw_hist2d(axis, stats, panel_title, x_edges, y_edges, norm_obj):
+        hist = axis.hist2d(
+            stats["error"],
+            stats["ventilation"],
+            bins=[x_edges, y_edges],
+            cmap=cmap,
+            norm=norm_obj,
+            cmin=1,
+        )
+        axis.axvline(0.0, color="black", linestyle="-", linewidth=1.2, alpha=0.9)
+        axis.axhline(0.0, color="black", linestyle="-", linewidth=1.2, alpha=0.9)
+        axis.set_xlabel(error_xlabel or f"Error = {y_var} - {x_var}", fontsize=axis_label_fontsize)
+        axis.set_ylabel(ventilation_ylabel or f"Observed Ventilation = {y_var}", fontsize=axis_label_fontsize)
+        axis.tick_params(axis="both", labelsize=tick_label_fontsize)
+        axis.grid(False)
+        return hist
+
+    def _print_count_summary(total_stats, stats_by_panel=None):
+        if not print_counts:
+            return
+        total_n = 0 if total_stats is None else total_stats["n"]
+        print(f"Total count: {total_n}")
+        if stats_by_panel is None:
+            return
+        for panel_name, panel_stats in stats_by_panel.items():
+            panel_n = 0 if panel_stats is None else panel_stats["n"]
+            print(f"  {panel_name}: {panel_n}")
+
+    if plot_mode not in {"hist1d", "hist2d"}:
+        raise ValueError("plot_mode must be 'hist1d' or 'hist2d'.")
+
+    if not split_by_subgroup and plot_mode == "hist1d":
+        stats = _compute_error_stats(data)
+        if stats is None:
+            raise ValueError("No finite model-error values were found.")
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 4.5), dpi=140)
+        else:
+            fig = ax.figure
+
+        _draw_hist(ax, stats, title)
+        _print_count_summary(stats)
+        return fig, ax, stats
+
+    if not split_by_subgroup and plot_mode == "hist2d":
+        stats = _compute_error_stats(data)
+        if stats is None:
+            raise ValueError("No finite model-error values were found.")
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 5.5), dpi=140)
+        else:
+            fig = ax.figure
+
+        x_edges = np.linspace(stats["error"].min(), stats["error"].max(), bins + 1)
+        y_edges = np.linspace(stats["ventilation"].min(), stats["ventilation"].max(), bins + 1)
+        counts, _, _ = np.histogram2d(stats["error"], stats["ventilation"], bins=[x_edges, y_edges])
+        vmax = max(float(colorbar_max), 1.0) if colorbar_max is not None else max(float(counts.max()), 1.0)
+        norm_obj = Normalize(vmin=0, vmax=vmax)
+        hist = _draw_hist2d(ax, stats, title, x_edges, y_edges, norm_obj)
+        if colorbar:
+            cbar = fig.colorbar(hist[3], ax=ax)
+            cbar.set_label("Count")
+        _print_count_summary(stats)
+        return fig, ax, stats
+
+    if plot_mode == "hist1d":
+        subgroup_order = [
+            ("Window", False, 1),
+            ("Window", False, -1),
+            ("Skylight", True, 1),
+            ("Skylight", True, -1),
+        ]
+
+        if ax is None:
+            fig, axs = plt.subplots(2, 2, figsize=(12, 8), dpi=140, sharex=False, sharey=False)
+        else:
+            axs = np.asarray(ax)
+            if axs.shape != (2, 2):
+                raise ValueError("When split_by_subgroup=True and plot_mode='hist1d', ax must be a 2x2 array of axes.")
+            fig = axs.flat[0].figure
+
+        stats_by_panel = {}
+        for axis, (opening_label, skylight_value, sdelp_value) in zip(np.asarray(axs).flat, subgroup_order):
+            direction_label = "Positive Sign" if sdelp_value > 0 else "Negative Sign"
+            subset = data[(data["skylight"] == skylight_value) & (data["Sdelp"] == sdelp_value)]
+            stats = _compute_error_stats(subset)
+            panel_key = (opening_label, sdelp_value)
+            stats_by_panel[panel_key] = stats
+
+            if stats is None:
+                axis.set_title(f"{opening_label}, {direction_label}", fontsize=panel_title_fontsize)
+                axis.text(0.5, 0.5, "No finite data", ha="center", va="center", transform=axis.transAxes)
+                axis.set_axis_off()
+                continue
+
+            _draw_hist(axis, stats, f"{opening_label}, {direction_label}")
+
+        fig.tight_layout()
+        total_stats = _compute_error_stats(data)
+        labeled_panel_stats = {
+            f"{opening_label}, {'Positive Sign' if sdelp_value > 0 else 'Negative Sign'}": panel_stats
+            for (opening_label, sdelp_value), panel_stats in stats_by_panel.items()
+        }
+        _print_count_summary(total_stats, labeled_panel_stats)
+        return fig, axs, stats_by_panel
+
+    subgroup_order = [
+        ("Window", False),
+        ("Skylight", True),
+    ]
+
+    all_stats = []
+    stats_by_panel = {}
+    for opening_label, skylight_value in subgroup_order:
+        subset = data[data["skylight"] == skylight_value]
+        stats = _compute_error_stats(subset)
+        stats_by_panel[opening_label] = stats
+        if stats is not None:
+            all_stats.append(stats)
+
+    if not all_stats:
+        raise ValueError("No finite model-error values were found.")
+
+    all_error = np.concatenate([stats["error"] for stats in all_stats])
+    all_ventilation = np.concatenate([stats["ventilation"] for stats in all_stats])
+    x_edges = np.linspace(all_error.min(), all_error.max(), bins + 1)
+    y_edges = np.linspace(all_ventilation.min(), all_ventilation.max(), bins + 1)
+
+    max_count = 0.0
+    for stats in all_stats:
+        counts, _, _ = np.histogram2d(stats["error"], stats["ventilation"], bins=[x_edges, y_edges])
+        max_count = max(max_count, float(counts.max()))
+    vmax = max(float(colorbar_max), 1.0) if colorbar_max is not None else max(max_count, 1.0)
+    norm_obj = Normalize(vmin=0, vmax=vmax)
+
+    if show_split_marginals:
+        if ax is not None:
+            raise ValueError("Custom axes are not supported when show_split_marginals=True.")
+
+        fig = plt.figure(figsize=(12, 8), dpi=140)
+        gs = fig.add_gridspec(
+            3,
+            2,
+            height_ratios=[1, 2, 1],
+            hspace=0.08,
+            wspace=0.12,
+        )
+
+        top_axes = []
+        main_axes = []
+        bottom_axes = []
+        hist = None
+
+        max_pos_count = 1
+        max_neg_count = 1
+        panel_histograms = {}
+        for opening_label, _ in subgroup_order:
+            stats = stats_by_panel[opening_label]
+            if stats is None:
+                panel_histograms[opening_label] = {
+                    "positive_counts": np.zeros(len(x_edges) - 1, dtype=float),
+                    "negative_counts": np.zeros(len(x_edges) - 1, dtype=float),
+                }
+                continue
+            pos_error = stats["error"][stats["ventilation"] > 0]
+            neg_error = stats["error"][stats["ventilation"] < 0]
+            pos_counts, _ = np.histogram(pos_error, bins=x_edges)
+            neg_counts, _ = np.histogram(neg_error, bins=x_edges)
+            panel_histograms[opening_label] = {
+                "positive_counts": pos_counts,
+                "negative_counts": neg_counts,
+            }
+            max_pos_count = max(max_pos_count, int(pos_counts.max()) if len(pos_counts) else 1)
+            max_neg_count = max(max_neg_count, int(neg_counts.max()) if len(neg_counts) else 1)
+
+        bar_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+        bar_widths = np.diff(x_edges)
+        x_limits = (x_edges[0], x_edges[-1])
+
+        for col_idx, (opening_label, _) in enumerate(subgroup_order):
+            shared_main = main_axes[0] if main_axes else None
+            ax_main = fig.add_subplot(gs[1, col_idx], sharex=shared_main)
+            ax_top = fig.add_subplot(gs[0, col_idx], sharex=ax_main)
+            ax_bottom = fig.add_subplot(gs[2, col_idx], sharex=ax_main)
+            top_axes.append(ax_top)
+            main_axes.append(ax_main)
+            bottom_axes.append(ax_bottom)
+
+            stats = stats_by_panel[opening_label]
+            if stats is None:
+                for axis in (ax_top, ax_main, ax_bottom):
+                    axis.text(0.5, 0.5, "No finite data", ha="center", va="center", transform=axis.transAxes)
+                    axis.set_axis_off()
+                continue
+
+            hist = _draw_hist2d(ax_main, stats, opening_label, x_edges, y_edges, norm_obj)
+            hist_data = panel_histograms[opening_label]
+
+            ax_top.bar(
+                bar_centers,
+                hist_data["positive_counts"],
+                width=bar_widths,
+                color=positive_hist_color,
+                alpha=0.85,
+                edgecolor="white",
+                linewidth=0.4,
+                align="center",
+            )
+            ax_top.set_ylim(0, max_pos_count * 1.08)
+            ax_top.set_title(f"{opening_label}", fontsize=panel_title_fontsize)
+            ax_top.set_ylabel(positive_ylabel, fontsize=marginal_label_fontsize)
+            ax_top.axvline(stats["mu_hat"], color="black", linestyle="--", linewidth=1.8)
+            ax_top.grid(True, axis="y", alpha=0.2)
+            ax_top.tick_params(axis="x", labelbottom=False)
+            ax_top.tick_params(axis="y", labelsize=tick_label_fontsize)
+            ax_top.set_xlim(*x_limits)
+
+            ax_bottom.bar(
+                bar_centers,
+                hist_data["negative_counts"],
+                width=bar_widths,
+                color=negative_hist_color,
+                alpha=0.85,
+                edgecolor="white",
+                linewidth=0.4,
+                align="center",
+            )
+            ax_bottom.set_ylim(max_neg_count * 1.08, 0)
+            ax_bottom.set_ylabel(negative_ylabel, fontsize=marginal_label_fontsize)
+            ax_bottom.axvline(stats["mu_hat"], color="black", linestyle="--", linewidth=1.8)
+            ax_bottom.grid(True, axis="y", alpha=0.2)
+            ax_bottom.set_xlabel(error_xlabel or f"Error = {y_var} - {x_var}", fontsize=axis_label_fontsize)
+            ax_bottom.tick_params(axis="both", labelsize=tick_label_fontsize)
+            ax_bottom.set_xlim(*x_limits)
+
+            ax_main.set_xlabel("")
+            ax_main.tick_params(axis="x", bottom=False, labelbottom=False)
+            ax_main.set_xlim(*x_limits)
+            if col_idx > 0:
+                ax_top.set_ylabel("")
+                ax_main.set_ylabel("")
+                ax_bottom.set_ylabel("")
+
+        if colorbar and hist is not None:
+            fig.subplots_adjust(bottom=0.10, top=0.90, left=0.08, right=0.90)
+            cbar_ax = fig.add_axes((0.92, 0.28, 0.02, 0.38))
+            cbar = fig.colorbar(hist[3], cax=cbar_ax, orientation="vertical")
+            cbar.set_label("Count", fontsize=colorbar_label_fontsize)
+            cbar.ax.tick_params(labelsize=tick_label_fontsize)
+        else:
+            fig.tight_layout(rect=[0, 0, 1, 0.95])
+        total_stats = _compute_error_stats(data)
+        _print_count_summary(total_stats, stats_by_panel)
+        return fig, np.asarray(main_axes), stats_by_panel
+
+    if ax is None:
+        fig, axs = plt.subplots(1, 2, figsize=(12, 5.5), dpi=140, sharex=True, sharey=True)
+    else:
+        axs = np.asarray(ax)
+        if axs.shape != (2,):
+            raise ValueError("When split_by_subgroup=True and plot_mode='hist2d', ax must be a length-2 array of axes.")
+        fig = axs.flat[0].figure
+
+    hist = None
+    for axis, (opening_label, _) in zip(np.asarray(axs).flat, subgroup_order):
+        stats = stats_by_panel[opening_label]
+        if stats is None:
+            axis.set_title(opening_label, fontsize=panel_title_fontsize)
+            axis.text(0.5, 0.5, "No finite data", ha="center", va="center", transform=axis.transAxes)
+            axis.set_axis_off()
+            continue
+
+        hist = _draw_hist2d(axis, stats, opening_label, x_edges, y_edges, norm_obj)
+
+    if colorbar and hist is not None:
+        fig.subplots_adjust(bottom=0.22, top=0.88, wspace=0.12)
+        cbar_ax = fig.add_axes((0.18, 0.08, 0.64, 0.04))
+        cbar = fig.colorbar(hist[3], cax=cbar_ax, orientation="horizontal")
+        cbar.set_label("Count", fontsize=colorbar_label_fontsize)
+        cbar.ax.tick_params(labelsize=tick_label_fontsize)
+    else:
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
+    total_stats = _compute_error_stats(data)
+    _print_count_summary(total_stats, stats_by_panel)
+    return fig, axs, stats_by_panel
 
 
 def plot_bayesian_ventilation_parameter_posteriors(
@@ -354,10 +783,18 @@ def plot_bayesian_ventilation_parameter_posteriors(
     labels=None,
     bins=40,
     kde=True,
+    overlay_normal=False,
+    normal_line_color="tab:red",
+    normal_linewidth=2.0,
     figsize=None,
     axes=None,
 ):
     """Plot posterior parameter distributions for each fitted ventilation subgroup."""
+    panel_title_fontsize = 24
+    axis_label_fontsize = 24
+    row_label_fontsize = 20
+    tick_label_fontsize = 16
+
     if columns is None:
         columns = ["a", "p_rms", "sigma_obs"]
     columns = list(columns)
@@ -418,22 +855,32 @@ def plot_bayesian_ventilation_parameter_posteriors(
                 raise ValueError(f"Posterior column '{column}' has no finite values.")
 
             sns.histplot(vals, bins=bins, kde=kde, stat="density", ax=ax, color="0.45")
+            if overlay_normal:
+                mean = float(np.mean(vals))
+                sd = max(float(np.std(vals, ddof=0)), 1e-12)
+                x_grid = np.linspace(vals.min(), vals.max(), 400)
+                ax.plot(
+                    x_grid,
+                    norm.pdf(x_grid, loc=mean, scale=sd),
+                    color=normal_line_color,
+                    linewidth=normal_linewidth,
+                )
             median = float(np.median(vals))
-            lower = float(np.quantile(vals, 0.03))
-            upper = float(np.quantile(vals, 0.97))
-            ax.axvline(median, color="k", linewidth=2)
+            lower = float(np.quantile(vals, 0.025))
+            upper = float(np.quantile(vals, 0.975))
+            ax.axvline(median, color="k", linestyle="--", linewidth=2)
             ax.axvspan(lower, upper, color="0.7", alpha=0.25)
             ax.grid(True, alpha=0.25)
-            ax.tick_params(labelsize=11)
+            ax.tick_params(labelsize=tick_label_fontsize)
 
             if row_idx == 0:
-                ax.set_title(label_map.get(column, column), fontsize=14)
+                ax.set_title(label_map.get(column, column), fontsize=panel_title_fontsize)
             if col_idx == 0:
-                ax.set_ylabel(f"{title}\n{direction}", fontsize=12)
+                ax.set_ylabel(f"{title}\n{direction}", fontsize=row_label_fontsize)
             else:
                 ax.set_ylabel("")
             if row_idx == n_rows - 1:
-                ax.set_xlabel(label_map.get(column, column), fontsize=12)
+                ax.set_xlabel(label_map.get(column, column), fontsize=axis_label_fontsize)
             else:
                 ax.set_xlabel("")
 
@@ -519,15 +966,53 @@ def load_bayesian_ventilation_fit_results(output_dir):
     return fit_results
 
 
+def load_bayesian_q_ventilation_fit_results(output_dir):
+    """Load saved q-side Bayesian subgroup MCMC results from NetCDF plus JSON metadata."""
+    import json
+    from pathlib import Path
+    import arviz as az
+
+    output_dir = Path(output_dir)
+    metadata = json.loads((output_dir / "metadata.json").read_text())
+    fit_results = {}
+
+    for entry in metadata.get("entries", []):
+        title = entry["panel"]
+        direction = entry["direction"]
+        idata = az.from_netcdf(output_dir / entry["idata_file"])
+        parameter_draws = _parameter_draws_q_from_idata(idata)
+        subgroup_meta = entry.get("subgroup", {})
+        subgroup = {
+            "title": subgroup_meta.get("title", title),
+            "direction": subgroup_meta.get("direction", direction),
+            "skylight": bool(subgroup_meta.get("skylight", title == "Skylight")),
+            "sdelp": int(subgroup_meta.get("sdelp", 1 if direction == "Flow Entering" else -1)),
+            "u_model": np.asarray(subgroup_meta.get("u_model", []), dtype=float),
+            "y_obs": np.asarray(subgroup_meta.get("y_obs", []), dtype=float),
+        }
+        fit_results[(title, direction)] = {
+            "idata": idata,
+            "summary": _summarize_parameter_draws(parameter_draws),
+            "parameter_draws": parameter_draws,
+            "posterior_median": _posterior_median_from_parameter_draws_q(parameter_draws),
+            "n_obs": int(entry.get("n_obs", len(subgroup["u_model"]))),
+            "sign": int(entry.get("sign", 1)),
+            "subgroup": subgroup,
+        }
+
+    return fit_results
+
+
 
 def fit_bayesian_ventilation_p_subgroups(
     data,
     y_var,
     x_var,
     *,
-    a_sigma=0.5,
-    p_rms_sigma=0.1,
-    obs_sigma=0.1,
+    p_rms_var="p_rms-noInt-Norm",
+    a_mu=1.0,
+    a_sigma=0.1,
+    obs_sigma=0.01,
     sample_kwargs=None,
     random_seed=42,
 ):
@@ -536,6 +1021,7 @@ def fit_bayesian_ventilation_p_subgroups(
     for i in range(2):
         sl_val = bool(i)
         title = "Skylight" if sl_val else "Window"
+        plotdf = data[data["skylight"] == sl_val].copy()
         for j, (s, lbl) in enumerate([(1, "Flow Entering"), (-1, "Flow Exiting")]):
             subgroup = prepare_bayesian_ventilation_subgroup(data, y_var, x_var, sl_val, s)
             regdf_abs = subgroup["fitdf_abs"]
@@ -543,10 +1029,21 @@ def fit_bayesian_ventilation_p_subgroups(
                 print(f"Skipping Bayesian fit for {title}, {lbl}: no samples")
                 continue
 
+            p_subset = pd.to_numeric(plotdf.loc[plotdf["Sdelp"] == int(s), p_rms_var], errors="coerce")
+            p_subset = p_subset[np.isfinite(p_subset)]
+            if len(p_subset) == 0:
+                print(f"Skipping Bayesian fit for {title}, {lbl}: no finite {p_rms_var} values")
+                continue
+
+            p_rms_mu = float(np.mean(p_subset))
+            p_rms_sigma = max(float(np.std(p_subset, ddof=0)), 1e-6)
+
             fit_result = fit_bayesian_pressure_subgroup(
                 subgroup["u_model"],
                 subgroup["y_obs"],
+                a_mu=a_mu,
                 a_sigma=a_sigma,
+                p_rms_mu=p_rms_mu,
                 p_rms_sigma=p_rms_sigma,
                 obs_sigma=obs_sigma,
                 random_seed=random_seed + i * 10 + j,
@@ -555,12 +1052,75 @@ def fit_bayesian_ventilation_p_subgroups(
 
             fit_result["subgroup"] = subgroup
             fit_result["sign"] = s
+            fit_result["p_rms_prior_mu"] = p_rms_mu
+            fit_result["p_rms_prior_sigma"] = p_rms_sigma
             fit_results[(title, lbl)] = fit_result
 
             med = fit_result["posterior_median"]
             print(
                 f"Bayesian fit {title}, {lbl}: "
                 f"a={med['a']:.4f}, p_rms={med['p_rms']:.4f}, sigma_obs={med['sigma_obs']:.4f}"
+            )
+
+    return fit_results
+
+
+def fit_bayesian_ventilation_q_subgroups(
+    data,
+    y_var,
+    x_var,
+    *,
+    q_rms_var="rms-mass_flux-Norm",
+    a_mu=1.0,
+    a_sigma=0.1,
+    obs_sigma=0.01,
+    sample_kwargs=None,
+    random_seed=42,
+):
+    """Fit one a/q_rms/sigma_obs posterior per Window/Skylight and Entering/Exiting subgroup."""
+    fit_results = {}
+    for i in range(2):
+        sl_val = bool(i)
+        title = "Skylight" if sl_val else "Window"
+        plotdf = data[data["skylight"] == sl_val].copy()
+        for j, (s, lbl) in enumerate([(1, "Flow Entering"), (-1, "Flow Exiting")]):
+            subgroup = prepare_bayesian_ventilation_subgroup(data, y_var, x_var, sl_val, s)
+            regdf_abs = subgroup["fitdf_abs"]
+            if regdf_abs.empty:
+                print(f"Skipping Bayesian q fit for {title}, {lbl}: no samples")
+                continue
+
+            q_subset = pd.to_numeric(plotdf.loc[plotdf["Sdelp"] == int(s), q_rms_var], errors="coerce")
+            q_subset = q_subset[np.isfinite(q_subset)]
+            if len(q_subset) == 0:
+                print(f"Skipping Bayesian q fit for {title}, {lbl}: no finite {q_rms_var} values")
+                continue
+
+            q_rms_mu = float(np.mean(q_subset))
+            q_rms_sigma = max(float(np.std(q_subset, ddof=0)), 1e-6)
+
+            fit_result = fit_bayesian_q_subgroup(
+                subgroup["u_model"],
+                subgroup["y_obs"],
+                a_mu=a_mu,
+                a_sigma=a_sigma,
+                q_rms_mu=q_rms_mu,
+                q_rms_sigma=q_rms_sigma,
+                obs_sigma=obs_sigma,
+                random_seed=random_seed + i * 10 + j,
+                sample_kwargs=sample_kwargs,
+            )
+
+            fit_result["subgroup"] = subgroup
+            fit_result["sign"] = s
+            fit_result["q_rms_prior_mu"] = q_rms_mu
+            fit_result["q_rms_prior_sigma"] = q_rms_sigma
+            fit_results[(title, lbl)] = fit_result
+
+            med = fit_result["posterior_median"]
+            print(
+                f"Bayesian q fit {title}, {lbl}: "
+                f"a={med['a']:.4f}, q_rms={med['q_rms']:.4f}, sigma_obs={med['sigma_obs']:.4f}"
             )
 
     return fit_results
@@ -766,6 +1326,204 @@ def plot_bayesian_ventilation_p_fit_results(
     return fig, axs
 
 
+def plot_bayesian_ventilation_q_fit_results(
+    data,
+    fit_results,
+    y_var,
+    x_var,
+    *,
+    hue="roomType",
+    style="slAll",
+    model_name="Bayesian q_rms Ventilation Model",
+    credible_interval=0.95,
+    posterior_draws_for_curves=300,
+    include_obs_noise=True,
+    curve_points=200,
+    random_seed=42,
+    axes=None,
+    show_row_titles=True,
+    set_axis_labels=True,
+    show_figure_legend=True,
+    add_numeric_colorbar=False,
+    hue_norm=None,
+    palette_numeric="viridis",
+    figure_suptitle=True,
+    colorbar_rect=None,
+    colorbar_orientation="horizontal",
+    colorbar_label=None,
+    xlim=(-0.6, 0.6),
+    ylim=(-0.6, 0.6),
+    show_scatter=True,
+    scatter_alpha=0.6,
+    scatter_size=20,
+    band_alpha=0.3,
+    band_color="0.5",
+    scatter_zorder=1,
+    band_zorder=2,
+    line_zorder=3,
+):
+    """Plot previously-fitted Bayesian q_rms ventilation subgroup results."""
+    data = data.copy()
+    using_external_axes = axes is not None
+    if using_external_axes:
+        axs = np.array(axes).flatten()
+        if len(axs) < 2:
+            raise ValueError("When providing axes, pass at least two axes (Window, Skylight).")
+        axs = axs[:2]
+        fig = axs[0].figure
+    else:
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6), dpi=140, sharex=True, sharey=True)
+        axs = np.array(axs).flatten()
+
+    for ax in axs:
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(labelsize=16)
+        if set_axis_labels:
+            ax.set_xlabel("Modeled Flux Velocity", fontsize=20)
+            ax.set_ylabel("LES Flux Velocity", fontsize=20)
+        if xlim is not None:
+            ax.set_xlim(*xlim)
+        if ylim is not None:
+            ax.set_ylim(*ylim)
+
+    hue_is_numeric = pd.api.types.is_numeric_dtype(data[hue])
+    room_type_hue_order = ["cross", "corner", "dual", "single"] if hue == "roomType" else None
+    if hue_is_numeric and hue_norm is None:
+        finite_vals = pd.to_numeric(data[hue], errors="coerce")
+        finite_vals = finite_vals[np.isfinite(finite_vals)]
+        if len(finite_vals) > 0:
+            hue_norm = Normalize(vmin=finite_vals.min(), vmax=finite_vals.max())
+
+    scatter_collection_for_cbar = None
+
+    for i in range(2):
+        sl_val = bool(i)
+        plotdf = data[data["skylight"] == sl_val].copy()
+        plotdf = plotdf.sort_values(by=[hue, style])
+
+        min_val = min(plotdf[x_var].min(), plotdf[y_var].min())
+        max_val = max(plotdf[x_var].max(), plotdf[y_var].max())
+        xs = np.array([min_val, max_val])
+        axs[i].plot(xs, xs, "r--", label="1:1 Line", zorder=0)
+
+        title = "Skylight" if sl_val else "Window"
+        if show_row_titles:
+            axs[i].set_title(title, fontsize=20)
+
+        for j, (s, stl, lbl) in enumerate([(1, "-", "Flow Entering"), (-1, "-", "Flow Exiting")]):
+            fit_result = fit_results.get((title, lbl))
+            if fit_result is None:
+                continue
+            subgroup = fit_result.get("subgroup")
+            if subgroup is None or len(subgroup["u_model"]) == 0:
+                continue
+            x_min = subgroup["u_model"].min()
+            x_max = subgroup["u_model"].max()
+            if np.isclose(x_min, x_max):
+                x_grid = np.array([x_min], dtype=float)
+            else:
+                x_grid = np.linspace(x_min, x_max, curve_points)
+            curve = posterior_predict_bayesian_q_curve(
+                fit_result,
+                x_grid,
+                sign=s,
+                credible_interval=credible_interval,
+                posterior_draws_for_curves=posterior_draws_for_curves,
+                include_obs_noise=include_obs_noise,
+                random_seed=random_seed + 1000 + i * 10 + j,
+            )
+            fit_result["curve"] = curve
+
+            band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
+            band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
+            line_label = "Posterior Median Model" if s > 0 else None
+            axs[i].fill_between(
+                curve["x"],
+                curve["lower"],
+                curve["upper"],
+                color=band_color,
+                alpha=band_alpha,
+                label=band_label,
+                zorder=band_zorder,
+            )
+            axs[i].plot(
+                curve["x"],
+                curve["median"],
+                color="k",
+                linestyle=stl,
+                linewidth=2.5,
+                label=line_label,
+                zorder=line_zorder,
+            )
+
+        scatter_ax = None
+        if show_scatter:
+            legend_mode = "auto"
+            if hue_is_numeric:
+                legend_mode = False
+            scatter_ax = sns.scatterplot(
+                data=plotdf,
+                x=x_var,
+                y=y_var,
+                hue=hue,
+                style=style,
+                alpha=scatter_alpha,
+                s=scatter_size,
+                ax=axs[i],
+                palette=palette_numeric if hue_is_numeric else "colorblind",
+                hue_norm=hue_norm if hue_is_numeric else None,
+                hue_order=None if hue_is_numeric else room_type_hue_order,
+                legend=legend_mode,
+                zorder=scatter_zorder,
+            )
+            if hue_is_numeric and len(scatter_ax.collections) > 0:
+                scatter_collection_for_cbar = scatter_ax.collections[0]
+                if scatter_collection_for_cbar is not None:
+                    scatter_collection_for_cbar.set_cmap(palette_numeric)
+                    if hue_norm is not None:
+                        scatter_collection_for_cbar.set_norm(hue_norm)
+
+    handles, labels = axs[0].get_legend_handles_labels()
+    for ax in axs:
+        if ax.get_legend() is not None:
+            ax.get_legend().remove()
+    filtered = [(h, l) for h, l in zip(handles, labels) if l not in (None, "", "_nolegend_")]
+    handles = [h for h, _ in filtered]
+    labels = [l for _, l in filtered]
+
+    if show_figure_legend and (not hue_is_numeric) and len(handles) > 0:
+        if using_external_axes:
+            fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.02),
+                       fontsize=16, ncol=min(5, len(labels)), frameon=False)
+        else:
+            fig.legend(handles, labels, loc="center left", bbox_to_anchor=(0.93, 0.5),
+                       fontsize=16, frameon=False)
+
+    if add_numeric_colorbar and hue_is_numeric and scatter_collection_for_cbar is not None:
+        colorbar_orientation = str(colorbar_orientation).lower()
+        if colorbar_orientation not in ("horizontal", "vertical"):
+            raise ValueError("colorbar_orientation must be 'horizontal' or 'vertical'.")
+        if colorbar_rect is None:
+            if colorbar_orientation == "vertical":
+                colorbar_rect = (0.94, 0.15, 0.02, 0.7)
+            else:
+                colorbar_rect = (0.20, -0.03, 0.60, 0.03)
+        cbar_ax = fig.add_axes(tuple(colorbar_rect))
+        cbar_norm = hue_norm if hue_norm is not None else Normalize()
+        cbar_mappable = ScalarMappable(norm=cbar_norm, cmap=palette_numeric)
+        cbar_mappable.set_array([])
+        cbar = fig.colorbar(cbar_mappable, cax=cbar_ax, orientation=colorbar_orientation)
+        cbar.set_label(colorbar_label or hue, fontsize=20)
+        cbar.ax.tick_params(labelsize=20)
+
+    if figure_suptitle:
+        fig.suptitle(f"{model_name}: Direct Posterior Bands", fontsize=20)
+
+    if not using_external_axes:
+        plt.tight_layout(rect=[0, 0, 0.92, 0.95])
+
+    return fig, axs
+
 
 def plot_bayesian_ventilation_p_fit(
     data,
@@ -775,9 +1533,10 @@ def plot_bayesian_ventilation_p_fit(
     style="slAll",
     model_name="Bayesian Pressure Ventilation Model",
     credible_interval=0.95,
-    a_sigma=0.5,
-    p_rms_sigma=0.1,
-    obs_sigma=0.1,
+    p_rms_var="p_rms-noInt-Norm",
+    a_mu=1.0,
+    a_sigma=0.1,
+    obs_sigma=0.01,
     sample_kwargs=None,
     random_seed=42,
     posterior_draws_for_curves=300,
@@ -808,8 +1567,9 @@ def plot_bayesian_ventilation_p_fit(
         data,
         y_var,
         x_var,
+        p_rms_var=p_rms_var,
+        a_mu=a_mu,
         a_sigma=a_sigma,
-        p_rms_sigma=p_rms_sigma,
         obs_sigma=obs_sigma,
         sample_kwargs=sample_kwargs,
         random_seed=random_seed,
