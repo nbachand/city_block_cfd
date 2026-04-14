@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit
-from scipy.stats import norm
+from scipy.stats import norm, probplot, shapiro
 import seaborn as sns
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
@@ -418,6 +418,56 @@ def summarize_bayesian_ventilation_fits(fit_results):
         return pd.DataFrame(columns=["panel", "direction", "n_obs", "parameter"])
     return pd.concat(rows, ignore_index=True)
 
+
+
+def summarize_bayesian_parameter_normal_fit_tests(fit_results, *, columns=None):
+    """Run Shapiro-Wilk normality diagnostics for posterior parameters."""
+    if columns is None:
+        columns = ["a", "p_rms", "sigma_obs"]
+    columns = list(columns)
+    if len(columns) == 0:
+        raise ValueError("columns must contain at least one parameter name.")
+
+    preferred_order = [
+        ("Window", "Flow Entering"),
+        ("Window", "Flow Exiting"),
+        ("Skylight", "Flow Entering"),
+        ("Skylight", "Flow Exiting"),
+    ]
+    fit_keys = [key for key in preferred_order if key in fit_results]
+    fit_keys.extend([key for key in fit_results if key not in fit_keys])
+
+    rows = []
+    for title, direction in fit_keys:
+        result = fit_results[(title, direction)]
+        draws = result["parameter_draws"]
+        for column in columns:
+            if column not in draws.columns:
+                raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
+            vals = pd.to_numeric(draws[column], errors="coerce").to_numpy(dtype=float)
+            vals = vals[np.isfinite(vals)]
+            if len(vals) == 0:
+                raise ValueError(f"Posterior column '{column}' has no finite values.")
+
+            fit_mean = float(np.mean(vals))
+            fit_sd = max(float(np.std(vals, ddof=0)), 1e-12)
+            shapiro_result = shapiro(vals)
+            rows.append(
+                {
+                    "panel": title,
+                    "direction": direction,
+                    "n_obs": result.get("n_obs", np.nan),
+                    "n_draws": int(len(vals)),
+                    "parameter": column,
+                    "normal_fit_mean": fit_mean,
+                    "normal_fit_sd": fit_sd,
+                    "shapiro_w": float(shapiro_result.statistic),
+                    "shapiro_pvalue": float(shapiro_result.pvalue),
+                    "reject_normal_5pct": bool(shapiro_result.pvalue < 0.05),
+                }
+            )
+
+    return pd.DataFrame(rows)
 
 
 def plot_empirical_model_error_distribution(
@@ -1029,6 +1079,119 @@ def plot_bayesian_ventilation_parameter_traces(
         fontsize=14,
     )
     fig.tight_layout(rect=[0, 0, 1, 0.97])
+    return fig, axs
+
+
+def plot_bayesian_ventilation_parameter_qq(
+    fit_results,
+    *,
+    columns=None,
+    labels=None,
+    figsize=None,
+    axes=None,
+    marker="o",
+    marker_size=16,
+    marker_alpha=0.7,
+    point_color="0.35",
+    line_color="tab:blue",
+    line_width=2.0,
+):
+    """Plot normal Q-Q diagnostics for posterior parameter draws."""
+    panel_title_fontsize = 24
+    axis_label_fontsize = 24
+    row_label_fontsize = 20
+    tick_label_fontsize = 16
+
+    if columns is None:
+        columns = ["a", "p_rms", "sigma_obs"]
+    columns = list(columns)
+    if len(columns) == 0:
+        raise ValueError("columns must contain at least one parameter name.")
+
+    default_labels = {
+        "a": "alpha",
+        "p_rms": "p_rms",
+        "q_rms": "q_rms",
+        "sigma_obs": "sigma",
+    }
+    label_map = dict(default_labels)
+    if labels is not None:
+        label_map.update(labels)
+
+    preferred_order = [
+        ("Window", "Flow Entering"),
+        ("Window", "Flow Exiting"),
+        ("Skylight", "Flow Entering"),
+        ("Skylight", "Flow Exiting"),
+    ]
+    fit_keys = [key for key in preferred_order if key in fit_results]
+    fit_keys.extend([key for key in fit_results if key not in fit_keys])
+    if len(fit_keys) == 0:
+        raise ValueError("fit_results is empty.")
+
+    n_rows = len(fit_keys)
+    n_cols = len(columns)
+    if axes is None:
+        if figsize is None:
+            figsize = (4.2 * n_cols, 3.2 * n_rows)
+        fig, axs = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=figsize,
+            dpi=140,
+            squeeze=False,
+        )
+    else:
+        axs = np.asarray(axes, dtype=object)
+        if axs.ndim == 1:
+            axs = axs.reshape(n_rows, n_cols)
+        if axs.shape != (n_rows, n_cols):
+            raise ValueError(f"axes must have shape {(n_rows, n_cols)}.")
+        fig = axs.flat[0].figure
+
+    for row_idx, key in enumerate(fit_keys):
+        title, direction = key
+        draws = fit_results[key]["parameter_draws"]
+        for col_idx, column in enumerate(columns):
+            ax = axs[row_idx, col_idx]
+            if column not in draws.columns:
+                raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
+            vals = pd.to_numeric(draws[column], errors="coerce").to_numpy(dtype=float)
+            vals = vals[np.isfinite(vals)]
+            if len(vals) == 0:
+                raise ValueError(f"Posterior column '{column}' has no finite values.")
+
+            (theoretical_q, ordered_vals), (slope, intercept, _) = probplot(vals, dist="norm", fit=True)
+            ax.scatter(
+                theoretical_q,
+                ordered_vals,
+                s=marker_size,
+                alpha=marker_alpha,
+                color=point_color,
+                marker=marker,
+            )
+            x_line = np.array([np.min(theoretical_q), np.max(theoretical_q)], dtype=float)
+            ax.plot(
+                x_line,
+                slope * x_line + intercept,
+                color=line_color,
+                linewidth=line_width,
+            )
+            ax.grid(True, alpha=0.25)
+            ax.tick_params(labelsize=tick_label_fontsize)
+
+            if row_idx == 0:
+                ax.set_title(label_map.get(column, column), fontsize=panel_title_fontsize)
+            if col_idx == 0:
+                ax.set_ylabel(f"{title}\n{direction}", fontsize=row_label_fontsize)
+            else:
+                ax.set_ylabel("")
+            if row_idx == n_rows - 1:
+                ax.set_xlabel("Normal Quantiles", fontsize=axis_label_fontsize)
+            else:
+                ax.set_xlabel("")
+
+    fig.tight_layout()
     return fig, axs
 
 
