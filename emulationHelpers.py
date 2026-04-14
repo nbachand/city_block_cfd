@@ -5,6 +5,7 @@ from scipy.stats import norm
 import seaborn as sns
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
+from matplotlib.lines import Line2D
 import pyafn
 from matplotlib import pyplot as plt
 import pytensor.tensor as pt
@@ -889,6 +890,146 @@ def plot_bayesian_ventilation_parameter_posteriors(
     fig.tight_layout()
     return fig, axs
 
+
+def plot_bayesian_ventilation_parameter_traces(
+    fit_results,
+    *,
+    columns=None,
+    labels=None,
+    figsize=None,
+    axes=None,
+    linewidth=0.9,
+    alpha=0.85,
+    show_mean=True,
+    mean_color="black",
+    mean_linestyle="--",
+    mean_linewidth=1.5,
+):
+    """Plot MCMC chain traces for each fitted ventilation subgroup."""
+    panel_title_fontsize = 24
+    axis_label_fontsize = 24
+    row_label_fontsize = 20
+    tick_label_fontsize = 16
+
+    if columns is None:
+        columns = ["a", "p_rms", "sigma_obs"]
+    columns = list(columns)
+    if len(columns) == 0:
+        raise ValueError("columns must contain at least one parameter name.")
+
+    default_labels = {
+        "a": "alpha",
+        "p_rms": "p_rms",
+        "q_rms": "q_rms",
+        "sigma_obs": "sigma",
+    }
+    label_map = dict(default_labels)
+    if labels is not None:
+        label_map.update(labels)
+
+    preferred_order = [
+        ("Window", "Flow Entering"),
+        ("Window", "Flow Exiting"),
+        ("Skylight", "Flow Entering"),
+        ("Skylight", "Flow Exiting"),
+    ]
+    fit_keys = [key for key in preferred_order if key in fit_results]
+    fit_keys.extend([key for key in fit_results if key not in fit_keys])
+    if len(fit_keys) == 0:
+        raise ValueError("fit_results is empty.")
+
+    first_posterior = fit_results[fit_keys[0]]["idata"].posterior
+    if "chain" not in first_posterior.dims or "draw" not in first_posterior.dims:
+        raise ValueError("Posterior inference data must contain 'chain' and 'draw' dimensions.")
+    n_chains = int(first_posterior.sizes["chain"])
+    chain_colors = plt.rcParams["axes.prop_cycle"].by_key().get(
+        "color",
+        ["tab:blue", "tab:orange", "tab:green", "tab:red"],
+    )
+
+    n_rows = len(fit_keys)
+    n_cols = len(columns)
+    if axes is None:
+        if figsize is None:
+            figsize = (4.4 * n_cols, 2.8 * n_rows)
+        fig, axs = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=figsize,
+            dpi=140,
+            squeeze=False,
+            sharex=True,
+        )
+    else:
+        axs = np.asarray(axes, dtype=object)
+        if axs.ndim == 1:
+            axs = axs.reshape(n_rows, n_cols)
+        if axs.shape != (n_rows, n_cols):
+            raise ValueError(f"axes must have shape {(n_rows, n_cols)}.")
+        fig = axs.flat[0].figure
+
+    for row_idx, key in enumerate(fit_keys):
+        title, direction = key
+        posterior = fit_results[key]["idata"].posterior
+        draw_idx = np.arange(int(posterior.sizes["draw"]))
+        for col_idx, column in enumerate(columns):
+            ax = axs[row_idx, col_idx]
+            if column not in posterior.data_vars:
+                raise KeyError(f"Parameter column '{column}' not found in posterior inference data.")
+
+            values = np.asarray(posterior[column].values, dtype=float)
+            if values.ndim != 2:
+                raise ValueError(f"Posterior variable '{column}' must be a scalar parameter over chain and draw.")
+
+            for chain_idx in range(values.shape[0]):
+                ax.plot(
+                    draw_idx,
+                    values[chain_idx],
+                    color=chain_colors[chain_idx % len(chain_colors)],
+                    linewidth=linewidth,
+                    alpha=alpha,
+                )
+
+            if show_mean:
+                ax.axhline(
+                    float(np.mean(values)),
+                    color=mean_color,
+                    linestyle=mean_linestyle,
+                    linewidth=mean_linewidth,
+                )
+
+            ax.grid(True, alpha=0.25)
+            ax.tick_params(labelsize=tick_label_fontsize)
+
+            if row_idx == 0:
+                ax.set_title(label_map.get(column, column), fontsize=panel_title_fontsize)
+            if col_idx == 0:
+                ax.set_ylabel(f"{title}\n{direction}", fontsize=row_label_fontsize)
+            else:
+                ax.set_ylabel("")
+            if row_idx == n_rows - 1:
+                ax.set_xlabel("Draw", fontsize=axis_label_fontsize)
+            else:
+                ax.set_xlabel("")
+
+    legend_handles = [
+        Line2D([0], [0], color=chain_colors[idx % len(chain_colors)], linewidth=1.8, label=f"Chain {idx + 1}")
+        for idx in range(n_chains)
+    ]
+    if show_mean:
+        legend_handles.append(
+            Line2D([0], [0], color=mean_color, linestyle=mean_linestyle, linewidth=mean_linewidth, label="Posterior Mean")
+        )
+    fig.legend(
+        handles=legend_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.01),
+        ncol=min(len(legend_handles), 5),
+        frameon=False,
+        fontsize=14,
+    )
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
+    return fig, axs
 
 
 def save_bayesian_ventilation_fit_results(fit_results, output_dir):
