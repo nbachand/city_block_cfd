@@ -244,8 +244,8 @@ def fit_bayesian_q_subgroup(
     *,
     a_mu=1.0,
     a_sigma=0.1,
-    q_rms_mu=0.12,
-    q_rms_sigma=0.012,
+    log_q_rms_mu=-2.0,
+    log_q_rms_sigma=0.1,
     obs_sigma=0.01,
     random_seed=42,
     sample_kwargs=None,
@@ -267,7 +267,8 @@ def fit_bayesian_q_subgroup(
     with pm.Model():
         u_model_data = pm.Data("u_model", u_model)
         a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
-        q_rms = pm.TruncatedNormal("q_rms", mu=q_rms_mu, sigma=q_rms_sigma, lower=0.0)
+        log_q_rms = pm.Normal("log_q_rms", mu=log_q_rms_mu, sigma=log_q_rms_sigma)
+        q_rms = pm.Deterministic("q_rms", pt.exp(log_q_rms))
         sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
         mu = ventilation_redecomp_q_op(u_model_data, a, q_rms)
         pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
@@ -1090,20 +1091,22 @@ def fit_bayesian_ventilation_q_subgroups(
 
             q_subset = pd.to_numeric(plotdf.loc[plotdf["Sdelp"] == int(s), q_rms_var], errors="coerce")
             q_subset = q_subset[np.isfinite(q_subset)]
+            q_subset = q_subset[q_subset > 0]
             if len(q_subset) == 0:
-                print(f"Skipping Bayesian q fit for {title}, {lbl}: no finite {q_rms_var} values")
+                print(f"Skipping Bayesian q fit for {title}, {lbl}: no positive finite {q_rms_var} values")
                 continue
 
-            q_rms_mu = float(np.mean(q_subset))
-            q_rms_sigma = max(float(np.std(q_subset, ddof=0)), 1e-6)
+            log_q_subset = np.log(q_subset)
+            log_q_rms_mu = float(np.mean(log_q_subset))
+            log_q_rms_sigma = max(float(np.std(log_q_subset, ddof=0)), 1e-6)
 
             fit_result = fit_bayesian_q_subgroup(
                 subgroup["u_model"],
                 subgroup["y_obs"],
                 a_mu=a_mu,
                 a_sigma=a_sigma,
-                q_rms_mu=q_rms_mu,
-                q_rms_sigma=q_rms_sigma,
+                log_q_rms_mu=log_q_rms_mu,
+                log_q_rms_sigma=log_q_rms_sigma,
                 obs_sigma=obs_sigma,
                 random_seed=random_seed + i * 10 + j,
                 sample_kwargs=sample_kwargs,
@@ -1111,8 +1114,8 @@ def fit_bayesian_ventilation_q_subgroups(
 
             fit_result["subgroup"] = subgroup
             fit_result["sign"] = s
-            fit_result["q_rms_prior_mu"] = q_rms_mu
-            fit_result["q_rms_prior_sigma"] = q_rms_sigma
+            fit_result["log_q_rms_prior_mu"] = log_q_rms_mu
+            fit_result["log_q_rms_prior_sigma"] = log_q_rms_sigma
             fit_results[(title, lbl)] = fit_result
 
             med = fit_result["posterior_median"]
