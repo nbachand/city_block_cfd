@@ -151,8 +151,8 @@ def fit_bayesian_pressure_subgroup(
     *,
     a_mu=1.0,
     a_sigma=0.1,
-    p_rms_mu=0.05,
-    p_rms_sigma=0.005,
+    log_p_rms_mu=-3.0,
+    log_p_rms_sigma=0.1,
     obs_sigma=0.01,
     random_seed=42,
     sample_kwargs=None,
@@ -174,7 +174,8 @@ def fit_bayesian_pressure_subgroup(
     with pm.Model():
         u_model_data = pm.Data("u_model", u_model)
         a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
-        p_rms = pm.TruncatedNormal("p_rms", mu=p_rms_mu, sigma=p_rms_sigma, lower=0.0)
+        log_p_rms = pm.Normal("log_p_rms", mu=log_p_rms_mu, sigma=log_p_rms_sigma)
+        p_rms = pm.Deterministic("p_rms", pt.exp(log_p_rms))
         sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
         mu = ventilation_redecomp_p_op(u_model_data, a, p_rms)
         pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
@@ -1030,21 +1031,18 @@ def fit_bayesian_ventilation_p_subgroups(
                 continue
 
             p_subset = pd.to_numeric(plotdf.loc[plotdf["Sdelp"] == int(s), p_rms_var], errors="coerce")
-            p_subset = p_subset[np.isfinite(p_subset)]
-            if len(p_subset) == 0:
-                print(f"Skipping Bayesian fit for {title}, {lbl}: no finite {p_rms_var} values")
-                continue
 
-            p_rms_mu = float(np.mean(p_subset))
-            p_rms_sigma = max(float(np.std(p_subset, ddof=0)), 1e-6)
+            log_p_subset = np.log(p_subset)
+            log_p_rms_mu = float(np.mean(log_p_subset))
+            log_p_rms_sigma = max(float(np.std(log_p_subset, ddof=0)), 1e-6)
 
             fit_result = fit_bayesian_pressure_subgroup(
                 subgroup["u_model"],
                 subgroup["y_obs"],
                 a_mu=a_mu,
                 a_sigma=a_sigma,
-                p_rms_mu=p_rms_mu,
-                p_rms_sigma=p_rms_sigma,
+                log_p_rms_mu=log_p_rms_mu,
+                log_p_rms_sigma=log_p_rms_sigma,
                 obs_sigma=obs_sigma,
                 random_seed=random_seed + i * 10 + j,
                 sample_kwargs=sample_kwargs,
@@ -1052,8 +1050,8 @@ def fit_bayesian_ventilation_p_subgroups(
 
             fit_result["subgroup"] = subgroup
             fit_result["sign"] = s
-            fit_result["p_rms_prior_mu"] = p_rms_mu
-            fit_result["p_rms_prior_sigma"] = p_rms_sigma
+            fit_result["log_p_rms_prior_mu"] = log_p_rms_mu
+            fit_result["log_p_rms_prior_sigma"] = log_p_rms_sigma
             fit_results[(title, lbl)] = fit_result
 
             med = fit_result["posterior_median"]

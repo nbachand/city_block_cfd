@@ -72,7 +72,7 @@ a \sim \mathcal{N}(\mu_a, \sigma_a)
 $$
 
 $$
-p_{\mathrm{rms}} \sim \mathrm{TruncatedNormal}(\mu_p, \sigma_p; \text{lower}=0)
+\log p_{\mathrm{rms}} \sim \mathcal{N}(\mu_{\log p}, \sigma_{\log p})
 $$
 
 $$
@@ -82,8 +82,9 @@ $$
 Important interpretation:
 
 - `a` now uses a normal prior centered at 1
-- `p_rms` uses a truncated normal prior centered at the measured subgroup mean of `p_rms-noInt-Norm`
-- the `p_rms` prior standard deviation is the measured subgroup standard deviation of `p_rms-noInt-Norm`
+- `log_p_rms` uses a normal prior, and `p_rms = exp(log_p_rms)` inside the forward model
+- the `log_p_rms` prior mean is the measured subgroup mean of `log(p_rms-noInt-Norm)` using only positive values
+- the `log_p_rms` prior standard deviation is the measured subgroup standard deviation of `log(p_rms-noInt-Norm)` using only positive values
 - `sigma_obs` remains positive via a half-normal prior
 
 These priors are defined in [emulationHelpers.py#L163](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L163) to [emulationHelpers.py#L166](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L166).
