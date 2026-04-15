@@ -141,4 +141,38 @@ def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, p
 
     return flowStatsMI, roomVentilationMI
 
+def aggregate_window_series_to_room(roomVentilationMI, window_series, out_col="xAdjusted_room", mode="abs_half_sum"):
+    """
+    window_series: pd.Series indexed like (run, windowKey), e.g. xAdjusted
+    mode:
+      - "abs_half_sum": sum(abs(q_i))/2  (ventilation magnitude style)
+      - "sum":          signed sum(q_i)
+      - "mean":         arithmetic mean
+    """
+    rv = roomVentilationMI.copy()
+    rv[out_col] = np.nan
 
+    window_key_cols = rv.columns[rv.columns.str.contains("windowKeys")].tolist()
+
+    for (run, room), row in rv.iterrows():
+        keys = row[window_key_cols].dropna().tolist()
+        vals = []
+        for k in keys:
+            idx = (run, k)
+            if idx in window_series.index:
+                vals.append(window_series.loc[idx])
+
+        if len(vals) == 0:
+            continue
+
+        vals = np.asarray(vals, dtype=float)
+        if mode == "abs_half_sum":
+            rv.loc[(run, room), out_col] = np.nansum(np.abs(vals)) / 2.0
+        elif mode == "sum":
+            rv.loc[(run, room), out_col] = np.nansum(vals)
+        elif mode == "mean":
+            rv.loc[(run, room), out_col] = np.nanmean(vals)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    return rv
