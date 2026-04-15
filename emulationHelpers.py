@@ -146,6 +146,36 @@ def _summarize_parameter_draws(parameter_draws):
 
 
 
+def _parameter_display_label(column):
+    return {
+        "a": "$C_d$",
+        "p_rms": "$\\sigma_p$",
+        "q_rms": "$\\sigma_q$",
+        "sigma_obs": "$\\varepsilon$",
+    }.get(column, column)
+
+
+def _parameter_display_values(values, column):
+    arr = np.asarray(values, dtype=float)
+    if column == "a":
+        return Cd * arr
+    return arr
+
+
+def _parameter_display_draws(parameter_draws, columns=None):
+    if columns is None:
+        columns = list(parameter_draws.columns)
+    display_data = {}
+    for column in columns:
+        if column not in parameter_draws.columns:
+            raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
+        display_data[_parameter_display_label(column)] = _parameter_display_values(
+            pd.to_numeric(parameter_draws[column], errors="coerce").to_numpy(dtype=float),
+            column,
+        )
+    return pd.DataFrame(display_data)
+
+
 def fit_bayesian_pressure_subgroup(
     u_model,
     y_obs,
@@ -406,7 +436,8 @@ def summarize_bayesian_ventilation_fits(fit_results):
     """Combine subgroup summaries from Bayesian ventilation subgroup fits."""
     rows = []
     for (title, direction), result in fit_results.items():
-        summary = result["summary"].copy().reset_index()
+        display_draws = _parameter_display_draws(result["parameter_draws"])
+        summary = _summarize_parameter_draws(display_draws).reset_index()
         first_col = summary.columns[0]
         summary = summary.rename(columns={first_col: "parameter"})
         summary.insert(0, "n_obs", result.get("n_obs", np.nan))
@@ -444,7 +475,7 @@ def summarize_bayesian_parameter_normal_fit_tests(fit_results, *, columns=None):
         for column in columns:
             if column not in draws.columns:
                 raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
-            vals = pd.to_numeric(draws[column], errors="coerce").to_numpy(dtype=float)
+            vals = _parameter_display_values(draws[column], column)
             vals = vals[np.isfinite(vals)]
             if len(vals) == 0:
                 raise ValueError(f"Posterior column '{column}' has no finite values.")
@@ -458,7 +489,7 @@ def summarize_bayesian_parameter_normal_fit_tests(fit_results, *, columns=None):
                     "direction": direction,
                     "n_obs": result.get("n_obs", np.nan),
                     "n_draws": int(len(vals)),
-                    "parameter": column,
+                    "parameter": _parameter_display_label(column),
                     "normal_fit_mean": fit_mean,
                     "normal_fit_sd": fit_sd,
                     "shapiro_w": float(shapiro_result.statistic),
@@ -855,9 +886,10 @@ def plot_bayesian_ventilation_parameter_posteriors(
         raise ValueError("columns must contain at least one parameter name.")
 
     default_labels = {
-        "a": "alpha",
-        "p_rms": "p_rms",
-        "sigma_obs": "sigma",
+        "a": _parameter_display_label("a"),
+        "p_rms": _parameter_display_label("p_rms"),
+        "q_rms": _parameter_display_label("q_rms"),
+        "sigma_obs": _parameter_display_label("sigma_obs"),
     }
     label_map = dict(default_labels)
     if labels is not None:
@@ -902,7 +934,7 @@ def plot_bayesian_ventilation_parameter_posteriors(
             ax = axs[row_idx, col_idx]
             if column not in draws.columns:
                 raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
-            vals = pd.to_numeric(draws[column], errors="coerce")
+            vals = _parameter_display_values(draws[column], column)
             vals = vals[np.isfinite(vals)]
             if len(vals) == 0:
                 raise ValueError(f"Posterior column '{column}' has no finite values.")
@@ -968,10 +1000,10 @@ def plot_bayesian_ventilation_parameter_traces(
         raise ValueError("columns must contain at least one parameter name.")
 
     default_labels = {
-        "a": "alpha",
-        "p_rms": "p_rms",
-        "q_rms": "q_rms",
-        "sigma_obs": "sigma",
+        "a": _parameter_display_label("a"),
+        "p_rms": _parameter_display_label("p_rms"),
+        "q_rms": _parameter_display_label("q_rms"),
+        "sigma_obs": _parameter_display_label("sigma_obs"),
     }
     label_map = dict(default_labels)
     if labels is not None:
@@ -1027,7 +1059,7 @@ def plot_bayesian_ventilation_parameter_traces(
             if column not in posterior.data_vars:
                 raise KeyError(f"Parameter column '{column}' not found in posterior inference data.")
 
-            values = np.asarray(posterior[column].values, dtype=float)
+            values = _parameter_display_values(posterior[column].values, column)
             if values.ndim != 2:
                 raise ValueError(f"Posterior variable '{column}' must be a scalar parameter over chain and draw.")
 
@@ -1109,10 +1141,10 @@ def plot_bayesian_ventilation_parameter_qq(
         raise ValueError("columns must contain at least one parameter name.")
 
     default_labels = {
-        "a": "alpha",
-        "p_rms": "p_rms",
-        "q_rms": "q_rms",
-        "sigma_obs": "sigma",
+        "a": _parameter_display_label("a"),
+        "p_rms": _parameter_display_label("p_rms"),
+        "q_rms": _parameter_display_label("q_rms"),
+        "sigma_obs": _parameter_display_label("sigma_obs"),
     }
     label_map = dict(default_labels)
     if labels is not None:
@@ -1156,7 +1188,7 @@ def plot_bayesian_ventilation_parameter_qq(
             ax = axs[row_idx, col_idx]
             if column not in draws.columns:
                 raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
-            vals = pd.to_numeric(draws[column], errors="coerce").to_numpy(dtype=float)
+            vals = _parameter_display_values(draws[column], column)
             vals = vals[np.isfinite(vals)]
             if len(vals) == 0:
                 raise ValueError(f"Posterior column '{column}' has no finite values.")
