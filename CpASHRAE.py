@@ -247,6 +247,6 @@ for C in Cs:
     dfWindows.append(dfWindowsC)
 dfRooms = pd.concat(dfRooms, axis=0)
 dfWindows = pd.concat(dfWindows, axis=0)
-dfRooms.to_csv("roomASHRAE.csv", index=False)
-dfWindows.to_csv("windowASHRAE.csv", index=False)
+dfRooms.to_csv("ashrae_exports/roomASHRAE.csv", index=False)
+dfWindows.to_csv("ashrae_exports/windowASHRAE.csv", index=False)
 plt.show()
