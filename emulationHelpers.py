@@ -431,6 +431,127 @@ def posterior_predict_bayesian_q_curve(
     }
 
 
+def _sample_normal_mc_parameter_curve(
+    fit_result,
+    x_grid,
+    *,
+    parameter_columns,
+    positive_columns,
+    model_func,
+    sign=1,
+    credible_interval=0.95,
+    normal_mc_draws_for_curves=300,
+    include_obs_noise=True,
+    random_seed=42,
+):
+    """Generate output bands by sampling independent normals from posterior mean/std summaries."""
+    x_grid = np.asarray(x_grid, dtype=float)
+    if x_grid.ndim != 1:
+        raise ValueError("x_grid must be a 1D array.")
+    if len(x_grid) == 0:
+        raise ValueError("x_grid must contain at least one point.")
+
+    parameter_draws = fit_result["parameter_draws"].reset_index(drop=True)
+    if len(parameter_draws) == 0:
+        raise ValueError("fit_result contains no parameter draws.")
+
+    n_draws = len(parameter_draws) if normal_mc_draws_for_curves is None else int(normal_mc_draws_for_curves)
+    if n_draws <= 0:
+        raise ValueError("normal_mc_draws_for_curves must be positive or None.")
+
+    rng = np.random.default_rng(random_seed)
+    sampled_params = {}
+    positive_columns = set(positive_columns)
+    for column in parameter_columns:
+        if column not in parameter_draws.columns:
+            raise KeyError(f"Parameter column '{column}' not found in posterior draws.")
+        vals = pd.to_numeric(parameter_draws[column], errors="coerce").to_numpy(dtype=float)
+        vals = vals[np.isfinite(vals)]
+        if len(vals) == 0:
+            raise ValueError(f"Posterior column '{column}' has no finite values.")
+        mean = float(np.mean(vals))
+        sd = float(np.std(vals, ddof=0))
+        samples = rng.normal(loc=mean, scale=sd, size=n_draws)
+        if column in positive_columns:
+            samples = np.maximum(samples, 1e-8)
+        sampled_params[column] = samples
+
+    target_shape = (n_draws, len(x_grid))
+    x_eval = np.broadcast_to(x_grid[np.newaxis, :], target_shape)
+    param_1 = np.broadcast_to(sampled_params[parameter_columns[0]][:, np.newaxis], target_shape)
+    param_2 = np.broadcast_to(sampled_params[parameter_columns[1]][:, np.newaxis], target_shape)
+    y_draws = np.asarray(model_func(x_eval, param_1, param_2), dtype=float)
+
+    if include_obs_noise:
+        sigma_vals = np.maximum(sampled_params["sigma_obs"], 1e-8)
+        y_draws = y_draws + rng.normal(loc=0.0, scale=sigma_vals[:, np.newaxis], size=y_draws.shape)
+
+    y_draws = sign * y_draws
+    if sign < 0:
+        x_plot = -x_grid[::-1]
+        y_draws = y_draws[:, ::-1]
+    else:
+        x_plot = x_grid
+
+    alpha = (1.0 - credible_interval) / 2.0
+    return {
+        "x": x_plot,
+        "median": np.quantile(y_draws, 0.5, axis=0),
+        "lower": np.quantile(y_draws, alpha, axis=0),
+        "upper": np.quantile(y_draws, 1.0 - alpha, axis=0),
+    }
+
+
+def normal_mc_predict_bayesian_pressure_curve(
+    fit_result,
+    x_grid,
+    *,
+    sign=1,
+    credible_interval=0.95,
+    normal_mc_draws_for_curves=300,
+    include_obs_noise=True,
+    random_seed=42,
+):
+    """Generate a mean/std Gaussian Monte Carlo comparison band for pressure fits."""
+    return _sample_normal_mc_parameter_curve(
+        fit_result,
+        x_grid,
+        parameter_columns=("a", "p_rms", "sigma_obs"),
+        positive_columns=("p_rms", "sigma_obs"),
+        model_func=pyafn.ventilationReDecomp_p,
+        sign=sign,
+        credible_interval=credible_interval,
+        normal_mc_draws_for_curves=normal_mc_draws_for_curves,
+        include_obs_noise=include_obs_noise,
+        random_seed=random_seed,
+    )
+
+
+def normal_mc_predict_bayesian_q_curve(
+    fit_result,
+    x_grid,
+    *,
+    sign=1,
+    credible_interval=0.95,
+    normal_mc_draws_for_curves=300,
+    include_obs_noise=True,
+    random_seed=42,
+):
+    """Generate a mean/std Gaussian Monte Carlo comparison band for q_rms fits."""
+    return _sample_normal_mc_parameter_curve(
+        fit_result,
+        x_grid,
+        parameter_columns=("a", "q_rms", "sigma_obs"),
+        positive_columns=("q_rms", "sigma_obs"),
+        model_func=pyafn.ventilationReDecomp_q,
+        sign=sign,
+        credible_interval=credible_interval,
+        normal_mc_draws_for_curves=normal_mc_draws_for_curves,
+        include_obs_noise=include_obs_noise,
+        random_seed=random_seed,
+    )
+
+
 
 def summarize_bayesian_ventilation_fits(fit_results):
     """Combine subgroup summaries from Bayesian ventilation subgroup fits."""
@@ -1496,9 +1617,17 @@ def plot_bayesian_ventilation_p_fit_results(
     scatter_size=20,
     band_alpha=0.3,
     band_color="0.5",
-    scatter_zorder=1,
-    band_zorder=2,
-    line_zorder=3,
+    band_hatch=None,
+    compare_normal_mc=False,
+    normal_mc_draws_for_curves=400,
+    normal_mc_band_color="tab:blue",
+    normal_mc_band_alpha=0.22,
+    normal_mc_band_hatch=None,
+    normal_mc_label="95% Mean/Std Normal-MC Band",
+    normal_mc_random_seed=None,
+    scatter_zorder=3,
+    band_zorder=1,
+    line_zorder=4,
 ):
     """Plot previously-fitted Bayesian ventilation subgroup results."""
     data = data.copy()
@@ -1571,6 +1700,21 @@ def plot_bayesian_ventilation_p_fit_results(
                 random_seed=random_seed + 1000 + i * 10 + j,
             )
             fit_result["curve"] = curve
+            if compare_normal_mc:
+                normal_curve = normal_mc_predict_bayesian_pressure_curve(
+                    fit_result,
+                    x_grid,
+                    sign=s,
+                    credible_interval=credible_interval,
+                    normal_mc_draws_for_curves=normal_mc_draws_for_curves,
+                    include_obs_noise=include_obs_noise,
+                    random_seed=(
+                        normal_mc_random_seed
+                        if normal_mc_random_seed is not None
+                        else random_seed + 2000 + i * 10 + j
+                    ),
+                )
+                fit_result["normal_mc_curve"] = normal_curve
 
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
@@ -1581,9 +1725,25 @@ def plot_bayesian_ventilation_p_fit_results(
                 curve["upper"],
                 color=band_color,
                 alpha=band_alpha,
+                hatch=band_hatch,
+                edgecolor=band_color if band_hatch else None,
+                linewidth=0.0,
                 label=band_label,
                 zorder=band_zorder,
             )
+            if compare_normal_mc:
+                axs[i].fill_between(
+                    normal_curve["x"],
+                    normal_curve["lower"],
+                    normal_curve["upper"],
+                    color=normal_mc_band_color,
+                    alpha=normal_mc_band_alpha,
+                    hatch=normal_mc_band_hatch,
+                    edgecolor=normal_mc_band_color if normal_mc_band_hatch else None,
+                    linewidth=0.0,
+                    label=normal_mc_label if s > 0 else None,
+                    zorder=band_zorder,
+                )
             axs[i].plot(
                 curve["x"],
                 curve["median"],
@@ -1614,6 +1774,9 @@ def plot_bayesian_ventilation_p_fit_results(
                 legend=legend_mode,
                 zorder=scatter_zorder,
             )
+            if scatter_ax is not None and len(scatter_ax.collections) > 0:
+                for collection in scatter_ax.collections:
+                    collection.set_zorder(scatter_zorder)
             if hue_is_numeric and len(scatter_ax.collections) > 0:
                 scatter_collection_for_cbar = scatter_ax.collections[0]
                 if scatter_collection_for_cbar is not None:
@@ -1695,9 +1858,17 @@ def plot_bayesian_ventilation_q_fit_results(
     scatter_size=20,
     band_alpha=0.3,
     band_color="0.5",
-    scatter_zorder=1,
-    band_zorder=2,
-    line_zorder=3,
+    band_hatch=None,
+    compare_normal_mc=False,
+    normal_mc_draws_for_curves=400,
+    normal_mc_band_color="tab:blue",
+    normal_mc_band_alpha=0.22,
+    normal_mc_band_hatch=None,
+    normal_mc_label="95% Mean/Std Normal-MC Band",
+    normal_mc_random_seed=None,
+    scatter_zorder=3,
+    band_zorder=1,
+    line_zorder=4,
 ):
     """Plot previously-fitted Bayesian q_rms ventilation subgroup results."""
     data = data.copy()
@@ -1770,6 +1941,21 @@ def plot_bayesian_ventilation_q_fit_results(
                 random_seed=random_seed + 1000 + i * 10 + j,
             )
             fit_result["curve"] = curve
+            if compare_normal_mc:
+                normal_curve = normal_mc_predict_bayesian_q_curve(
+                    fit_result,
+                    x_grid,
+                    sign=s,
+                    credible_interval=credible_interval,
+                    normal_mc_draws_for_curves=normal_mc_draws_for_curves,
+                    include_obs_noise=include_obs_noise,
+                    random_seed=(
+                        normal_mc_random_seed
+                        if normal_mc_random_seed is not None
+                        else random_seed + 2000 + i * 10 + j
+                    ),
+                )
+                fit_result["normal_mc_curve"] = normal_curve
 
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
@@ -1780,9 +1966,25 @@ def plot_bayesian_ventilation_q_fit_results(
                 curve["upper"],
                 color=band_color,
                 alpha=band_alpha,
+                hatch=band_hatch,
+                edgecolor=band_color if band_hatch else None,
+                linewidth=0.0,
                 label=band_label,
                 zorder=band_zorder,
             )
+            if compare_normal_mc:
+                axs[i].fill_between(
+                    normal_curve["x"],
+                    normal_curve["lower"],
+                    normal_curve["upper"],
+                    color=normal_mc_band_color,
+                    alpha=normal_mc_band_alpha,
+                    hatch=normal_mc_band_hatch,
+                    edgecolor=normal_mc_band_color if normal_mc_band_hatch else None,
+                    linewidth=0.0,
+                    label=normal_mc_label if s > 0 else None,
+                    zorder=band_zorder,
+                )
             axs[i].plot(
                 curve["x"],
                 curve["median"],
@@ -1813,6 +2015,9 @@ def plot_bayesian_ventilation_q_fit_results(
                 legend=legend_mode,
                 zorder=scatter_zorder,
             )
+            if scatter_ax is not None and len(scatter_ax.collections) > 0:
+                for collection in scatter_ax.collections:
+                    collection.set_zorder(scatter_zorder)
             if hue_is_numeric and len(scatter_ax.collections) > 0:
                 scatter_collection_for_cbar = scatter_ax.collections[0]
                 if scatter_collection_for_cbar is not None:
@@ -1894,6 +2099,7 @@ def plot_bayesian_ventilation_p_fit(
     ylim=(-0.6, 0.6),
     band_alpha=0.3,
     band_color="0.5",
+    band_hatch=None,
     band_zorder=1,
     line_zorder=2,
     scatter_zorder=3,
@@ -1939,6 +2145,7 @@ def plot_bayesian_ventilation_p_fit(
         ylim=ylim,
         band_alpha=band_alpha,
         band_color=band_color,
+        band_hatch=band_hatch,
         scatter_zorder=scatter_zorder,
         band_zorder=band_zorder,
         line_zorder=line_zorder,
@@ -2183,7 +2390,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             print(f"NRMSE: {nrmse:.2f}, RMSE: {rmse:.3f}")
             
             error = y_pred_model - y_obs_model
-            print(f"Bias: {np.mean(error):.4f}, Error STD: {np.std(error):.4f}")
+            iqr_error = np.quantile(error, 0.75) - np.quantile(error, 0.25)
+            print(f"Bias: {np.mean(error):.4f}, Error STD: {np.std(error):.4f}, Error IQR: {iqr_error:.4f}")
             metrics_rows.append(
                 {
                     "model_name": model_name,
@@ -2199,6 +2407,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     "rmse": rmse,
                     "nrmse": nrmse,
                     "bias": np.mean(error),
+                    "iqr_error": iqr_error,
                     "std": np.std(error),
                     "n": len(y_obs_model),
                 }
@@ -2229,6 +2438,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             rmse, nrmse = calculate_normalized_rmse(plotdf[x_var], plotdf[y_var], normalization='std')
             print(f"For skylight={sl_val}, NRMSE: {nrmse:.4f}, RMSE: {rmse:.4f}")
             opening_error = plotdf[x_var] - plotdf[y_var]
+            opening_iqr_error = np.quantile(opening_error, 0.75) - np.quantile(opening_error, 0.25)
             metrics_rows.append(
                 {
                     "model_name": model_name,
@@ -2244,6 +2454,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     "rmse": rmse,
                     "nrmse": nrmse,
                     "bias": np.mean(opening_error),
+                    "iqr_error": opening_iqr_error,
                     "std": np.std(opening_error),
                     "n": len(plotdf[[x_var, y_var]].dropna()),
                 }
