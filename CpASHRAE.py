@@ -101,7 +101,7 @@ rooms = {
         "window_equivalent":
         [
             "xwindow_0-0",
-            "zwindow_1-0"
+            "zwindow_0-0"
         ],
         "rooms": [[1], [1]],
         "A": [1, 1]
@@ -127,7 +127,7 @@ rooms = {
     },
     "single": {
         "windows": [
-            ("large_face_AB", 270)
+            ("large_face_AB", 90)
         ],
         "window_equivalent":
         [
@@ -149,6 +149,13 @@ print(f"Calculated wind speed at building height: {U_H:.2f} m/s")
 Cs = [2, 3]  # Shelter class adjustments
 dfRooms = []
 dfWindows = []
+windowInfoDict = {
+    "room": [],
+    "window": [],
+    "wind_angle" : [],
+    "effective_angle": [],
+    "C_p": [],
+}
 for C in Cs:
     vent_rooms = {room_name: [] for room_name in rooms}
     vent_windows = {}
@@ -164,6 +171,12 @@ for C in Cs:
             for window, angle in room_dict["windows"]:
                 effective_angle = (angle - wind_angle) % 360
                 Cp = windows[window][effective_angle]
+                windowInfoDict["room"].append(room_name)
+                windowInfoDict["window"].append(window)
+                windowInfoDict["wind_angle"].append(wind_angle)
+                windowInfoDict["effective_angle"].append(effective_angle)
+                windowInfoDict["C_p"].append(Cp)
+
                 Cp_max = max(Cp_max, Cp)
                 if Cp == Cp_max and "door" not in window:
                     shelter_class_value = shelter_class[window]
@@ -249,4 +262,5 @@ dfRooms = pd.concat(dfRooms, axis=0)
 dfWindows = pd.concat(dfWindows, axis=0)
 dfRooms.to_csv("ashrae_exports/roomASHRAE.csv", index=False)
 dfWindows.to_csv("ashrae_exports/windowASHRAE.csv", index=False)
+pd.DataFrame(windowInfoDict).to_csv("ashrae_exports/windowInfoASHRAE.csv", index=False)
 plt.show()
