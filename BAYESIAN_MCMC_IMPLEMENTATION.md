@@ -76,25 +76,26 @@ $$
 $$
 
 $$
-\sigma_{\mathrm{obs}} \sim \mathrm{HalfNormal}(\sigma_\epsilon)
+\log \sigma_{\mathrm{obs}} \sim \mathcal{N}(-2, 1)
 $$
 
 Important interpretation:
 
-- `a` now uses a normal prior centered at 1
+- `a` now uses a normal prior centered at 1 with standard deviation 0.2
 - `log_p_rms` uses a normal prior, and `p_rms = exp(log_p_rms)` inside the forward model
 - the `log_p_rms` prior mean is the measured subgroup mean of `log(p_rms-noInt-Norm)` using only positive values
 - the `log_p_rms` prior standard deviation is the measured subgroup standard deviation of `log(p_rms-noInt-Norm)` using only positive values
-- `sigma_obs` remains positive via a half-normal prior
+- `sigma_obs` remains positive via the deterministic transform `sigma_obs = exp(log_sigma_obs)`
 
 These priors are defined in [emulationHelpers.py#L163](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L163) to [emulationHelpers.py#L166](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L166).
 
 Default prior scales are currently:
 
 - `a_mu = 1.0`
-- `a_sigma = 0.1`
+- `a_sigma = 0.2`
 - `p_rms_var = "p_rms-noInt-Norm"`
-- `obs_sigma = 0.01`
+- `log_sigma_obs_mu = -2.0`
+- `log_sigma_obs_sigma = 1.0`
 
 See [emulationHelpers.py#L141](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L141) to [emulationHelpers.py#L143](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationHelpers.py#L143).
 
@@ -203,9 +204,10 @@ The notebook currently uses a cache directory named:
 The notebook cell that launches or reloads the scalar-posterior workflow lives in [emulationMCMC.ipynb](/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/emulationMCMC.ipynb). The important settings are:
 
 - `a_mu = 1.0`
-- `a_sigma = 0.1`
+- `a_sigma = 0.2`
 - `p_rms_var = "p_rms-noInt-Norm"`
-- `obs_sigma = 0.01`
+- `log_sigma_obs_mu = -2.0`
+- `log_sigma_obs_sigma = 1.0`
 - cached save/load behavior through `save_bayesian_ventilation_fit_results(...)` and `load_bayesian_ventilation_fit_results(...)`
 
 ## Conceptual Summary

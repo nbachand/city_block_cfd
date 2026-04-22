@@ -151,7 +151,7 @@ def _parameter_display_label(column):
         "a": "$C_d$",
         "p_rms": "$\\sigma_p$",
         "q_rms": "$\\sigma_q$",
-        "sigma_obs": "$\\varepsilon$",
+        "sigma_obs": "$\\sigma_{\\varepsilon}$",
     }.get(column, column)
 
 
@@ -181,15 +181,18 @@ def fit_bayesian_pressure_subgroup(
     y_obs,
     *,
     a_mu=1.0,
-    a_sigma=0.1,
+    a_sigma=0.2,
     log_p_rms_mu=-3.0,
     log_p_rms_sigma=0.1,
-    obs_sigma=0.01,
+    log_sigma_obs_mu=-2.0,
+    log_sigma_obs_sigma=1.0,
     random_seed=42,
     sample_kwargs=None,
 ):
     """Fit one a/p_rms/sigma_obs posterior for a single subgroup."""
     import pymc as pm
+
+    print(f"a_mu={a_mu}, a_sigma={a_sigma}, log_p_rms_mu={log_p_rms_mu}, log_p_rms_sigma={log_p_rms_sigma}, log_sigma_obs_mu={log_sigma_obs_mu}, log_sigma_obs_sigma={log_sigma_obs_sigma}")
 
     u_model = np.asarray(u_model, dtype=float)
     y_obs = np.asarray(y_obs, dtype=float)
@@ -199,6 +202,8 @@ def fit_bayesian_pressure_subgroup(
         raise ValueError("u_model and y_obs must have the same length.")
     if len(u_model) == 0:
         raise ValueError("Cannot fit a subgroup with zero samples.")
+    if log_sigma_obs_sigma <= 0:
+        raise ValueError("log_sigma_obs_sigma must be positive.")
 
     sample_kwargs_local = dict(sample_kwargs or {})
 
@@ -207,7 +212,8 @@ def fit_bayesian_pressure_subgroup(
         a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
         log_p_rms = pm.Normal("log_p_rms", mu=log_p_rms_mu, sigma=log_p_rms_sigma)
         p_rms = pm.Deterministic("p_rms", pt.exp(log_p_rms))
-        sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
+        log_sigma_obs = pm.Normal("log_sigma_obs", mu=log_sigma_obs_mu, sigma=log_sigma_obs_sigma)
+        sigma_obs = pm.Deterministic("sigma_obs", pt.exp(log_sigma_obs))
         mu = ventilation_redecomp_p_op(u_model_data, a, p_rms)
         pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
 
@@ -274,15 +280,18 @@ def fit_bayesian_q_subgroup(
     y_obs,
     *,
     a_mu=1.0,
-    a_sigma=0.1,
+    a_sigma=0.2,
     log_q_rms_mu=-2.0,
     log_q_rms_sigma=0.1,
-    obs_sigma=0.01,
+    log_sigma_obs_mu=-2.0,
+    log_sigma_obs_sigma=1.0,
     random_seed=42,
     sample_kwargs=None,
 ):
     """Fit one a/q_rms/sigma_obs posterior for a single subgroup."""
     import pymc as pm
+
+    print(f"a_mu={a_mu}, a_sigma={a_sigma}, log_q_rms_mu={log_q_rms_mu}, log_q_rms_sigma={log_q_rms_sigma}, log_sigma_obs_mu={log_sigma_obs_mu}, log_sigma_obs_sigma={log_sigma_obs_sigma}")
 
     u_model = np.asarray(u_model, dtype=float)
     y_obs = np.asarray(y_obs, dtype=float)
@@ -292,6 +301,8 @@ def fit_bayesian_q_subgroup(
         raise ValueError("u_model and y_obs must have the same length.")
     if len(u_model) == 0:
         raise ValueError("Cannot fit a subgroup with zero samples.")
+    if log_sigma_obs_sigma <= 0:
+        raise ValueError("log_sigma_obs_sigma must be positive.")
 
     sample_kwargs_local = dict(sample_kwargs or {})
 
@@ -300,7 +311,8 @@ def fit_bayesian_q_subgroup(
         a = pm.Normal("a", mu=a_mu, sigma=a_sigma)
         log_q_rms = pm.Normal("log_q_rms", mu=log_q_rms_mu, sigma=log_q_rms_sigma)
         q_rms = pm.Deterministic("q_rms", pt.exp(log_q_rms))
-        sigma_obs = pm.HalfNormal("sigma_obs", sigma=obs_sigma)
+        log_sigma_obs = pm.Normal("log_sigma_obs", mu=log_sigma_obs_mu, sigma=log_sigma_obs_sigma)
+        sigma_obs = pm.Deterministic("sigma_obs", pt.exp(log_sigma_obs))
         mu = ventilation_redecomp_q_op(u_model_data, a, q_rms)
         pm.Normal("y_like", mu=mu, sigma=sigma_obs, observed=y_obs)
 
@@ -761,10 +773,10 @@ def plot_empirical_model_error_distribution(
 
     if plot_mode == "hist1d":
         subgroup_order = [
-            ("Window", False, 1),
-            ("Window", False, -1),
-            ("Skylight", True, 1),
-            ("Skylight", True, -1),
+            ("Windows", False, 1),
+            ("Windows", False, -1),
+            ("Skylights", True, 1),
+            ("Skylights", True, -1),
         ]
 
         if ax is None:
@@ -801,8 +813,8 @@ def plot_empirical_model_error_distribution(
         return fig, axs, stats_by_panel
 
     subgroup_order = [
-        ("Window", False),
-        ("Skylight", True),
+        ("Windows", False),
+        ("Skylights", True),
     ]
 
     all_stats = []
@@ -1470,8 +1482,9 @@ def fit_bayesian_ventilation_p_subgroups(
     *,
     p_rms_var="p_rms-noInt-Norm",
     a_mu=1.0,
-    a_sigma=0.1,
-    obs_sigma=0.01,
+    a_sigma=0.2,
+    log_sigma_obs_mu=-2.0,
+    log_sigma_obs_sigma=1.0,
     sample_kwargs=None,
     random_seed=42,
 ):
@@ -1501,7 +1514,8 @@ def fit_bayesian_ventilation_p_subgroups(
                 a_sigma=a_sigma,
                 log_p_rms_mu=log_p_rms_mu,
                 log_p_rms_sigma=log_p_rms_sigma,
-                obs_sigma=obs_sigma,
+                log_sigma_obs_mu=log_sigma_obs_mu,
+                log_sigma_obs_sigma=log_sigma_obs_sigma,
                 random_seed=random_seed + i * 10 + j,
                 sample_kwargs=sample_kwargs,
             )
@@ -1528,8 +1542,9 @@ def fit_bayesian_ventilation_q_subgroups(
     *,
     q_rms_var="rms-mass_flux-Norm",
     a_mu=1.0,
-    a_sigma=0.1,
-    obs_sigma=0.01,
+    a_sigma=0.2,
+    log_sigma_obs_mu=-2.0,
+    log_sigma_obs_sigma=1.0,
     sample_kwargs=None,
     random_seed=42,
 ):
@@ -1564,7 +1579,8 @@ def fit_bayesian_ventilation_q_subgroups(
                 a_sigma=a_sigma,
                 log_q_rms_mu=log_q_rms_mu,
                 log_q_rms_sigma=log_q_rms_sigma,
-                obs_sigma=obs_sigma,
+                log_sigma_obs_mu=log_sigma_obs_mu,
+                log_sigma_obs_sigma=log_sigma_obs_sigma,
                 random_seed=random_seed + i * 10 + j,
                 sample_kwargs=sample_kwargs,
             )
@@ -2077,8 +2093,9 @@ def plot_bayesian_ventilation_p_fit(
     credible_interval=0.95,
     p_rms_var="p_rms-noInt-Norm",
     a_mu=1.0,
-    a_sigma=0.1,
-    obs_sigma=0.01,
+    a_sigma=0.2,
+    log_sigma_obs_mu=-2.0,
+    log_sigma_obs_sigma=1.0,
     sample_kwargs=None,
     random_seed=42,
     posterior_draws_for_curves=300,
@@ -2113,7 +2130,8 @@ def plot_bayesian_ventilation_p_fit(
         p_rms_var=p_rms_var,
         a_mu=a_mu,
         a_sigma=a_sigma,
-        obs_sigma=obs_sigma,
+        log_sigma_obs_mu=log_sigma_obs_mu,
+        log_sigma_obs_sigma=log_sigma_obs_sigma,
         sample_kwargs=sample_kwargs,
         random_seed=random_seed,
     )
