@@ -1641,6 +1641,12 @@ def plot_bayesian_ventilation_p_fit_results(
     normal_mc_band_hatch=None,
     normal_mc_label="95% Mean/Std Normal-MC Band",
     normal_mc_random_seed=None,
+    compare_sigma_e_bound=False,
+    sigma_e_multiplier=2.0,
+    sigma_e_band_color="tab:orange",
+    sigma_e_band_alpha=0.18,
+    sigma_e_band_hatch="xx",
+    sigma_e_label=None,
     scatter_zorder=3,
     band_zorder=1,
     line_zorder=4,
@@ -1735,6 +1741,11 @@ def plot_bayesian_ventilation_p_fit_results(
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
             line_label = "Posterior Median Model" if s > 0 else None
+            sigma_e_plot_label = (
+                sigma_e_label
+                if sigma_e_label is not None
+                else f"Median Fit +/- {sigma_e_multiplier:g} sigma_e Band"
+            )
             axs[i].fill_between(
                 curve["x"],
                 curve["lower"],
@@ -1758,6 +1769,20 @@ def plot_bayesian_ventilation_p_fit_results(
                     edgecolor=normal_mc_band_color if normal_mc_band_hatch else None,
                     linewidth=0.0,
                     label=normal_mc_label if s > 0 else None,
+                    zorder=band_zorder,
+                )
+            if compare_sigma_e_bound:
+                sigma_e = float(np.median(fit_result["parameter_draws"]["sigma_obs"]))
+                axs[i].fill_between(
+                    curve["x"],
+                    curve["median"] - sigma_e_multiplier * sigma_e,
+                    curve["median"] + sigma_e_multiplier * sigma_e,
+                    color=sigma_e_band_color,
+                    alpha=sigma_e_band_alpha,
+                    hatch=sigma_e_band_hatch,
+                    edgecolor=sigma_e_band_color if sigma_e_band_hatch else None,
+                    linewidth=0.0,
+                    label=sigma_e_plot_label if s > 0 else None,
                     zorder=band_zorder,
                 )
             axs[i].plot(
@@ -1882,6 +1907,12 @@ def plot_bayesian_ventilation_q_fit_results(
     normal_mc_band_hatch=None,
     normal_mc_label="95% Mean/Std Normal-MC Band",
     normal_mc_random_seed=None,
+    compare_sigma_e_bound=False,
+    sigma_e_multiplier=2.0,
+    sigma_e_band_color="tab:orange",
+    sigma_e_band_alpha=0.18,
+    sigma_e_band_hatch="xx",
+    sigma_e_label=None,
     scatter_zorder=3,
     band_zorder=1,
     line_zorder=4,
@@ -1976,6 +2007,11 @@ def plot_bayesian_ventilation_q_fit_results(
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
             line_label = "Posterior Median Model" if s > 0 else None
+            sigma_e_plot_label = (
+                sigma_e_label
+                if sigma_e_label is not None
+                else f"Median Fit +/- {sigma_e_multiplier:g} sigma_e Band"
+            )
             axs[i].fill_between(
                 curve["x"],
                 curve["lower"],
@@ -1999,6 +2035,20 @@ def plot_bayesian_ventilation_q_fit_results(
                     edgecolor=normal_mc_band_color if normal_mc_band_hatch else None,
                     linewidth=0.0,
                     label=normal_mc_label if s > 0 else None,
+                    zorder=band_zorder,
+                )
+            if compare_sigma_e_bound:
+                sigma_e = float(np.median(fit_result["parameter_draws"]["sigma_obs"]))
+                axs[i].fill_between(
+                    curve["x"],
+                    curve["median"] - sigma_e_multiplier * sigma_e,
+                    curve["median"] + sigma_e_multiplier * sigma_e,
+                    color=sigma_e_band_color,
+                    alpha=sigma_e_band_alpha,
+                    hatch=sigma_e_band_hatch,
+                    edgecolor=sigma_e_band_color if sigma_e_band_hatch else None,
+                    linewidth=0.0,
+                    label=sigma_e_plot_label if s > 0 else None,
                     zorder=band_zorder,
                 )
             axs[i].plot(
