@@ -1647,6 +1647,7 @@ def plot_bayesian_ventilation_p_fit_results(
     sigma_e_band_alpha=0.18,
     sigma_e_band_hatch="xx",
     sigma_e_label=None,
+    median_model_label="Posterior Median Model",
     scatter_zorder=3,
     band_zorder=1,
     line_zorder=4,
@@ -1668,8 +1669,8 @@ def plot_bayesian_ventilation_p_fit_results(
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=16)
         if set_axis_labels:
-            ax.set_xlabel("Modeled Flux Velocity", fontsize=20)
-            ax.set_ylabel("LES Flux Velocity", fontsize=20)
+            ax.set_xlabel("Pseudo-Steady Baseline $q_n$", fontsize=20)
+            ax.set_ylabel("LES $q_n$", fontsize=20)
         if xlim is not None:
             ax.set_xlim(*xlim)
         if ylim is not None:
@@ -1740,7 +1741,7 @@ def plot_bayesian_ventilation_p_fit_results(
 
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
-            line_label = "Posterior Median Model" if s > 0 else None
+            line_label = median_model_label if s > 0 else None
             sigma_e_plot_label = (
                 sigma_e_label
                 if sigma_e_label is not None
@@ -1913,6 +1914,7 @@ def plot_bayesian_ventilation_q_fit_results(
     sigma_e_band_alpha=0.18,
     sigma_e_band_hatch="xx",
     sigma_e_label=None,
+    median_model_label="Posterior Median Model",
     scatter_zorder=3,
     band_zorder=1,
     line_zorder=4,
@@ -2006,7 +2008,7 @@ def plot_bayesian_ventilation_q_fit_results(
 
             band_name = "Posterior Predictive Band" if include_obs_noise else "Parameter Band"
             band_label = f"{int(credible_interval * 100)}% {band_name}" if s > 0 else None
-            line_label = "Posterior Median Model" if s > 0 else None
+            line_label = median_model_label if s > 0 else None
             sigma_e_plot_label = (
                 sigma_e_label
                 if sigma_e_label is not None
@@ -2324,8 +2326,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         axs[i].grid(True, alpha=0.3)
         axs[i].tick_params(labelsize=16)
         if set_axis_labels:
-            axs[i].set_xlabel("Modeled Flux Velocity", fontsize=20)
-            axs[i].set_ylabel("LES Flux Velocity", fontsize=20)
+            axs[i].set_xlabel("Pseudo-Steady Baseline $q_n$", fontsize=20)
+            axs[i].set_ylabel("LES $q_n$", fontsize=20)
         axs[i].set_xlim(-0.6, 0.6)
         axs[i].set_ylim(-0.6, 0.6)
     
