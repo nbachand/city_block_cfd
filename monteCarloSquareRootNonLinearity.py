@@ -94,14 +94,15 @@ for i, usePressure in enumerate([False, True]):
     # Simulation parameters
     q_std = 1.0  # Base standard deviation for generating I values
     max_q = 3.0
+    min_q = 0.01
 
     if randomPressure:
         max_value = p_instantaneous(max_q)  # Convert max flow to max pressure for sampling
-        min_value = p_instantaneous(0.1)  # Convert min flow to min pressure for sampling
+        min_value = p_instantaneous(min_q)  # Convert min flow to min pressure for sampling
         base_std = 2 * p_instantaneous(q_std)  # Set base std to the pressure corresponding to q_AFN=1
     else:
         max_value = max_q  # Maximum flow for sampling
-        min_value = 0.01  # Minimum flow for sampling
+        min_value = min_q  # Minimum flow for sampling
         base_std = q_std  # Set base std to the flow corresponding to q_AFN=1
     means = np.logspace(np.log10(min_value), np.log10(max_value), 40)
 
@@ -130,12 +131,12 @@ for i, usePressure in enumerate([False, True]):
         if randomPressure:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_pressure(
-                mean, base_std, n_samples=1000000
+                mean, base_std, n_samples=100000000
             )
         else:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_flow(
-                mean, base_std, n_samples=1000000
+                mean, base_std, n_samples=100000000
             )
 
         # plt.figure()
@@ -204,18 +205,18 @@ for i, usePressure in enumerate([False, True]):
         x_label = '$I(p)^{-0.5}$'
         title = 'Pressure-based; $p \\sim \\mathcal{N}(\\overline{p}, \\sigma_p^2)$'
     else:
-        title = 'Flow-based; $q \\sim \\mathcal{N}(\\overline{q}, \\sigma_q^2)$'
+        title = 'Ventilation-based; $q \\sim \\mathcal{N}(\\overline{q}, \\sigma_q^2)$'
         x_vals = 1 / I_values
         x_label = '$I(q)^{-1}$'
     
     # Plot 1: Mean flow vs transformed intensity
     ax = axes[0, i]
     ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
-    ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{PS}$', linewidth=1)
-    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{PS}\\sqrt{1-I^2}$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{PS}/(2H)$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{PS}/(2H_{\\mathrm{U}})$', linewidth=2)
-    # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{PS}(2H_{H,\\mathrm{T}})$', linewidth=2)
+    ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{MP}$', linewidth=1)
+    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{MP}\\sqrt{1-I^2}$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{MP}/(2H)$', linewidth=1.5)
+    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{MP}/(2H_{\\mathrm{U}})$', linewidth=2)
+    # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{MP}(2H_{H,\\mathrm{T}})$', linewidth=2)
     # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
     ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
@@ -279,6 +280,6 @@ for i, usePressure in enumerate([False, True]):
     # print(f"  Mean absolute error: {mean_error_blend:.6f}")
 
 plt.tight_layout()
-plt.show()
 
 plt.savefig('monte_carlo_square_root_non_linearity.png', dpi=300)
+plt.show()

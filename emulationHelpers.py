@@ -1669,7 +1669,7 @@ def plot_bayesian_ventilation_p_fit_results(
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=16)
         if set_axis_labels:
-            ax.set_xlabel("Pseudo-Steady Baseline $q_n$", fontsize=20)
+            ax.set_xlabel("Mean-Pressure Baseline $q_n$", fontsize=20)
             ax.set_ylabel("LES $q_n$", fontsize=20)
         if xlim is not None:
             ax.set_xlim(*xlim)
@@ -2326,7 +2326,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         axs[i].grid(True, alpha=0.3)
         axs[i].tick_params(labelsize=16)
         if set_axis_labels:
-            axs[i].set_xlabel("Pseudo-Steady Baseline $q_n$", fontsize=20)
+            axs[i].set_xlabel("Mean-Pressure Baseline $q_n$", fontsize=20)
             axs[i].set_ylabel("LES $q_n$", fontsize=20)
         axs[i].set_xlim(-0.6, 0.6)
         axs[i].set_ylim(-0.6, 0.6)
