@@ -1669,8 +1669,8 @@ def plot_bayesian_ventilation_p_fit_results(
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=16)
         if set_axis_labels:
-            ax.set_xlabel("Mean-Pressure Baseline $q_n$", fontsize=20)
-            ax.set_ylabel("LES $q_n$", fontsize=20)
+            ax.set_xlabel("Baseline $q_{MP,n}$", fontsize=20)
+            ax.set_ylabel("LES $\overline{q_n}$", fontsize=20)
         if xlim is not None:
             ax.set_xlim(*xlim)
         if ylim is not None:
@@ -1694,7 +1694,7 @@ def plot_bayesian_ventilation_p_fit_results(
         min_val = min(plotdf[x_var].min(), plotdf[y_var].min())
         max_val = max(plotdf[x_var].max(), plotdf[y_var].max())
         xs = np.array([min_val, max_val])
-        axs[i].plot(xs, xs, "r--", label="1:1 Line", zorder=0)
+        axs[i].plot(xs, xs, color="red", linestyle="--", label="1:1 Line", zorder=0)
 
         title = "Skylight" if sl_val else "Window"
         if show_row_titles:
@@ -1789,8 +1789,8 @@ def plot_bayesian_ventilation_p_fit_results(
             axs[i].plot(
                 curve["x"],
                 curve["median"],
-                color="k",
-                linestyle=stl,
+                color="black",
+                linestyle="-",
                 linewidth=2.5,
                 label=line_label,
                 zorder=line_zorder,
@@ -1961,7 +1961,7 @@ def plot_bayesian_ventilation_q_fit_results(
         min_val = min(plotdf[x_var].min(), plotdf[y_var].min())
         max_val = max(plotdf[x_var].max(), plotdf[y_var].max())
         xs = np.array([min_val, max_val])
-        axs[i].plot(xs, xs, "r--", label="1:1 Line", zorder=0)
+        axs[i].plot(xs, xs, color="red", linestyle="--", label="1:1 Line", zorder=0)
 
         title = "Skylight" if sl_val else "Window"
         if show_row_titles:
@@ -2056,8 +2056,8 @@ def plot_bayesian_ventilation_q_fit_results(
             axs[i].plot(
                 curve["x"],
                 curve["median"],
-                color="k",
-                linestyle=stl,
+                color="black",
+                linestyle="-",
                 linewidth=2.5,
                 label=line_label,
                 zorder=line_zorder,
@@ -2326,8 +2326,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         axs[i].grid(True, alpha=0.3)
         axs[i].tick_params(labelsize=16)
         if set_axis_labels:
-            axs[i].set_xlabel("Mean-Pressure Baseline $q_n$", fontsize=20)
-            axs[i].set_ylabel("LES $q_n$", fontsize=20)
+            axs[i].set_xlabel("Baseline $q_{MP,n}$", fontsize=20)
+            axs[i].set_ylabel("LES $\overline{q_n}$", fontsize=20)
         axs[i].set_xlim(-0.6, 0.6)
         axs[i].set_ylim(-0.6, 0.6)
     
@@ -2357,7 +2357,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         
         # 1:1 reference line
         xs = np.array([min_val, max_val])
-        axs[i].plot(xs, xs, 'r--', label='1:1 Line')
+        reference_label = '1:1' if adjustData else r'$\overline{q} = q_{MP}$'
+        axs[i].plot(xs, xs, "r--", label=reference_label)
         
         # Title
         title = "Skylight" if sl_val else "Window"
@@ -2433,7 +2434,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                 x_plot = regdf_abs[x_var] * s
                 y_plot = y_pred * s
                 
-                fit_label = "Model" if s > 0 else None
+                fit_label = r'$\overline{q} = q_{\mathrm{PW}}$' if s > 0 else None
                 axs[i].plot(x_plot, y_plot, color="k", linestyle=stl, label=fit_label, linewidth=2.5)
                 
                 # Add asymptote plots if requested
@@ -2445,10 +2446,10 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                         y_pred_lower = s * model_func(regdf_abs[x_var], *popt, I_crit=0.001)
                         y_pred_upper = s * model_func(regdf_abs[x_var], *popt, I_crit=1000)
                     
-                    upper_label = "Mean Dominated" if s > 0 else None
-                    lower_label = "Fluctuation Dominated" if s > 0 else None
-                    axs[i].plot(x_plot, y_pred_upper, color="blue", linestyle='--', label=upper_label, linewidth=1)
-                    axs[i].plot(x_plot, y_pred_lower, color="green", linestyle='--', label=lower_label, linewidth=1)
+                    upper_label = r'$\overline{q} = q_{MP}\sqrt{1-I^2}$' if s > 0 else None
+                    lower_label = r'$\overline{q} = q_{MP}/(2H)$' if s > 0 else None
+                    axs[i].plot(x_plot, y_pred_upper, color="blue", linestyle="--", label=upper_label, linewidth=1)
+                    axs[i].plot(x_plot, y_pred_lower, color="green", linestyle="--", label=lower_label, linewidth=1)
             
             # Calculate model-vs-observed metrics
             y_obs_model = plotdf.loc[mask, y_var].values
@@ -2460,6 +2461,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             print(f"NRMSE: {nrmse:.2f}, RMSE: {rmse:.3f}")
             
             error = y_pred_model - y_obs_model
+            y_obs_ss = np.sum((y_obs_model - np.mean(y_obs_model)) ** 2)
+            r_squared = 1 - np.sum(error ** 2) / y_obs_ss if y_obs_ss > 0 else np.nan
             iqr_error = np.quantile(error, 0.75) - np.quantile(error, 0.25)
             print(f"Bias: {np.mean(error):.4f}, Error STD: {np.std(error):.4f}, Error IQR: {iqr_error:.4f}")
             metrics_rows.append(
@@ -2476,12 +2479,30 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     "sigma": popt[1] if len(popt) > 1 else np.nan,
                     "rmse": rmse,
                     "nrmse": nrmse,
+                    "r_squared": r_squared,
                     "bias": np.mean(error),
                     "iqr_error": iqr_error,
                     "std": np.std(error),
                     "n": len(y_obs_model),
                 }
             )
+
+            annotation_kwargs = {
+                "transform": axs[i].transAxes,
+                "fontsize": 13,
+                "bbox": {"facecolor": "white", "edgecolor": "none", "alpha": 0.75, "pad": 1.5},
+                "zorder": 5,
+            }
+            if s > 0:
+                axs[i].text(
+                    0.03, 0.97, rf"Flow in: $R^2={r_squared:.2f}$",
+                    ha="left", va="top", color="tab:red", **annotation_kwargs,
+                )
+            else:
+                axs[i].text(
+                    0.97, 0.03, rf"Flow out: $R^2={r_squared:.2f}$",
+                    ha="right", va="bottom", color="tab:blue", **annotation_kwargs,
+                )
 
         
         # Scatter plot
@@ -2508,6 +2529,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             rmse, nrmse = calculate_normalized_rmse(plotdf[x_var], plotdf[y_var], normalization='std')
             print(f"For skylight={sl_val}, NRMSE: {nrmse:.4f}, RMSE: {rmse:.4f}")
             opening_error = plotdf[x_var] - plotdf[y_var]
+            opening_ss = np.sum((plotdf[y_var] - plotdf[y_var].mean()) ** 2)
+            opening_r_squared = 1 - np.sum(opening_error ** 2) / opening_ss if opening_ss > 0 else np.nan
             opening_iqr_error = np.quantile(opening_error, 0.75) - np.quantile(opening_error, 0.25)
             metrics_rows.append(
                 {
@@ -2523,6 +2546,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     "sigma": np.nan,
                     "rmse": rmse,
                     "nrmse": nrmse,
+                    "r_squared": opening_r_squared,
                     "bias": np.mean(opening_error),
                     "iqr_error": opening_iqr_error,
                     "std": np.std(opening_error),
@@ -2544,12 +2568,54 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
     labels = [l for _, l in filtered]
     
     if show_figure_legend and (not hue_is_numeric) and len(handles) > 0:
-        if using_external_axes:
+        if hue == "roomType":
+            room_label_map = {
+                "cross": "Cross",
+                "corner": "Corner",
+                "dual": "Dual-Room",
+                "single": "Single-Sided",
+            }
+            room_items = [
+                (handle, room_label_map[label])
+                for handle, label in zip(handles, labels)
+                if label in room_label_map
+            ]
+            model_label_order = [
+                r'$\overline{q} = q_{MP}$',
+                r'$\overline{q} = q_{MP}\sqrt{1-I^2}$',
+                r'$\overline{q} = q_{MP}/(2H)$',
+                r'$\overline{q} = q_{\mathrm{PW}}$',
+            ]
+            model_items = []
+            for model_label in model_label_order:
+                for handle, label in zip(handles, labels):
+                    if label == model_label:
+                        model_items.append((handle, label))
+                        break
+
+            if model_items:
+                axs[0].legend(
+                    [handle for handle, _ in model_items],
+                    [label for _, label in model_items],
+                    loc="upper left",
+                    fontsize=12,
+                )
+            if room_items:
+                fig.legend(
+                    [handle for handle, _ in room_items],
+                    [label for _, label in room_items],
+                    loc="lower center",
+                    bbox_to_anchor=(0.5, 0.01 if not using_external_axes else -0.02),
+                    fontsize=14,
+                    ncol=len(room_items),
+                    frameon=False,
+                )
+        elif using_external_axes:
             fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02),
                        fontsize=20, ncol=min(5, len(labels)), frameon=False)
         else:
             fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.93, 0.5),
-                       fontsize=20, title='Room Type', title_fontsize=20)
+                       fontsize=20)
     
     # Re-apply asymptote legend after removal loop (legacy behavior)
     if asymptote_legend_handles is not None and len(axs) > 2:
@@ -2578,7 +2644,10 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         fig.suptitle(f"{model_name}: Modeled vs LES Flux with Sign-group Fits", fontsize=20)
     
     if not using_external_axes:
-        plt.tight_layout(rect=[0, 0, 0.92, 0.95])
+        if show_figure_legend and (not hue_is_numeric) and hue == "roomType":
+            plt.tight_layout(rect=[0, 0.13, 1, 0.95])
+        else:
+            plt.tight_layout(rect=[0, 0, 0.92, 0.95])
 
     metrics_df = pd.DataFrame(metrics_rows)
     

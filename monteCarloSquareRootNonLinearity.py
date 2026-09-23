@@ -16,6 +16,7 @@ C_d = 0.611  # Discharge coefficient
 A = 1      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
+N_SAMPLES = 10**8  # Number of Monte Carlo samples
 
 def q_AFN(Delta_p_mean):
     """Airflow network prediction"""
@@ -86,6 +87,9 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     return q_mean, q_prime_rms, q_prime_H_mean, Delta_p_mean, Delta_p_prime_rms, Delta_p_prime_H_mean
     
 fig, axes = plt.subplots(3, 2, figsize=(10, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1, 1]})
+# The top row occupies 2/(2+1+1) of the full figure height, so 10 x 4 inches
+# preserves the same nominal panel width and height in the standalone version.
+fig_top, axes_top = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
 for i, usePressure in enumerate([False, True]):
     HPressure = usePressure  # Set to True ts use pressure-based H definition
     QPressure = usePressure  # Set to True to use pressure-based Q definition
@@ -131,12 +135,12 @@ for i, usePressure in enumerate([False, True]):
         if randomPressure:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_pressure(
-                mean, base_std, n_samples=100000000
+                mean, base_std, n_samples=N_SAMPLES
             )
         else:
             # Monte Carlo simulation
             qs, delPs = monte_carlo_average_flow(
-                mean, base_std, n_samples=100000000
+                mean, base_std, n_samples=N_SAMPLES
             )
 
         # plt.figure()
@@ -209,23 +213,24 @@ for i, usePressure in enumerate([False, True]):
         x_vals = 1 / I_values
         x_label = '$I(q)^{-1}$'
     
-    # Plot 1: Mean flow vs transformed intensity
-    ax = axes[0, i]
-    ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
-    ax.plot(x_vals, x_vals, color='gray', linestyle='--', label='$\\overline{q} = q_{MP}$', linewidth=1)
-    ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='#0072B2', linestyle='-', label='$\\overline{q} = q_{MP}\\sqrt{1-I^2}$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='#D55E00', linestyle='-', label='$\\overline{q} = q_{MP}/(2H)$', linewidth=1.5)
-    ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='#D55E00', linestyle=':', label= '$\\overline{q} = q_{MP}/(2H_{\\mathrm{U}})$', linewidth=2)
-    # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{MP}(2H_{H,\\mathrm{T}})$', linewidth=2)
-    # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
-    ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='#009E73', linestyle='--', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
-    ax.set_xlabel(x_label, fontsize=14)
-    ax.set_ylabel('$\\overline{q}$', fontsize=14)
-    ax.set_title(title, fontsize=16, fontweight='normal')
-    if i == 0:
-        ax.legend(fontsize=11, loc='lower right')
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim([0, 1.1*max_q])
+    # Plot 1: Mean flow vs transformed intensity. Draw the same panel in the
+    # full figure and the standalone top-row figure.
+    for ax in (axes[0, i], axes_top[i]):
+        ax.plot(x_vals, mc_q_mean_normalized*q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
+        ax.plot(x_vals, x_vals, color='red', linestyle='--', label='$\\overline{q} = q_{MP}$', linewidth=1)
+        ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='blue', linestyle='--', label='$\\overline{q} = q_{MP}\\sqrt{1-I^2}$', linewidth=1.5)
+        ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='green', linestyle='--', label='$\\overline{q} = q_{MP}/(2H)$', linewidth=1.5)
+        ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='green', linestyle=':', label= '$\\overline{q} = q_{MP}/(2H_{\\mathrm{U}})$', linewidth=2)
+        # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{MP}(2H_{H,\\mathrm{T}})$', linewidth=2)
+        # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
+        ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='black', linestyle='-', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=2)
+        ax.set_xlabel(x_label, fontsize=14)
+        ax.set_ylabel('$\\overline{q}$', fontsize=14)
+        ax.set_title(title, fontsize=16, fontweight='normal')
+        if i == 0:
+            ax.legend(fontsize=11, loc='lower right')
+        ax.grid(True, alpha=0.3)
+        ax.set_ylim([0, 1.1*max_q])
 
     # # Plot 2: Error between Monte Carlo and analytical
     # ax = axes[i, 1]
@@ -279,7 +284,9 @@ for i, usePressure in enumerate([False, True]):
     # print(f"  Max absolute error: {max_error_blend:.6f}")
     # print(f"  Mean absolute error: {mean_error_blend:.6f}")
 
-plt.tight_layout()
+fig.tight_layout()
+fig_top.tight_layout()
 
-plt.savefig('monte_carlo_square_root_non_linearity.png', dpi=300)
+fig.savefig('monte_carlo_square_root_non_linearity.png', dpi=300)
+fig_top.savefig('monte_carlo_square_root_non_linearity_top_row.png', dpi=300)
 plt.show()
