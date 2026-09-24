@@ -1670,7 +1670,7 @@ def plot_bayesian_ventilation_p_fit_results(
         ax.tick_params(labelsize=16)
         if set_axis_labels:
             ax.set_xlabel("Baseline $q_{MP,n}$", fontsize=20)
-            ax.set_ylabel("LES $\overline{q_n}$", fontsize=20)
+            ax.set_ylabel(r"LES $\overline{q_n}$", fontsize=20)
         if xlim is not None:
             ax.set_xlim(*xlim)
         if ylim is not None:
@@ -2327,7 +2327,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         axs[i].tick_params(labelsize=16)
         if set_axis_labels:
             axs[i].set_xlabel("Baseline $q_{MP,n}$", fontsize=20)
-            axs[i].set_ylabel("LES $\overline{q_n}$", fontsize=20)
+            axs[i].set_ylabel(r"LES $\overline{q_n}$", fontsize=20)
         axs[i].set_xlim(-0.6, 0.6)
         axs[i].set_ylim(-0.6, 0.6)
     
@@ -2412,7 +2412,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             
             popt = curve_fit(model_func, X_fit, regdf_abs[y_var], p0=fit_p0, bounds=fit_bounds)[0]
             print(f"Fitted parameters for {title}, {lbl}: popt={popt}")
-            print(f"$C_d$ is {Cd * popt[0]:.2f}, $\sigma$ is {popt[1]:.2f}")
+            print(fr"$C_d$ is {Cd * popt[0]:.2f}, $\sigma$ is {popt[1]:.2f}")
             fitted_params[(title, lbl)] = popt
             
             mask = plotdf["Sdelp"] == s
