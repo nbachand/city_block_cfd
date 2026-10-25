@@ -15,6 +15,7 @@ def _scale_scalar(func, x):
 C_d = 0.611  # Discharge coefficient
 A = 1      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
+U_10 = 1.0     # Prescribed velocity at 10 m height (m/s), used for nondimensionalization
 H_mean_type='harmonic'  # 'harmonic', 'geometric', 'arithmetic', or 'quadratic' mean for H calculation
 N_SAMPLES = 10**8  # Number of Monte Carlo samples
 
@@ -91,31 +92,29 @@ def calculate_statistics(q_samples, Delta_p_samples, H_mean_type='harmonic'):
     
     return q_mean, q_prime_rms, q_prime_H_mean, Delta_p_mean, Delta_p_prime_rms, Delta_p_prime_H_mean
     
-fig, axes = plt.subplots(3, 2, figsize=(10, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1, 1]})
+fig, axes = plt.subplots(3, 2, figsize=(10.2, 8), sharex='col', gridspec_kw={'height_ratios': [2, 1, 1]})
 # The top row occupies 2/(2+1+1) of the full figure height, so 10 x 4 inches
 # preserves the same nominal panel width and height in the standalone version.
-fig_top, axes_top = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
+fig_top, axes_top = plt.subplots(1, 2, figsize=(10.2, 5), sharex=False)
 for i, usePressure in enumerate([False, True]):
     HPressure = usePressure  # Set to True ts use pressure-based H definition
     QPressure = usePressure  # Set to True to use pressure-based Q definition
     randomPressure = usePressure  # Set to True to sample pressure, False to sample flow
 
-    # Simulation parameters
-    q_std = 1.0  # Base standard deviation for generating I values
-    max_q = 3.0
-    min_q = 0.01
-    I_q_max = q_std / max_q  # Maximum intensity for flow-based sampling
-    H_q_min_prop = q_std / min_q  # Minimum H for flow-based sampling
-
+    # Match the original dimensional sampling ranges.
+    q_std = 1.0  # Flow standard deviation (m^3/s)
+    min_q = 0.01  # Minimum sampled mean flow (m^3/s)
+    max_q = 3.0  # Maximum sampled mean flow and maximum pressure-based q_MP (m^3/s)
+    # This sets q_AFN(p_std / 2) = q_std, matching the fluctuation reference scales.
+    p_std = 2 * _scale_scalar(p_instantaneous, q_std)
     if randomPressure:
-        max_value = p_instantaneous(max_q)  # Convert max flow to max pressure for sampling
-        base_std = 2 * max_value * (I_q_max)**2  # Set base std to the pressure corresponding to q_AFN=1
-        min_value = base_std / H_q_min_prop  # Convert min flow to min pressure for sampling
-        print(f"Sampling pressure: max_value={max_value:.4f}, min_value={min_value:.4f}, base_std={base_std:.4f}")
+        base_std = p_std
+        min_value = p_std * min_q / q_std
+        max_value = _scale_scalar(p_instantaneous, max_q)
     else:
-        max_value = max_q  # Maximum flow for sampling
-        min_value = min_q  # Minimum flow for sampling
-        base_std = q_std  # Set base std to the flow corresponding to q_AFN=1
+        base_std = q_std
+        min_value = min_q
+        max_value = max_q
     means = np.logspace(np.log10(min_value), np.log10(max_value), 40)
 
     # Storage for results
@@ -125,7 +124,6 @@ for i, usePressure in enumerate([False, True]):
     analytical_fluct_dom = []
     analytical_fluct_dom_bound = []
     analytical_fluct_tan = []
-    analytical_blend = []
     analytical_blend = []
     analytical_AFN = []
 
@@ -211,31 +209,33 @@ for i, usePressure in enumerate([False, True]):
     q_afn_val_mc = np.array(q_afn_values)
 
 
-    # Plotting
+    # Plot dimensional flow against inverse fluctuation intensity.
     if QPressure:
-        x_vals = 1 / np.sqrt(I_values)  # Pressure-based intensity scales as q_AFN^2
-        x_star = 1 / np.sqrt(piecewise_transition_intensity(use_pressure=True))
-        x_star_label = '$I^*(p)^{-0.5}$'
-        x_label = '$I(p)^{-0.5}$'
-        title = 'Pressure-based; $p \\sim \\mathcal{N}(\\overline{p}, \\sigma_p^2)$'
-        q_MP = q_AFN(base_std / (2 * I_values))  # Mean flow at unit pressure difference
+        x_star_label = r'$I^*(\Delta C_p)^{-1/2}$'
+        x_label = r'$I(\Delta C_p)^{-1/2}$'
+        exponent = -0.5
+        title = r'Pressure-based; $\Delta C_p \sim \mathcal{N}(\overline{\Delta C_p}, \sigma_{\Delta C_p}^2)$'
     else:
-        title = 'Ventilation-based; $q \\sim \\mathcal{N}(\\overline{q}, \\sigma_q^2)$'
-        x_vals = 1 / I_values
-        x_star = 1 / piecewise_transition_intensity(use_pressure=False)
-        x_star_label = '$I^*(q)^{-1}$'
-        x_label = '$I(q)^{-1}$'
-        q_MP = base_std / I_values  # Mean flow at unit pressure difference
-    
-    # Plot 1: Mean flow vs transformed intensity. Draw the same panel in the
-    # full figure and the standalone top-row figure.
+        x_star_label = r'$I^*(q_n)^{-1}$'
+        x_label = r'$I(q_n)^{-1}$'
+        exponent = -1.0
+        title = r'Ventilation-based; $q_n \sim \mathcal{N}(\overline{q}_n, \sigma_{q_n}^2)$'
+    x_star = piecewise_transition_intensity(use_pressure=QPressure)**exponent
+    x_vals = I_values**exponent
+    # Nondimensionalize ventilation rates: q_n = q / (U_10 A).
+    q_ref = U_10 * A
+    y_mc = np.asarray(mc_q_mean) / q_ref
+    q_mp_n = q_afn_val_mc / q_ref
+    y_label = r'$\overline{q}_n$'
+
+    # Draw the same nondimensional curves in both figures.
     for ax in (axes[0, i], axes_top[i]):
-        ax.plot(x_vals, mc_q_mean_normalized * q_afn_val_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
-        ax.plot(x_vals, q_MP, color='red', linestyle='--', label='$\\overline{q} = q_{MP}$', linewidth=1)
-        ax.plot(x_vals, analytical_mean_dom*q_afn_val_mc, color='blue', linestyle='--', label='$\\overline{q} = q_{MP}\\sqrt{1-I^2}$', linewidth=2.5)
-        ax.plot(x_vals, analytical_fluct_dom*q_afn_val_mc, color='green', linestyle='--', label='$\\overline{q} = q_{MP}/(2H)$', linewidth=2.5)
-        ax.plot(x_vals, analytical_fluct_dom_bound*q_afn_val_mc, color='green', linestyle=':', label= '$\\overline{q} = q_{MP}/(2H_{\\mathrm{U}})$', linewidth=2.5)
-        ax.plot(x_vals, analytical_blend*q_afn_val_mc, color='black', linestyle='-', label='$\\overline{q} = q_{\\mathrm{PW}}$', linewidth=1.5)
+        ax.plot(x_vals, y_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
+        ax.plot(x_vals, q_mp_n, color='red', linestyle='--', label='$\\overline{q}_n = q_{MP,n}$', linewidth=1)
+        ax.plot(x_vals, np.asarray(analytical_mean_dom)*q_mp_n, color='blue', linestyle='--', label='$\\overline{q}_n = q_{MP,n}\\sqrt{1-I^2}$', linewidth=2.5)
+        ax.plot(x_vals, np.asarray(analytical_fluct_dom)*q_mp_n, color='green', linestyle='--', label='$\\overline{q}_n = q_{MP,n}/(2H)$', linewidth=2.5)
+        ax.plot(x_vals, np.asarray(analytical_fluct_dom_bound)*q_mp_n, color='green', linestyle=':', label= '$\\overline{q}_n = q_{MP,n}/(2H_{\\mathrm{U}})$', linewidth=2.5)
+        ax.plot(x_vals, np.asarray(analytical_blend)*q_mp_n, color='black', linestyle='-', label='$\\overline{q}_n = q_{\\mathrm{PW},n}$', linewidth=1.5)
         ax.axvline(x_star, color='0.35', linestyle='-.', linewidth=1.25)
         x_min, x_max = ax.get_xlim()
         ax.text((x_min + x_star) / 2, 0.95, 'Fluctuation Dominated',
@@ -248,15 +248,15 @@ for i, usePressure in enumerate([False, True]):
                     xycoords=('data', 'axes fraction'), xytext=(5, 0),
                     textcoords='offset points', ha='left', va='top', fontsize=11,
                     bbox=dict(facecolor='white', edgecolor='none', pad=1))
-        # ax.plot(x_vals, analytical_fluct_tan*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{MP}(2H_{H,\\mathrm{T}})$', linewidth=2)
+        # ax.plot(x_vals, np.asarray(analytical_fluct_tan)*q_afn_val_mc, color='#D55E00', linestyle='-.', label='$\\overline{q} = q_{MP}(2H_{H,\\mathrm{T}})$', linewidth=2)
         # ax.plot(q_afn_values, analytical_blend, color='#009E73', linestyle='-', label='Blended model', linewidth=2)
         ax.set_xlabel(x_label, fontsize=14)
-        ax.set_ylabel('$\\overline{q}$', fontsize=14)
+        ax.set_ylabel(y_label, fontsize=14)
         ax.set_title(title, fontsize=16, fontweight='normal')
         if i == 0:
             ax.legend(fontsize=11, loc='lower right')
         ax.grid(True, alpha=0.3)
-        ax.set_ylim([0, 1.1*max_q])
+        ax.set_ylim([0, 1.1 * max(np.max(y_mc), np.max(q_mp_n))])
 
     # # Plot 2: Error between Monte Carlo and analytical
     # ax = axes[i, 1]
@@ -277,8 +277,8 @@ for i, usePressure in enumerate([False, True]):
 
     # Plot 3: Intensity values
     ax = axes[1, i]
-    ax.plot(x_vals, 1/I_p_values, color='#0072B2', linestyle='-', label='$I(p)^{-1}$', linewidth=2)
-    ax.plot(x_vals, 1/I_q_values, color='#D55E00', linestyle='-', label='$I(q)^{-1}$', linewidth=2)
+    ax.plot(x_vals, 1/I_p_values, color='#0072B2', linestyle='-', label='$I(\\Delta C_p)^{-1}$', linewidth=2)
+    ax.plot(x_vals, 1/I_q_values, color='#D55E00', linestyle='-', label='$I(q_n)^{-1}$', linewidth=2)
     ax.set_xlabel(x_label, fontsize=14)
     ax.set_ylabel('$I^{-1}$', fontsize=14)
     # ax.set_title('I vs q_AFN', fontsize=13, fontweight='bold')
@@ -297,7 +297,7 @@ for i, usePressure in enumerate([False, True]):
     if i == 0:
         ax.legend(fontsize=11, loc='lower right')
     ax.grid(True, alpha=0.3)
-    ax.set_ylim([0, 1.1*max_q])
+    ax.set_ylim(bottom=0)
 
     # # Print summary statistics
     # print("\n" + "="*60)
@@ -309,6 +309,14 @@ for i, usePressure in enumerate([False, True]):
     # print(f"Blended model (I < 1.0):")
     # print(f"  Max absolute error: {max_error_blend:.6f}")
     # print(f"  Mean absolute error: {mean_error_blend:.6f}")
+
+for ax in (*axes.flat, *axes_top.flat):
+    for axis in (ax.xaxis, ax.yaxis):
+        axis.label.set_fontsize(1.25 * axis.label.get_fontsize())
+        axis.get_offset_text().set_fontsize(1.25 * axis.get_offset_text().get_fontsize())
+        for tick in axis.get_major_ticks() + axis.get_minor_ticks():
+            tick.label1.set_fontsize(1.25 * tick.label1.get_fontsize())
+            tick.label2.set_fontsize(1.25 * tick.label2.get_fontsize())
 
 fig.tight_layout()
 fig_top.tight_layout()
