@@ -1,7 +1,10 @@
-RESTART = ../../../STITCH/config2/9M-mesh.mles ./data/result.00172000.sles
+# 2026 rerun of R48 from rest (the 2024 run's restart files were lost; its outputs are in run2024/).
+# Same start as the 2024 run's first job. To restart mid-run, add the result file after the mesh below
+# and comment out INIT and RESET_ALL.
+RESTART = /oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/STITCH/config2/9M-mesh.mles #./data/result.00172000.sles
 # INTERP_FROM_RESTART ../R21/data/result.0015800.sles
-# INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
-# RESET_ALL
+INIT time = 0.0 step = 0 p=0 #u = 10.0 0.0 0.000001
+RESET_ALL
  
 #Equation of state
 EOS HELMHOLTZ

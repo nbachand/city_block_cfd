@@ -239,15 +239,27 @@ if windowType == "POINTCLOUD_PROBES":
 else:
     EPquants = ["comp(u_avg,0)", "comp(u_avg,1)", "comp(u_avg,2)", "mag(u)_avg", "p_avg", "D_avg", "S_avg", "T_avg"]
 
+# The extra probes record charles's running averages (*_avg), so the value at one step is the average
+# since the last stats reset. charles_mods/general_mods.hpp resets all stats (CtiRegister::resetStats)
+# at scalarSeedStep, tempInitStep and tempInitStep + scalarSeedStep, before that step's probes are
+# written, so reading at a reset step gives a one-step snapshot. Read the last probe step before it.
+STATS_RESET_STEPS = {40000, 120000, 160000}
+
+def ep_avg_step(stop):
+    if stop not in STATS_RESET_STEPS:
+        return stop
+    return max(step for step in EPprobes.probe_steps if step < stop)
+
 for i, start in enumerate(starts):
     stop = stops[i]
-    print(f"... from steps {start} to {stop}")
-    
+    ep_step = ep_avg_step(stop)
+    print(f"... from steps {start} to {stop} (extra probe averages read at step {ep_step})")
+
     print(f"Extra probe steps from {min(EPprobes.probe_steps)}, {max(EPprobes.probe_steps)}")
 
     df = EPprobes.statistics(
-        names = [name for name in  EPprobes.probe_names if "extraProbe" in name], 
-        steps = [stop],
+        names = [name for name in  EPprobes.probe_names if "extraProbe" in name],
+        steps = [ep_step],
         quants = EPquants,
         parrallel=False
         )
