@@ -1,7 +1,5 @@
 # SURF STL ../../OpenSCAD/config3/mesh_geom.stl
-SURF STL ../../OpenSCAD/config3/mesh_geom_noInteriors_meshlab2.stl
-
-INTERACTIVE
+SURF STL ../../OpenSCAD/config3/mesh_geom_noInteriors_meshlab.stl
 
 RUN_DIAGNOSTICS WITH_DETAILS WITH_SUBZONE_INFO
 CHECK_SELF_INTERSECTIONS
@@ -41,7 +39,9 @@ SET_ZONE_BC ZONE_NAMES right BC PER2_A
 SET_ZONE_BC ZONE_NAMES left BC PER2_B
 SET_PERIODIC ZONES right left CART 0 0 348
 
+WRITE_IMAGE NAME=./SurferImages/y1p5 TARGET 0 174 0 CAMERA 0 -174 0 SIZE 480 480 WIDTH 348  GEOM PLANE 174 1.5 174 0 -1 0 HIDE_ZONES_NAMED right,left,ground,top,inlet,outlet
+
 # WRITE_SBIN mesh_geom.sbin
-WRITE_SBIN mesh_geom_noInteriors.sbin
+# WRITE_SBIN mesh_geom_noInteriors.sbin
 
 INTERACTIVE
