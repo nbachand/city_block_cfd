@@ -9,7 +9,10 @@ from matplotlib.lines import Line2D
 import pyafn
 from matplotlib import pyplot as plt
 import pytensor.tensor as pt
-from pytensor.compile.ops import wrap_py
+try:
+    from pytensor.compile.ops import wrap_py
+except ImportError:  # older pytensor (<2.32) only provides as_op
+    from pytensor.compile.ops import as_op as wrap_py
 from pyafn import rho, Cd
 
 
@@ -2234,7 +2237,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                                 show_figure_legend=True, add_numeric_colorbar=False,
                                 hue_norm=None, palette_numeric="viridis", figure_suptitle=True,
                                 colorbar_rect=None, colorbar_orientation="horizontal", colorbar_label=None, return_data=False,
-                                return_params=False, return_metrics=False):
+                                return_params=False, return_metrics=False, marker_size=20):
     """
     Plot ventilation model fits comparing modeled vs LES flux velocities.
     
@@ -2297,7 +2300,9 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         ("Skylight", "Flow Entering"), ("Skylight", "Flow Exiting").
     return_metrics : bool
         If True, return a tidy dataframe with subgroup- and opening-level error metrics.
-    
+    marker_size : float
+        Scatter marker size (matplotlib `s`, area in points^2). Default 20.
+
     Returns:
     --------
     fig, axs : matplotlib figure and axes objects
@@ -2350,7 +2355,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
     for i in range(2):
         sl_val = bool(i)
         plotdf = data[data["skylight"] == sl_val].copy()
-        plotdf = plotdf.sort_values(by=[hue, style])
+        plotdf = plotdf.sort_values(by=[c for c in (hue, style) if c is not None])
         
         min_val = min(plotdf[x_var].min(), plotdf[y_var].min())
         max_val = max(plotdf[x_var].max(), plotdf[y_var].max())
@@ -2412,7 +2417,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
             
             popt = curve_fit(model_func, X_fit, regdf_abs[y_var], p0=fit_p0, bounds=fit_bounds)[0]
             print(f"Fitted parameters for {title}, {lbl}: popt={popt}")
-            print(fr"$C_d$ is {Cd * popt[0]:.2f}, $\sigma$ is {popt[1]:.2f}")
+            print(fr"$C_d$ is {Cd * popt[0]:.3}, $\sigma$ is {popt[1]:.3f}")
             fitted_params[(title, lbl)] = popt
             
             mask = plotdf["Sdelp"] == s
@@ -2512,7 +2517,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         scatter_ax = sns.scatterplot(
             data=plotdf, x=x_var, y=y_var,
             hue=hue, style=style,
-            alpha=0.6, s=20, ax=axs[i],
+            alpha=0.6, s=marker_size, ax=axs[i],
             palette=palette_numeric if hue_is_numeric else "colorblind",
             hue_norm=hue_norm if hue_is_numeric else None,
             hue_order=None if hue_is_numeric else room_type_hue_order,

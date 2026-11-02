@@ -19,7 +19,7 @@ def getRoomTemp(row, tempStack=False):
     else:
         return row["mean-T-room"]
 
-def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"], tempStack=False, doorCd=0.6, checkAnalytical=False):
+def update_flow_and_ventilation(flowStatsMI, roomVentilationMI, useDoors=True, pTypes = {"p-noInt": "p_avg-noInt"}, optTypes = ["optp0", "optp0Cd"], tempStack=False, doorCd=pyafn.Cd, checkAnalytical=False):
     flowStatsMI = flowStatsMI.copy()
     roomVentilationMI = roomVentilationMI.copy()
 

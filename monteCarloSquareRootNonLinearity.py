@@ -12,7 +12,7 @@ def _scale_scalar(func, x):
     return _as_scalar(func(np.array([x], dtype=float)))
 
 # Constants
-C_d = 0.611  # Discharge coefficient
+C_d = pyafn.Cd  # Discharge coefficient
 A = 1      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
 U_10 = 1.0     # Prescribed velocity at 10 m height (m/s), used for nondimensionalization
@@ -233,8 +233,8 @@ for i, usePressure in enumerate([False, True]):
         ax.plot(x_vals, y_mc, 'kx', label='Monte Carlo', markersize=6, alpha=1)
         ax.plot(x_vals, q_mp_n, color='red', linestyle='--', label='$\\overline{q}_n = q_{MP,n}$', linewidth=1)
         ax.plot(x_vals, np.asarray(analytical_mean_dom)*q_mp_n, color='blue', linestyle='--', label='$\\overline{q}_n = q_{MP,n}\\sqrt{1-I^2}$', linewidth=2.5)
-        ax.plot(x_vals, np.asarray(analytical_fluct_dom)*q_mp_n, color='green', linestyle='--', label='$\\overline{q}_n = q_{MP,n}/(2H)$', linewidth=2.5)
-        ax.plot(x_vals, np.asarray(analytical_fluct_dom_bound)*q_mp_n, color='green', linestyle=':', label= '$\\overline{q}_n = q_{MP,n}/(2H_{\\mathrm{U}})$', linewidth=2.5)
+        ax.plot(x_vals, np.asarray(analytical_fluct_dom)*q_mp_n, color='green', linestyle=':', label='$\\overline{q}_n = q_{MP,n}/(2H)$', linewidth=2.5)
+        ax.plot(x_vals, np.asarray(analytical_fluct_dom_bound)*q_mp_n, color='green', linestyle='--', label= '$\\overline{q}_n = q_{MP,n}/(2H_{\\mathrm{U}})$', linewidth=2.5)
         ax.plot(x_vals, np.asarray(analytical_blend)*q_mp_n, color='black', linestyle='-', label='$\\overline{q}_n = q_{\\mathrm{PW},n}$', linewidth=1.5)
         ax.axvline(x_star, color='0.35', linestyle='-.', linewidth=1.25)
         x_min, x_max = ax.get_xlim()
