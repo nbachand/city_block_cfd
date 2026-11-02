@@ -72,5 +72,7 @@ cd "$SCR"
 echo "0 0 $UT" > ./probes/VolProbe90X.svp
 echo "0 0 $WT" > ./probes/VolProbe90Z.svp
 echo "Executing charles from $(pwd)"
+set +u  # /etc/bashrc (via ~/.bash_profile) reads PS1, unset in batch jobs
 source ~/.bash_profile
+set -u
 srun "$EXE" -i "$IN"

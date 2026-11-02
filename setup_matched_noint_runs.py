@@ -8,12 +8,12 @@ Each interior run gets two pressure-only twins (docs/handoff_les_pressure_ws_sca
 "Matched pressure-only restarts"), interpolated from its own restart file without INIT / RESET_ALL,
 so the step and time carry over and the twin starts correlated with the interior run:
 
-    window   slot      start file          RESET_STATS at step   NSTEPS   averaging window
-    ΔT 0     76 + i    result.00039000     42000                 120000   42k-119k
-    ΔT 5     88 + i    result.00159000     162000                240000   162k-239k
+    window   slot      start file          RESET_STATS at step   NSTEPS   averaging window (POST snapshot)
+    ΔT 0     76 + i    result.00039000     42000                 120000   42k-119k (result.00119000)
+    ΔT 5     88 + i    result.00159000     162000                240000   162k-240k (result.00240000)
 
-i is the source's position in SOURCES. general_mods.hpp also resets stats at steps 40000 and
-160000; RESET_STATS is absolute simulation time (time = step * dt in every source run). The
+i is the source's position in SOURCES. general_mods.hpp also resets stats at steps 40000,
+120000 and 160000 (so the ΔT 0 window is read one snapshot before 120000); RESET_STATS is absolute simulation time (time = step * dt in every source run). The
 input and submit script are copied from the existing no-interior run with the same config, angle
 and WS (TEMPLATE), and the submit header is the one used for config2 R82. Existing folders are
 never overwritten.
@@ -28,7 +28,7 @@ import shutil
 from pathlib import Path
 
 CHARLES = Path("/oak/stanford/groups/gorle/nbachand/Cascade/city_block_cfd/CHARLES")
-SCRATCH = Path(os.environ["SCRATCH"]) / "Cascade/city_block_cfd/CHARLES"
+SCRATCH = Path(os.environ.get("SCRATCH", "/scratch")) / "Cascade/city_block_cfd/CHARLES"
 # Interior source runs in slot order: families a, b, s (all skylights open). Value: (angle, WS).
 SOURCES = {
     2: {46: (45, 2), 47: (45, 4), 48: (0, 2), 49: (0, 4), 53: (45, 2), 54: (45, 4), 55: (0, 2), 56: (0, 4),
@@ -40,8 +40,10 @@ TEMPLATE = {(2, 45, 2): 57, (2, 45, 4): 58, (2, 0, 2): 59, (2, 0, 4): 60,
             (3, 45, 2): 25, (3, 45, 4): 26, (3, 0, 2): 27, (3, 0, 4): 28}
 MESH = {2: "STITCH/config2/7M-mesh-noInteriors.mles", 3: "STITCH/config3/13M-mesh-noInteriors.mles"}
 DT = {2: 0.02, 4: 0.01}
-WINDOWS = {"dT0": {"offset": 76, "start": 39000, "reset": 42000, "nsteps": 120000},
-           "dT5": {"offset": 88, "start": 159000, "reset": 162000, "nsteps": 240000}}
+# post: the snapshot whose running averages are the window's (POST pass, extra probes); "V" is the
+# interior run's window digit in the multi-run ids (C*1000 + R*10 + V).
+WINDOWS = {"dT0": {"offset": 76, "start": 39000, "reset": 42000, "nsteps": 120000, "post": 119000, "V": 0},
+           "dT5": {"offset": 88, "start": 159000, "reset": 162000, "nsteps": 240000, "post": 240000, "V": 2}}
 # Sources whose restart files are read from scratch instead of Oak: the R48 rerun (started 2026-10-28)
 # writes its snapshots to its scratch run folder. Its dT5 twin (R90) is created once result.00159000 exists.
 SOURCE_DATA = {(2, 48): SCRATCH / "config2/R48/data"}
@@ -53,6 +55,14 @@ SLURM_HEADER = """#SBATCH -n 24
 #SBATCH --mail-type=ALL
 #SBATCH --constraint=[CLASS:SH4_CBASE|CLASS:SH4_CPERF|CLASS:SH3_CBASE.1]
 """
+
+
+def matched_run(c: int, src: int, v: int):
+    """Pressure-only twin of interior run config<c> R<src>, window digit v: (R, flowStats file name), or None."""
+    for w in WINDOWS.values():
+        if w["V"] == v and src in SOURCES.get(c, {}):
+            return w["offset"] + list(SOURCES[c]).index(src), f"flowStats-{w['reset']}to{w['post']}.csv"
+    return None
 
 
 def source_data(c: int, src: int) -> Path:

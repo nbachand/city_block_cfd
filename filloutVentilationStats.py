@@ -777,3 +777,117 @@ def replace_sl_with_h_df(df, level=1):
         if "houseType" in col:
             df[col] = df[col].apply(lambda s: s.replace("sl", "-1-0"))
     return df
+
+
+#### Pressure-only (no-interior) opening stats for the flow model ####
+
+def _read_noint_stats(path):
+    """One pressure-only run's opening stats (probes/flowStats-*.csv) with the columns suffixed "-noInt"."""
+    stats = pd.read_csv(path, index_col=0)
+    stats.index = stats.index.map(lambda name: name if name.split("_")[-1][0] == "B" else f"{name}_B")
+    stats.index.name = None
+    stats.columns = [str(col).replace('-119000', '') + "-noInt" for col in stats.columns]
+    return stats
+
+
+def _combine_noint_stats(frames):
+    """Average member runs' stats as combine_stats does: numeric columns averaged (rms columns in
+    quadrature); other columns (opening metadata) must agree and are taken from the first frame."""
+    if len(frames) == 1:
+        return frames[0].copy()
+    index = frames[0].index
+    frames = [f.loc[index] for f in frames]
+    out = frames[0].copy()
+    for col in out.columns:
+        if pd.api.types.is_numeric_dtype(out[col]):
+            vals = np.stack([f[col].to_numpy(float) for f in frames])
+            out[col] = np.sqrt((vals**2).mean(axis=0)) if "rms" in col else vals.mean(axis=0)
+        else:
+            for f in frames[1:]:
+                same = (f[col].astype(str) == out[col].astype(str)) | (f[col].isna() & out[col].isna())
+                if not same.all():
+                    raise ValueError(f"pressure-only runs disagree on {col}")
+    return out
+
+
+def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_matched=True,
+                           require_all=True, unmatched_sources=((2, 48),), verbose=True):
+    """Pressure-only opening stats for every run in the combined flowStatsMI (index: combined run id
+    csId*10 + V, opening), replacing the old one-run-per-case assignment.
+
+    For each combined run, each member interior run (from runs_csv, the per-run flowStatsMI.csv) uses
+    its matched pressure-only twin (setup_matched_noint_runs.matched_run: CHARLES/config<C>/R76-R99,
+    restarted from that interior run, file probes/flowStats-42000to119000.csv for ΔT 0 or
+    -162000to240000.csv for ΔT 5) when the twin's file exists, otherwise the old pressure-only run of
+    the same C, A, WS (runsNoInt, probes/flowStats-40000to119000.csv). Members are averaged as
+    combine_stats averages the interior runs (rms in quadrature).
+
+    require_all: use the twins for a combined run only if every member's twin is available, so each
+        row is either fully matched or fully old. With False, members fall back one by one.
+    unmatched_sources: (C, R) interior runs whose current stats do not come from the run their twins
+        were restarted from: config2 R48's stats are from the 2024 run, its twins (R78, R90) from the
+        2026 rerun. Remove it once R48 is reprocessed from the rerun.
+    use_matched=False reproduces the old assignment.
+
+    Returns (pcStatsMI, sources): pcStatsMI is indexed (run, index) with the "-noInt" columns the
+    notebook has always used, plus pOnly_nMatched / pOnly_nMembers (floats) and pOnly_runs (str);
+    sources lists, per combined run, where each member's pressures came from.
+    """
+    from setup_matched_noint_runs import matched_run
+
+    if runs_csv is None:
+        runs_csv = f"{home_dir}/CHARLES/multiRuns/flowStatsMI.csv"
+    runs = pd.read_csv(runs_csv, index_col=[0, 1])
+    runs = runs.groupby(level=0)[["csId", "C", "A", "WS"]].first()
+    members = {}
+    for run_id, row in runs.iterrows():
+        members.setdefault(int(row.csId) * 10 + int(run_id) % 10, []).append(int(run_id))
+
+    noIntRuns = pd.DataFrame(runsNoInt).T
+    unmatched_sources = {tuple(s) for s in unmatched_sources}
+    cache, pcStats, sources = {}, [], []
+
+    def read(path):
+        if path not in cache:
+            cache[path] = _read_noint_stats(path)
+        return cache[path]
+
+    for run in np.sort(flowStatsMI.index.get_level_values(0).unique()):
+        first = flowStatsMI.loc[run].iloc[0]
+        A, WS, C, V = first["A"], first["WS"], int(first["C"]), int(run) % 10
+        old = noIntRuns[(noIntRuns["A"] == A) & (noIntRuns["WS"] == WS) & (noIntRuns["C"] == C)].index[0]
+        old_path = f"{home_dir}/CHARLES/config{C}/R{old % 100}/probes/flowStats-40000to119000.csv"
+
+        chosen = []
+        for m in members[int(run)]:
+            src = (m // 10) % 100
+            twin = matched_run(C, src, V) if use_matched and (C, src) not in unmatched_sources else None
+            path = twin and f"{home_dir}/CHARLES/config{C}/R{twin[0]}/probes/{twin[1]}"
+            if path and os.path.exists(path):
+                chosen.append((m, f"R{twin[0]}", path, True))
+            else:
+                chosen.append((m, f"R{old % 100} (old)", old_path, False))
+        if require_all and not all(c[3] for c in chosen):
+            chosen = [(m, f"R{old % 100} (old)", old_path, False) for m, *_ in chosen]
+
+        paths = list(dict.fromkeys(c[2] for c in chosen))
+        stats = _combine_noint_stats([read(p) for p in paths])
+        n_matched = sum(c[3] for c in chosen)
+        stats["run"] = run
+        stats["run-noInt"] = old * 10 + V if n_matched == 0 else np.nan
+        stats["pOnly_nMatched"] = float(n_matched)
+        stats["pOnly_nMembers"] = float(len(chosen))
+        stats["pOnly_runs"] = "+".join(dict.fromkeys(c[1] for c in chosen))
+        stats = replace_sl_with_h_df(stats, level=0)
+        pcStats.append(stats)
+        for m, label, _, matched in chosen:
+            sources.append({"run": run, "C": C, "A": A, "WS": WS, "V": V, "interior run": f"R{(m // 10) % 100}",
+                            "pressures from": f"config{C} {label}", "matched": matched})
+
+    pcStatsMI = pd.concat(pcStats, axis="rows").reset_index().set_index(["run", "index"])
+    sources = pd.DataFrame(sources)
+    if verbose:
+        per_run = sources.groupby("run")["matched"].agg(["sum", "size"])
+        print(f"pressure-only stats: {int((per_run['sum'] == per_run['size']).sum())} of {len(per_run)} combined runs "
+              f"use matched twins ({int(sources['matched'].sum())} of {len(sources)} member runs)")
+    return pcStatsMI, sources

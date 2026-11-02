@@ -28,5 +28,7 @@ sed "s/SNAPSHOT/$STEP/" "$CONFIG_DIR/charles-post-noInt.in" > "$POST/charles-pos
 EXE=$CONFIG_DIR/$(grep -oE "charles/[0-9a-z_]+/charles\.exe" charles.slurm | head -1)
 cd "$POST"
 echo "POST of $RUN result.$STEP.sles in $(pwd) with $EXE"
+set +u  # /etc/bashrc (via ~/.bash_profile) reads PS1, unset in batch jobs
 source ~/.bash_profile
+set -u
 srun "$EXE" -i "$POST/charles-post.in"

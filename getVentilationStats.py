@@ -172,6 +172,14 @@ if windowType == "POINTCLOUD_PROBES":
 
 print(category, R)
 
+# POINTCLOUD_PROBES come from POST passes, one snapshot step each. Read only the window-end step, so a
+# second POST step converted into the same folder is never averaged in.
+if windowType == "POINTCLOUD_PROBES":
+    assert len(stops) == 1 and stops[0] in probes.probe_steps, f"POST step {stops} not in {probes.probe_steps}"
+    window_steps = [stops[0]]
+else:
+    window_steps = probes.probe_steps
+
 print("Compiling window stats")
 
 ## X Flow
@@ -185,7 +193,7 @@ def norm_norm_blocks(data_dict):
 
 dfX = probes.statistics(
     names = [name for name in  probes.probe_names if "xwindow" in name], 
-    # steps = probes.probe_steps[start:stop:by],
+    steps = window_steps,
     quants = qois,
     processing = [norm_norm_blocks],
     parrallel=False
@@ -206,7 +214,7 @@ def norm_norm_blocks(data_dict):
 
 dfZ = probes.statistics(
     names = [name for name in  probes.probe_names if "zwindow" in name], 
-    # steps = probes.probe_steps[start:stop:by],
+    steps = window_steps,
     quants = qois,
     processing = [norm_norm_windows, norm_norm_blocks],
     parrallel=False
@@ -220,7 +228,7 @@ def norm_norm_windows(data_dict): # Currently this is applying to qois that shou
 
 dfY = probes.statistics(
     names = [name for name in  probes.probe_names if "skylight" in name], 
-    # steps = probes.probe_steps[start:stop:by],
+    steps = window_steps,
     quants = qois,
     processing = [norm_norm_windows, norm_norm_blocks],
     parrallel=False
