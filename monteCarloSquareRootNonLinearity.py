@@ -12,7 +12,7 @@ def _scale_scalar(func, x):
     return _as_scalar(func(np.array([x], dtype=float)))
 
 # Constants
-C_d = 0.611  # Discharge coefficient
+C_d = pyafn.Cd  # Discharge coefficient
 A = 1      # Area (m^2)
 rho = 1.225    # Air density (kg/m^3)
 U_10 = 1.0     # Prescribed velocity at 10 m height (m/s), used for nondimensionalization
