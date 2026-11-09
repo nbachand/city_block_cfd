@@ -817,11 +817,18 @@ def _combine_noint_stats(frames):
 
 
 def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_matched=True,
-                           require_all=True, unmatched_sources=(), verbose=True):
-    """Pressure-only opening stats for every run in the combined flowStatsMI (index: combined run id
-    csId*10 + V, opening), replacing the old one-run-per-case assignment.
+                           require_all=True, unmatched_sources=(), combined=True, verbose=True):
+    """Pressure-only opening stats for every run in flowStatsMI, replacing the old one-run-per-case
+    assignment.
 
-    For each combined run, each member interior run (from runs_csv, the per-run flowStatsMI.csv) uses
+    combined=True: flowStatsMI is the output of combine_stats (index: combined run id csId*10 + V,
+        opening) and each run's member interior runs are read from runs_csv (the per-run
+        flowStatsMI.csv). combined=False: flowStatsMI is per run (index: run id C*1000 + R*10 + V,
+        opening), so each run is its own single member and is compared 1:1 with its own twin; runs_csv
+        and require_all are then unused. The two id schemes overlap (e.g. 2530 is both the combined
+        R46+R53 and R53 ΔT 0), so the caller has to say which one flowStatsMI uses.
+
+    For each run, each member interior run uses
     its matched pressure-only twin (setup_matched_noint_runs.matched_run: CHARLES/config<C>/R76-R99,
     restarted from that interior run, file probes/flowStats-42000to119000.csv for ΔT 0 or
     -162000to240000.csv for ΔT 5) when the twin's file exists, otherwise the old pressure-only run of
@@ -829,7 +836,8 @@ def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_
     combine_stats averages the interior runs (rms in quadrature).
 
     require_all: use the twins for a combined run only if every member's twin is available, so each
-        row is either fully matched or fully old. With False, members fall back one by one.
+        row is either fully matched or fully old. With False, members fall back one by one. Moot
+        with combined=False (one member per run).
     unmatched_sources: (C, R) interior runs whose current stats do not come from the run their twins
         were restarted from; these always use the old pressure-only run. Empty since config2 R48 was
         reprocessed from its 2026 rerun (the run its twins R78, R90 were restarted from). Pass
@@ -838,17 +846,21 @@ def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_
 
     Returns (pcStatsMI, sources): pcStatsMI is indexed (run, index) with the "-noInt" columns the
     notebook has always used, plus pOnly_nMatched / pOnly_nMembers (floats) and pOnly_runs (str);
-    sources lists, per combined run, where each member's pressures came from.
+    sources lists, per run, where each member's pressures came from.
     """
     from setup_matched_noint_runs import matched_run
 
-    if runs_csv is None:
-        runs_csv = f"{home_dir}/CHARLES/multiRuns/flowStatsMI.csv"
-    runs = pd.read_csv(runs_csv, index_col=[0, 1])
-    runs = runs.groupby(level=0)[["csId", "C", "A", "WS"]].first()
-    members = {}
-    for run_id, row in runs.iterrows():
-        members.setdefault(int(row.csId) * 10 + int(run_id) % 10, []).append(int(run_id))
+    run_ids = np.sort(flowStatsMI.index.get_level_values(0).unique())
+    if combined:
+        if runs_csv is None:
+            runs_csv = f"{home_dir}/CHARLES/multiRuns/flowStatsMI.csv"
+        runs = pd.read_csv(runs_csv, index_col=[0, 1])
+        runs = runs.groupby(level=0)[["csId", "C", "A", "WS"]].first()
+        members = {}
+        for run_id, row in runs.iterrows():
+            members.setdefault(int(row.csId) * 10 + int(run_id) % 10, []).append(int(run_id))
+    else:
+        members = {int(run): [int(run)] for run in run_ids}
 
     noIntRuns = pd.DataFrame(runsNoInt).T
     unmatched_sources = {tuple(s) for s in unmatched_sources}
@@ -859,7 +871,7 @@ def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_
             cache[path] = _read_noint_stats(path)
         return cache[path]
 
-    for run in np.sort(flowStatsMI.index.get_level_values(0).unique()):
+    for run in run_ids:
         first = flowStatsMI.loc[run].iloc[0]
         A, WS, C, V = first["A"], first["WS"], int(first["C"]), int(run) % 10
         old = noIntRuns[(noIntRuns["A"] == A) & (noIntRuns["WS"] == WS) & (noIntRuns["C"] == C)].index[0]
@@ -895,6 +907,7 @@ def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_
     sources = pd.DataFrame(sources)
     if verbose:
         per_run = sources.groupby("run")["matched"].agg(["sum", "size"])
-        print(f"pressure-only stats: {int((per_run['sum'] == per_run['size']).sum())} of {len(per_run)} combined runs "
+        kind = "combined runs" if combined else "runs (per run, not combined)"
+        print(f"pressure-only stats: {int((per_run['sum'] == per_run['size']).sum())} of {len(per_run)} {kind} "
               f"use matched twins ({int(sources['matched'].sum())} of {len(sources)} member runs)")
     return pcStatsMI, sources
