@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import pyafn
 from pyafn import rho, Cd, g, beta
 import pandas as pd
@@ -79,11 +80,18 @@ windows = {
     }
 }
 
+# Each window is (Cp table, head-on wind angle, mirrored). Wind angles are the LES roomA/AofA convention:
+# the direction the wind blows toward in the canonical (B) house frame, 0 = +x, 90 = +z. House faces:
+# x=54 (head-on 0), z=56 (90), z=64 (270); the effective angle is theta = head-on angle - wind angle.
+# For theta > 0 the upwind corner of a face is: x=54 -> z=64 end, z=56 -> x=54 end, z=64 -> x=66 end.
+# The off-centre tables (small_face_A, large_face_B) were read for a window offset toward that
+# upwind corner (e.g. large_face_B: Cp(+90) = -0.4 near the leading edge, Cp(-90) = -0.2 downstream).
+# Windows offset toward the other corner see the face mirrored, Cp(theta) -> Cp(-theta): mirrored=True.
 rooms = {
     "cross": {
         "windows": [
-            ("large_face_B", 90),
-            ("large_face_B", 270),
+            ("large_face_B", 90, True),    # z=56, x=64: offset toward x=66, not the theta>0 upwind x=54 end
+            ("large_face_B", 270, False),  # z=64, x=64: offset toward x=66, the theta>0 upwind end
         ],
         "window_equivalent":
         [
@@ -95,8 +103,8 @@ rooms = {
     },
     "corner": {
         "windows": [
-            ("small_face_A", 0),
-            ("large_face_B", 90),
+            ("small_face_A", 0, True),   # x=54, z=58: offset toward z=56, not the theta>0 upwind z=64 end
+            ("large_face_B", 90, False),  # z=56, x=56: offset toward x=54, the theta>0 upwind end
         ],
         "window_equivalent":
         [
@@ -108,10 +116,10 @@ rooms = {
     },
     "dual": {
         "windows": [
-            ("small_face_A", 0),
-            ("large_face_B", 270),
-            ("large_face_AB", 270),
-            ("door", 0)
+            ("small_face_A", 0, False),   # x=54, z=62: offset toward z=64, the theta>0 upwind end
+            ("large_face_B", 270, True),  # z=64, x=56: offset toward x=54, not the theta>0 upwind x=66 end
+            ("large_face_AB", 270, False),  # z=64, x=60: centred, table is symmetric
+            ("door", 0, False)
         ],
         "window_equivalent":
         [
@@ -127,7 +135,7 @@ rooms = {
     },
     "single": {
         "windows": [
-            ("large_face_AB", 90)
+            ("large_face_AB", 90, False)  # z=56, x=60: centred, table is symmetric
         ],
         "window_equivalent":
         [
@@ -146,6 +154,33 @@ H = 3  # Building height in meters
 U_H = Ustar / k * np.log(3 / y0)  # Wind speed at building height (1.5 m)
 print(f"Calculated wind speed at building height: {U_H:.2f} m/s")
 
+def plot_polar_grid(series, angles, ncols, title, fname, panel_size=3.5):
+    """One polar panel per entry of `series` (name -> rates at each angle), saved to `fname`."""
+    nrows = int(np.ceil(len(series) / ncols))
+    fig, axes = plt.subplots(
+        nrows, ncols, subplot_kw=dict(projection="polar"),
+        figsize=(panel_size * ncols, panel_size * nrows + 0.5), dpi=160,
+        layout="constrained", squeeze=False,
+    )
+    theta = np.deg2rad(np.append(angles, angles[0]))  # close the polar curve
+    for ax, (name, rates) in zip(axes.flat, series.items()):
+        ax.plot(theta, np.append(rates, rates[0]), marker="o", markersize=3)
+        ax.set_title(name)
+        ax.set_theta_zero_location("W")
+        ax.yaxis.set_major_locator(MaxNLocator(3))
+        if np.min(rates) >= 0:
+            ax.set_rmin(0)  # autoscale would otherwise put a nonzero value at the center
+        else:
+            # Signed flows: center is the most negative value, so mark the zero-flow ring
+            ax.plot(np.linspace(0, 2 * np.pi, 200), np.zeros(200), "k--", lw=0.8)
+        ax.tick_params(labelsize=8)
+    for ax in axes.flat[len(series):]:
+        ax.set_visible(False)
+    fig.suptitle(title)
+    fig.savefig(fname)
+    plt.close(fig)
+
+
 Cs = [2, 3]  # Shelter class adjustments
 dfRooms = []
 dfWindows = []
@@ -154,6 +189,7 @@ windowInfoDict = {
     "window": [],
     "wind_angle" : [],
     "effective_angle": [],
+    "table_angle": [],
     "C_p": [],
 }
 for C in Cs:
@@ -168,13 +204,15 @@ for C in Cs:
             p_w = []
             Cp_max = -999
             shelter_factor_value = 0
-            for window, angle in room_dict["windows"]:
+            for window, angle, mirrored in room_dict["windows"]:
                 effective_angle = (angle - wind_angle) % 360
-                Cp = windows[window][effective_angle]
+                table_angle = (-effective_angle) % 360 if mirrored else effective_angle
+                Cp = windows[window][table_angle]
                 windowInfoDict["room"].append(room_name)
                 windowInfoDict["window"].append(window)
                 windowInfoDict["wind_angle"].append(wind_angle)
                 windowInfoDict["effective_angle"].append(effective_angle)
+                windowInfoDict["table_angle"].append(table_angle)
                 windowInfoDict["C_p"].append(Cp)
 
                 Cp_max = max(Cp_max, Cp)
@@ -216,37 +254,16 @@ for C in Cs:
             for i, flow in enumerate(flows):
                 vent_windows[room_dict["window_equivalent"][i]].append(flow)
 
-    fig, axes = plt.subplots(4, 1, subplot_kw=dict(projection="polar"), figsize=(2, 6), dpi=160)
-    for ax, (room_name, rates) in zip(axes.flat, vent_rooms.items()):
-        theta = np.deg2rad(angles)
-        # Close the polar curve
-        theta_closed = np.append(theta, theta[0])
-        rates_closed = np.append(rates, rates[0])
-
-        ax.plot(theta_closed, rates_closed)
-        ax.set_title(room_name, pad=15)
-        ax.set_theta_zero_location("W")
-        # ax.set_theta_direction(-1)
-        ax.set_xlabel("Total Ventilation Rate (m³/s)")
-
-    plt.tight_layout()
-    # plt.show()
-
-    fig, axes = plt.subplots(1, 8, subplot_kw=dict(projection="polar"), figsize=(12, 4), dpi=160)
-    for ax, (window_name, rates) in zip(axes.flat, vent_windows.items()):
-        theta = np.deg2rad(angles)
-        # Close the polar curve
-        theta_closed = np.append(theta, theta[0])
-        rates_closed = np.append(rates, rates[0])
-
-        ax.plot(theta_closed, rates_closed)
-        ax.set_title(window_name, pad=15)
-        ax.set_theta_zero_location("W")
-        # ax.set_theta_direction(-1)
-        ax.set_xlabel("Total Ventilation Rate (m³/s)")
-
-    plt.tight_layout()
-    # plt.show()
+    plot_polar_grid(
+        vent_rooms, angles, ncols=2,
+        title=f"Room ventilation rate (m³/s) vs. wind angle, C = {C}",
+        fname=f"ashrae_exports/roomASHRAE_C{C}.png",
+    )
+    plot_polar_grid(
+        vent_windows, angles, ncols=4,
+        title=f"Window flow rate (m³/s) vs. wind angle, C = {C}",
+        fname=f"ashrae_exports/windowASHRAE_C{C}.png",
+    )
 
     dfRoomsC = pd.DataFrame(vent_rooms)
     dfWindowsC = pd.DataFrame(vent_windows)

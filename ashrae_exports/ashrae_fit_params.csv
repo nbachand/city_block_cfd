@@ -1,5 +1,5 @@
 fit_source,model_name,opening_group,direction,cd,sigma,n,x_label,y_label
-ASHRAE-to-LES Fit,ASHRAE $\sigma_{q_n}$ Bulk Fit,Window,Flow Entering,1.062645640261406,0.11938563441201269,1137,ASHRAE,flux-Norm
-ASHRAE-to-LES Fit,ASHRAE $\sigma_{q_n}$ Bulk Fit,Window,Flow Exiting,1.0182640523433841,0.11056620287908962,1103,ASHRAE,flux-Norm
-ASHRAE-to-LES Fit,ASHRAE $\sigma_{\Delta C_p}$ Bulk Fit,Window,Flow Entering,0.9052355949718168,0.0037916273995178785,1137,ASHRAE,flux-Norm
-ASHRAE-to-LES Fit,ASHRAE $\sigma_{\Delta C_p}$ Bulk Fit,Window,Flow Exiting,0.9690712534088641,0.020975374889219665,1103,ASHRAE,flux-Norm
+ASHRAE-to-LES Fit,ASHRAE $\sigma_{q_n}$ Bulk Fit,Window,Flow Entering,0.9667174498658028,1.9589829717691156e-22,2283,ASHRAE,flux-Norm
+ASHRAE-to-LES Fit,ASHRAE $\sigma_{q_n}$ Bulk Fit,Window,Flow Exiting,0.9671162893426374,3.405134843956882e-20,2197,ASHRAE,flux-Norm
+ASHRAE-to-LES Fit,ASHRAE $\sigma_{\Delta C_p}$ Bulk Fit,Window,Flow Entering,0.9667174501782392,6.279661795049832e-16,2283,ASHRAE,flux-Norm
+ASHRAE-to-LES Fit,ASHRAE $\sigma_{\Delta C_p}$ Bulk Fit,Window,Flow Exiting,0.9671162894781032,5.005705197824267e-17,2197,ASHRAE,flux-Norm
