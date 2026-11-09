@@ -30,3 +30,6 @@
 # still ignore:
 .ipynb_checkpoints/
 *-jvxc-*
+charles-restart-[0-9]*.in
+tmp/
+handoff_*.md
