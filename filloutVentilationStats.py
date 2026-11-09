@@ -316,7 +316,13 @@ def roomStatistics(windowStats, windowMap, roomQois):
 
 def fillInParams(df, velTenMeters):
     def process_row(row):
-        row["AofA"] = (row["orientation"] + row["A"]) % 360
+        if "roomOrientation" in row.index:
+            # Opening rows: orientation is the outward-normal angle and A the direction the wind blows toward,
+            # both measured +x -> +z, so A - orientation is 180 head-on and 0 leeward on every face.
+            row["AofA"] = (row["A"] - row["orientation"]) % 360
+        else:
+            # Room rows: orientation is minus the house rotation, so this is the wind angle in the house frame.
+            row["AofA"] = (row["orientation"] + row["A"]) % 360
         row["AofA_resid"] = row["AofA"] % 90
         row["Ri"] = physics.getVentRi(row["delT"], row["WS"])
         row["EPR_Ri"] = physics.getVentRi(row["delT"], row["EPR_mag"])
@@ -811,7 +817,7 @@ def _combine_noint_stats(frames):
 
 
 def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_matched=True,
-                           require_all=True, unmatched_sources=((2, 48),), verbose=True):
+                           require_all=True, unmatched_sources=(), verbose=True):
     """Pressure-only opening stats for every run in the combined flowStatsMI (index: combined run id
     csId*10 + V, opening), replacing the old one-run-per-case assignment.
 
@@ -825,8 +831,9 @@ def assign_noint_pressures(flowStatsMI, runsNoInt, home_dir, runs_csv=None, use_
     require_all: use the twins for a combined run only if every member's twin is available, so each
         row is either fully matched or fully old. With False, members fall back one by one.
     unmatched_sources: (C, R) interior runs whose current stats do not come from the run their twins
-        were restarted from: config2 R48's stats are from the 2024 run, its twins (R78, R90) from the
-        2026 rerun. Remove it once R48 is reprocessed from the rerun.
+        were restarted from; these always use the old pressure-only run. Empty since config2 R48 was
+        reprocessed from its 2026 rerun (the run its twins R78, R90 were restarted from). Pass
+        ((2, 48),) only with a flowStatsMI.csv built from the 2024 R48 stats (R48/run2024/probes).
     use_matched=False reproduces the old assignment.
 
     Returns (pcStatsMI, sources): pcStatsMI is indexed (run, index) with the "-noInt" columns the
