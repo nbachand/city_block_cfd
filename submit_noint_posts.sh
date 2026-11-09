@@ -34,7 +34,8 @@ for C in $CONFIGS; do
         tag="config$C R$R (step $STEP)"
         [ -f "$d/charles.in" ] || { echo "$tag: not set up, skipped"; continue; }
         if grep -qxE "cc${C}_R${R}r?" <<< "$queued"; then echo "$tag: still running, skipped"; continue; fi
-        log=$(ls -t "$d"/slurm-*.out 2>/dev/null | head -1)
+        # newest log that ran steps (an auto-restart that found the run done logs no steps)
+        log=$(for f in $(ls -t "$d"/slurm-*.out 2>/dev/null); do grep -qE "^ starting step:" "$f" && { echo "$f"; break; }; done)
         nsteps=$(grep -oE "^NSTEPS = [0-9]+" "$d/charles.in" | awk '{print $3}')
         last=$([ -n "$log" ] && grep -E "^ starting step:" "$log" | tail -1 | awk '{print $3}')
         if [ -z "$last" ] || [ "$last" -lt "$nsteps" ]; then echo "$tag: not finished (step ${last:-none}), skipped"; continue; fi

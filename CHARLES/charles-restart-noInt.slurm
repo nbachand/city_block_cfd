@@ -15,7 +15,7 @@
 #    it at 0). Instead of "0 0 0", whose u = 0 first read sets the integral to dt*100*u_ref and
 #    overshoots the flow aloft by ~35% for ~2000 steps, VolProbe90X/Z.svp are seeded with the last
 #    velocities the previous job measured, so the integral rebuilds from a ~0.1% velocity deficit.
-#SBATCH -n 24
+#SBATCH -n 48
 #SBATCH --mem-per-cpu=7G
 #SBATCH --time=4-00:00:00
 #SBATCH --partition=serc
