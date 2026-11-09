@@ -8,31 +8,37 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.lines import Line2D
 import pyafn
 from matplotlib import pyplot as plt
-import pytensor.tensor as pt
-try:
-    from pytensor.compile.ops import wrap_py
-except ImportError:  # older pytensor (<2.32) only provides as_op
-    from pytensor.compile.ops import as_op as wrap_py
 from pyafn import rho, Cd
 
+# pytensor is only needed for the PyMC fits (pymc_afn env); keep the rest of
+# this module importable from kernels without it (e.g. pycascade).
+try:
+    import pytensor.tensor as pt
+    try:
+        from pytensor.compile.ops import wrap_py
+    except ImportError:  # older pytensor (<2.32) only provides as_op
+        from pytensor.compile.ops import as_op as wrap_py
+except ImportError:
+    pt = None
+
+if pt is not None:
+
+    @wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
+    def ventilation_redecomp_p_op(u_model, a, p_rms):
+        """PyTensor wrapper around pyafn.ventilationReDecomp_p for scalar subgroup parameters."""
+        return np.asarray(
+            pyafn.ventilationReDecomp_p(np.asarray(u_model, dtype=float), float(a), float(p_rms)),
+            dtype=float,
+        )
 
 
-@wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
-def ventilation_redecomp_p_op(u_model, a, p_rms):
-    """PyTensor wrapper around pyafn.ventilationReDecomp_p for scalar subgroup parameters."""
-    return np.asarray(
-        pyafn.ventilationReDecomp_p(np.asarray(u_model, dtype=float), float(a), float(p_rms)),
-        dtype=float,
-    )
-
-
-@wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
-def ventilation_redecomp_q_op(u_model, a, q_rms):
-    """PyTensor wrapper around pyafn.ventilationReDecomp_q for scalar subgroup parameters."""
-    return np.asarray(
-        pyafn.ventilationReDecomp_q(np.asarray(u_model, dtype=float), float(a), float(q_rms)),
-        dtype=float,
-    )
+    @wrap_py(itypes=[pt.dvector, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
+    def ventilation_redecomp_q_op(u_model, a, q_rms):
+        """PyTensor wrapper around pyafn.ventilationReDecomp_q for scalar subgroup parameters."""
+        return np.asarray(
+            pyafn.ventilationReDecomp_q(np.asarray(u_model, dtype=float), float(a), float(q_rms)),
+            dtype=float,
+        )
 
 
 def readEmulationMI(home_dir="./"):
@@ -111,6 +117,133 @@ def readEmulationMI(home_dir="./"):
     df["all"] = True
 
     return df, roomVentilationMI
+
+
+#### Averaging over realizations of the same nominal condition ####
+# Each window-only condition (C, A, WS, delT window) was simulated twice, e.g. config2 R46 and R53, both with
+# csId 253. Models are evaluated per realization with that realization's own pressure-only pressures; for
+# metrics and plots the predicted and LES ventilation rates are then averaged over the realizations
+# (average after the network, never the pressures before it). slAll runs are single realizations.
+
+def condition_ids(frame):
+    """Nominal-condition id of each row of a frame indexed (run_id, key): csId * 10 + V (V = run_id % 10),
+    as combine_stats indexes combined runs. Applied to an already averaged frame it returns its own index."""
+    run_id = np.asarray(frame.index.get_level_values(0), dtype=int)
+    return pd.Series(frame["csId"].to_numpy(dtype=int) * 10 + run_id % 10, index=frame.index, name="conditionId")
+
+
+def average_realizations(frame, extra=None, sign_source="p-noInt_optp0-q_model", sign_col="Sdelp", average=True):
+    """Average a per-realization frame (index (run_id, key), with a csId column) over the realizations of each
+    nominal condition. Returns a frame indexed (conditionId, key) with:
+      - numeric columns averaged; columns with "rms" in the name in quadrature, as combine_stats does;
+      - bool, string and other columns taken from the first realization (they agree between realizations);
+      - sign_col (the flow-direction group) recomputed from the sign of the averaged sign_source, the same
+        definition readEmulationMI uses, since the two realizations can disagree on the direction;
+      - nRealizations, the number of realizations averaged.
+    extra: {column: Series indexed like frame} attached before averaging (e.g. a per-run prediction).
+    average=False only attaches extra, so notebooks can switch the averaging off with one flag."""
+    out = frame.copy()
+    for name, series in (extra or {}).items():
+        out[name] = pd.Series(series).reindex(out.index)
+    if not average:
+        return out
+
+    keys = [condition_ids(out).to_numpy(), out.index.get_level_values(1)]
+    numeric = [
+        col for col in out.columns
+        if pd.api.types.is_numeric_dtype(out[col]) and not pd.api.types.is_bool_dtype(out[col])
+    ]
+    other = [col for col in out.columns if col not in numeric]
+    rms = [col for col in numeric if "rms" in col]
+
+    values = out[numeric].copy()
+    values[rms] = values[rms] ** 2
+    averaged = values.groupby(keys, sort=False).mean()
+    averaged[rms] = averaged[rms] ** 0.5
+    for col in numeric:  # integer columns that agree between realizations (skylight, csId, WS, ...) stay integer
+        if pd.api.types.is_integer_dtype(out[col]) and (averaged[col] % 1 == 0).all():
+            averaged[col] = averaged[col].astype(out[col].dtype)
+    if other:
+        averaged = averaged.join(out[other].groupby(keys, sort=False).first())
+    averaged = averaged[list(out.columns)]
+    averaged["nRealizations"] = out.groupby(keys, sort=False).size()
+    averaged.index.names = ["conditionId", out.index.names[1]]
+
+    if sign_col in averaged.columns:
+        if sign_source not in averaged.columns:
+            raise KeyError(f"average_realizations: {sign_col} needs {sign_source} to be recomputed")
+        sign = np.sign(averaged[sign_source])
+        sign[sign == 0] = 1
+        averaged[sign_col] = sign.astype(int)
+    return averaged
+
+
+def fit_signed_model(frame, x_col, y_col, model_func, group_inits, *, x2_col=None, sign_col="Sdelp",
+                     average=False, min_points=1, label=""):
+    """Fit y = s * f_s(|x|; p_s) for each flow-direction group s of group_inits ({s: (p0, bounds)}), with f_s
+    model_func or model_func[s] (a dict). Each group is first fit alone on its rows, |y| against f_s(|x|)
+    (curve_fit, as before). With average=True all groups' parameters are then refit together (least_squares,
+    from those fits) to minimize the reported error: the signed predictions averaged over the realizations of
+    each condition (average_realizations) against the averaged y. Each realization keeps its own group (its
+    sign_col), so a condition whose realizations disagree on the direction ties the two groups together.
+    Returns {s: popt} for the groups that could be fit."""
+    from scipy.optimize import least_squares
+
+    funcs = model_func if isinstance(model_func, dict) else {s: model_func for s in group_inits}
+    cols = [x_col, y_col] + ([x2_col] if x2_col else [])
+    rows = frame.dropna(subset=cols)
+
+    def model_input(sub, mask):
+        x = np.abs(sub.loc[mask, x_col].to_numpy(dtype=float))
+        return (x, np.abs(sub.loc[mask, x2_col].to_numpy(dtype=float))) if x2_col else x
+
+    popts = {}
+    for s, (p0, bounds) in group_inits.items():
+        mask = (rows[sign_col] == s).to_numpy()
+        if mask.sum() < min_points:
+            print(f"Skipping fit {label} s={s}: {mask.sum()} rows")
+            continue
+        group_abs = rows.loc[mask, cols].abs().sort_values(by=x_col)  # the rows as the earlier per-group fits saw them
+        X_fit = (group_abs[x_col], group_abs[x2_col]) if x2_col else group_abs[x_col]
+        try:
+            popts[s] = curve_fit(funcs[s], X_fit, group_abs[y_col], p0=p0, bounds=bounds)[0]
+        except Exception as exc:
+            print(f"Skipping fit {label} s={s}: {exc}")
+    if not average or not popts:
+        return popts
+
+    groups = list(popts)
+    sizes = [len(popts[s]) for s in groups]
+    sub = rows[rows[sign_col].isin(groups).to_numpy()]
+    masks = {s: (sub[sign_col] == s).to_numpy() for s in groups}
+    inputs = {s: model_input(sub, masks[s]) for s in groups}
+    codes = pd.MultiIndex.from_arrays([condition_ids(sub).to_numpy(), sub.index.get_level_values(1)]).factorize()[0]
+    counts = np.bincount(codes)
+    y_mean = np.bincount(codes, sub[y_col].to_numpy(dtype=float)) / counts
+
+    def residual(theta):
+        pred = np.empty(len(sub))
+        k = 0
+        for s, n in zip(groups, sizes):
+            pred[masks[s]] = s * funcs[s](inputs[s], *theta[k:k + n])
+            k += n
+        return np.bincount(codes, pred) / counts - y_mean
+
+    def group_bounds(s, side, n):
+        return np.broadcast_to(np.asarray(group_inits[s][1][side], dtype=float), (n,))
+
+    lo = np.concatenate([group_bounds(s, 0, n) for s, n in zip(groups, sizes)])
+    hi = np.concatenate([group_bounds(s, 1, n) for s, n in zip(groups, sizes)])
+    x0 = np.clip(np.concatenate([popts[s] for s in groups]), lo, hi)
+    result = least_squares(residual, x0, bounds=(lo, hi))
+    rmse0, rmse1 = np.sqrt(np.mean(residual(x0) ** 2)), np.sqrt(np.mean(result.fun ** 2))
+    print(f"Realization-averaged fit {label}: {len(counts)} conditions, RMSE {rmse0:.5f} (per-realization fit) "
+          f"-> {rmse1:.5f} ({result.message})")
+    k = 0
+    for s, n in zip(groups, sizes):
+        popts[s] = result.x[k:k + n]
+        k += n
+    return popts
 
 
 def prepare_bayesian_ventilation_subgroup(data, y_var, x_var, skylight, sdelp):
@@ -1629,8 +1762,8 @@ def plot_bayesian_ventilation_p_fit_results(
     colorbar_rect=None,
     colorbar_orientation="horizontal",
     colorbar_label=None,
-    xlim=(-0.6, 0.6),
-    ylim=(-0.6, 0.6),
+    xlim=(-0.62, 0.62),
+    ylim=(-0.62, 0.62),
     show_scatter=True,
     scatter_alpha=0.6,
     scatter_size=20,
@@ -1896,8 +2029,8 @@ def plot_bayesian_ventilation_q_fit_results(
     colorbar_rect=None,
     colorbar_orientation="horizontal",
     colorbar_label=None,
-    xlim=(-0.6, 0.6),
-    ylim=(-0.6, 0.6),
+    xlim=(-0.62, 0.62),
+    ylim=(-0.62, 0.62),
     show_scatter=True,
     scatter_alpha=0.6,
     scatter_size=20,
@@ -2167,8 +2300,8 @@ def plot_bayesian_ventilation_p_fit(
     colorbar_rect=None,
     colorbar_orientation="horizontal",
     colorbar_label=None,
-    xlim=(-0.6, 0.6),
-    ylim=(-0.6, 0.6),
+    xlim=(-0.62, 0.62),
+    ylim=(-0.62, 0.62),
     band_alpha=0.3,
     band_color="0.5",
     band_hatch=None,
@@ -2237,7 +2370,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                                 show_figure_legend=True, add_numeric_colorbar=False,
                                 hue_norm=None, palette_numeric="viridis", figure_suptitle=True,
                                 colorbar_rect=None, colorbar_orientation="horizontal", colorbar_label=None, return_data=False,
-                                return_params=False, return_metrics=False, marker_size=20):
+                                return_params=False, return_metrics=False, marker_size=20,
+                                average_over_realizations=False):
     """
     Plot ventilation model fits comparing modeled vs LES flux velocities.
     
@@ -2302,6 +2436,11 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         If True, return a tidy dataframe with subgroup- and opening-level error metrics.
     marker_size : float
         Scatter marker size (matplotlib `s`, area in points^2). Default 20.
+    average_over_realizations : bool
+        If True, fit and predict per realization as usual, then average the predictions, the LES values and
+        x_var over the realizations of each condition (module function average_realizations) before the
+        metrics, the R^2 annotations and the scatter. The flow-direction groups of the metrics then follow
+        the sign of the averaged x_var. return_data still returns the per-realization (adjusted) x_var.
 
     Returns:
     --------
@@ -2333,8 +2472,8 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         if set_axis_labels:
             axs[i].set_xlabel("Baseline $q_{MP,n}$", fontsize=20)
             axs[i].set_ylabel(r"LES $\overline{q_n}$", fontsize=20)
-        axs[i].set_xlim(-0.6, 0.6)
-        axs[i].set_ylim(-0.6, 0.6)
+        axs[i].set_xlim(-0.62, 0.62)
+        axs[i].set_ylim(-0.62, 0.62)
     
     hue_is_numeric = pd.api.types.is_numeric_dtype(data[hue])
     room_type_hue_order = ["cross", "corner", "dual", "single"] if hue == "roomType" else None
@@ -2369,20 +2508,13 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         title = "Skylight" if sl_val else "Window"
         if show_row_titles:
             axs[i].set_title(title, fontsize=20)
-        
-        # Fit regression lines for each sign group (entering/exiting flow)
-        for s, stl, lbl in [(1, '-', 'Flow Entering'), (-1, '-', 'Flow Exiting')]:
-            regdf_cols = [x_var, y_var] + ([x_var2] if x_var2 else [])
-            regdf = plotdf[plotdf["Sdelp"] == s][regdf_cols]
-            regdf_abs = regdf.abs()
-            regdf_abs = regdf_abs.sort_values(by=x_var)
-            
-            # Skip fit if subgroup has no samples
-            if regdf_abs.empty:
-                print(f"Skipping fit for {title}, {lbl}: no samples")
-                continue
-            
-            # Build subgroup-specific fit initialization when requested
+
+        # Per-realization model prediction of every row, filled by the sign-group fits below
+        prediction = pd.Series(np.nan, index=plotdf.index, dtype=float)
+        q_mp = plotdf[x_var].copy()  # baseline, before any adjustment: sets the averaged flow direction
+
+        # Subgroup-specific fit initialization when requested
+        def _group_init(s, lbl):
             fit_p0 = list(p0)
             fit_bounds = (list(bounds[0]), list(bounds[1]))
             if group_param2_means is not None and len(fit_p0) > 1:
@@ -2408,14 +2540,29 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     )
                 else:
                     print(f"Init {title}, {lbl}: subgroup mean missing; using provided p0/bounds")
-            
-            # Fit model
-            if x_var2:
-                X_fit = (regdf_abs[x_var], regdf_abs[x_var2])
+            return fit_p0, fit_bounds
+
+        # Fit each sign group (entering/exiting flow); with average_over_realizations the parameters minimize
+        # the error of the realization-averaged predictions, the error reported below
+        group_inits = {}
+        for s, lbl in [(1, 'Flow Entering'), (-1, 'Flow Exiting')]:
+            if (plotdf["Sdelp"] == s).any():
+                group_inits[s] = _group_init(s, lbl)
             else:
-                X_fit = regdf_abs[x_var]
-            
-            popt = curve_fit(model_func, X_fit, regdf_abs[y_var], p0=fit_p0, bounds=fit_bounds)[0]
+                print(f"Skipping fit for {title}, {lbl}: no samples")
+        group_popts = fit_signed_model(plotdf, x_var, y_var, model_func, group_inits, x2_col=x_var2,
+                                       average=average_over_realizations, label=f"{model_name}, {title}")
+
+        # Regression lines and per-realization predictions for each sign group
+        for s, stl, lbl in [(1, '-', 'Flow Entering'), (-1, '-', 'Flow Exiting')]:
+            regdf_cols = [x_var, y_var] + ([x_var2] if x_var2 else [])
+            regdf = plotdf[plotdf["Sdelp"] == s][regdf_cols]
+            regdf_abs = regdf.abs()
+            regdf_abs = regdf_abs.sort_values(by=x_var)
+            if regdf_abs.empty or s not in group_popts:
+                continue
+
+            popt = group_popts[s]
             print(f"Fitted parameters for {title}, {lbl}: popt={popt}")
             print(fr"$C_d$ is {Cd * popt[0]:.3}, $\sigma$ is {popt[1]:.3f}")
             fitted_params[(title, lbl)] = popt
@@ -2425,11 +2572,9 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                 y_pred_model = model_func((np.abs(plotdf.loc[mask, x_var].values), np.abs(plotdf.loc[mask, x_var2].values)), *popt) * s
             else:
                 y_pred_model = model_func(np.abs(plotdf.loc[mask, x_var].values), *popt) * s
-            
-            if adjustData:
-                # Adjust x values based on fitted model
-                plotdf.loc[mask, x_var] = y_pred_model
-            else:
+            prediction.loc[mask] = y_pred_model
+
+            if not adjustData:
                 # Plot regression line
                 if x_var2:
                     y_pred = model_func((regdf_abs[x_var].values, regdf_abs[x_var2].values), *popt)
@@ -2455,9 +2600,27 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     lower_label = r'$\overline{q} = q_{MP}/(2H)$' if s > 0 else None
                     axs[i].plot(x_plot, y_pred_upper, color="blue", linestyle="--", label=upper_label, linewidth=1)
                     axs[i].plot(x_plot, y_pred_lower, color="green", linestyle="--", label=lower_label, linewidth=1)
-            
-            # Calculate model-vs-observed metrics
-            y_obs_model = plotdf.loc[mask, y_var].values
+
+        # Per-realization rows with the model applied; evaluated per condition when averaging realizations
+        if adjustData:
+            plotdf[x_var] = prediction.where(prediction.notna(), plotdf[x_var])
+        evaldf = plotdf.copy()
+        evaldf["_prediction"] = prediction
+        evaldf["_q_mp"] = q_mp
+        if average_over_realizations:
+            evaldf = average_realizations(evaldf, sign_source="_q_mp")
+            evaldf = evaldf.sort_values(by=[c for c in (hue, style) if c is not None])
+
+        # Model-vs-observed metrics for each fitted sign group
+        for s, lbl in [(1, 'Flow Entering'), (-1, 'Flow Exiting')]:
+            if (title, lbl) not in fitted_params:
+                continue
+            popt = fitted_params[(title, lbl)]
+            eval_group = evaldf[evaldf["Sdelp"] == s]
+            if eval_group.empty:
+                continue
+            y_obs_model = eval_group[y_var].values
+            y_pred_model = eval_group["_prediction"].values
             rmse, nrmse = calculate_normalized_rmse(
                 y_obs_model,
                 y_pred_model,
@@ -2515,7 +2678,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
         if hue_is_numeric:
             legend_mode = False
         scatter_ax = sns.scatterplot(
-            data=plotdf, x=x_var, y=y_var,
+            data=evaldf, x=x_var, y=y_var,
             hue=hue, style=style,
             alpha=0.6, s=marker_size, ax=axs[i],
             palette=palette_numeric if hue_is_numeric else "colorblind",
@@ -2531,10 +2694,10 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     scatter_collection_for_cbar.set_norm(hue_norm)
         
         if adjustData:
-            rmse, nrmse = calculate_normalized_rmse(plotdf[x_var], plotdf[y_var], normalization='std')
+            rmse, nrmse = calculate_normalized_rmse(evaldf[x_var], evaldf[y_var], normalization='std')
             print(f"For skylight={sl_val}, NRMSE: {nrmse:.4f}, RMSE: {rmse:.4f}")
-            opening_error = plotdf[x_var] - plotdf[y_var]
-            opening_ss = np.sum((plotdf[y_var] - plotdf[y_var].mean()) ** 2)
+            opening_error = evaldf[x_var] - evaldf[y_var]
+            opening_ss = np.sum((evaldf[y_var] - evaldf[y_var].mean()) ** 2)
             opening_r_squared = 1 - np.sum(opening_error ** 2) / opening_ss if opening_ss > 0 else np.nan
             opening_iqr_error = np.quantile(opening_error, 0.75) - np.quantile(opening_error, 0.25)
             metrics_rows.append(
@@ -2555,7 +2718,7 @@ def plot_ventilation_model_fit(data, y_var, x_var, x_var2=None, hue="roomType", 
                     "bias": np.mean(opening_error),
                     "iqr_error": opening_iqr_error,
                     "std": np.std(opening_error),
-                    "n": len(plotdf[[x_var, y_var]].dropna()),
+                    "n": len(evaldf[[x_var, y_var]].dropna()),
                 }
             )
 
