@@ -33,3 +33,5 @@
 charles-restart-[0-9]*.in
 tmp/
 handoff_*.md
+sdr/HANDOFF_*.md
+sdr/METADATA_*.md

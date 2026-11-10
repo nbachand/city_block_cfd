@@ -21,9 +21,10 @@
         - [Room Characteristics](#room-characteristics)
         - [Window Characteristics](#window-characteristics)
         - [Room-Level Aggregations](#room-level-aggregations)
+    - [Version History](#version-history)
 
 ### Paper
-This guide presents the data used in the paper [Simulating The Urban Canopy's Impact on Wind-Driven Natural Ventilation](https://arxiv.org/abs/2508.04091). The two main datasets are:
+This guide presents the data used in the paper [Simulating the urban canopy's impact on wind-driven natural ventilation](https://doi.org/10.1017/flo.2025.10039) (*Flow* 6, E1, 2026; preprint [arXiv:2508.04091](https://arxiv.org/abs/2508.04091)). The data are archived in the Stanford Digital Repository at [doi:10.25740/vb900bf9392](https://doi.org/10.25740/vb900bf9392). The two main datasets are:
 
 ### GitHub
 These datasets were processed using code in the github repository [city_block_cfd](https://github.com/nbachand/city_block_cfd)
@@ -213,6 +214,9 @@ The *qoi* normalized by the velocity magnitude at the extra probe (1.5 m outside
 #### *qoi*-NormEPR
 The *qoi* normalized by the velocity magnitude at the extra roof probe (1 house height above the roof)
 
+#### *qoi*-NormABL
+Unused. These columns are empty in every row.
+
 ### Simulation Specifics
 
 #### starts
@@ -235,7 +239,7 @@ The flow angle with respect to flow along the x-axis through the unrotated house
 ### Window Characteristics
 
 #### AofA
-The angle of the flow with respect to the window normal (pointing outwards from the building interior). This is not specified for skylights which are all vertical.
+The angle of the flow with respect to the window normal (pointing outwards from the building interior), computed as $(A - \text{orientation}) \bmod 360$. 180 degrees is wind blowing straight into the window (windward), 0 degrees is wind blowing straight away from it (leeward), and 90 or 270 degrees is wind parallel to the window. This is not specified for skylights which are all vertical. In [roomVentilationMI](#datasets), `AofA` is instead the wind angle in the frame of the unrotated house, $(A + \text{orientation}) \bmod 360$, as in [roomA](#rooma).
 
 #### AofA_resid
 The residual of the AofA divided by 90 degrees, being either 0 degrees or 45 degrees. This is not specified for skylights.
@@ -292,3 +296,10 @@ The fit yields two parameters:
 - **-perA**: Flux normalized by surface area
 - **-h**: Heat transfer coefficient (for temperature-like scalars)
 - **-slEx**: Ceiling flux excluding skylight contributions
+
+## Version History
+
+### November 2026
+- **config2 R48 reprocessed.** The rows for run IDs 2480, 2481 and 2482 (config2 R48) in both files now come from the 2026 rerun of that case instead of the original 2024 run. All flow, scalar and probe statistics in those rows change. Run parameters and geometry are the same, and no other run's statistics change.
+- **[AofA](#aofa) corrected for openings.** In flowStatsMI, `AofA` was computed as $(\text{orientation} + A) \bmod 360$. That formula is only correct for openings whose orientation is 0 or 180 degrees. It is now $(A - \text{orientation}) \bmod 360$ for every opening. Values change for all openings with orientation 90 or 270 degrees. `AofA_resid` is unaffected because the old and new values differ by a multiple of 180 degrees. Room-level `AofA` in roomVentilationMI is unchanged.
+- The columns and the set of rows are the same as in the previous version.
