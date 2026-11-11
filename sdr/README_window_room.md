@@ -24,18 +24,18 @@
     - [Version History](#version-history)
 
 ### Paper
-This guide presents the data used in the paper [Simulating The Urban Canopy's Impact on Wind-Driven Natural Ventilation](https://arxiv.org/abs/2508.04091). The two main datasets are:
+This guide presents the data used in the paper [Simulating the urban canopy's impact on wind-driven natural ventilation](https://doi.org/10.1017/flo.2025.10039) (*Flow* 6, E1, 2026). The paper *Improving Airflow Network Models of Natural Ventilation: Geometry-Specific Pressures and Fluctuation Corrections* also uses this dataset.
 
 ### GitHub
 These datasets were processed using code in the github repository [city_block_cfd](https://github.com/nbachand/city_block_cfd)
 
 ### Datasets
 
-**[flowStatsMI](CHARLES/multiRuns/flowStatsMI.csv)**
+**[flowStatsMI](flowStatsMI.csv)**
 
 Various results on flow through individual windows. First two columns provide and index, [*run ID*, *window ID*], to identify each row. The *window ID* is [openingType](#openingtype)-[windowNumber](#windownumber)\_h_[houseNumber](#housetype)_[blockType](#blocktype).
 
-**[roomVentilationMI](CHARLES/multiRuns/roomVentilationMI.csv)**
+**[roomVentilationMI](roomVentilationMI.csv)**
 
 Various results on flow through individual rooms. Data from individual windows are consolidated into rooms based on their ventilation configuration (corner, cross, dual, single). First two columns provide and index, [*run ID*, *room ID*], to identify each row. The *room ID* is [roomType](#roomtype)\_h_[houseNumber](#housetype)_[blockType](#blocktype).
 
